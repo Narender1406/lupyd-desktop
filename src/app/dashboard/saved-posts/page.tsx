@@ -128,7 +128,7 @@ export default function SavedPostsPage() {
   })
 
   return (
-    <DashboardLayout activeTab="saved-posts">
+    <DashboardLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Saved Posts</h1>
@@ -215,17 +215,9 @@ export default function SavedPostsPage() {
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
                   <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <PostCard
-                      {...post}
-                      additionalInfo={
-                        <div className="flex items-center text-xs text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Saved {post.savedAt}</span>
-                        </div>
-                      }
-                      isSaved={true}
-                    />
-                  </AnimatedCard>
+                    {/*                    <PostCard post={post} />
+                    TODO: saved posts
+*/}                  </AnimatedCard>
                 ))}
               </div>
             ) : (
@@ -250,16 +242,8 @@ export default function SavedPostsPage() {
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
                   <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <PostCard
-                      {...post}
-                      additionalInfo={
-                        <div className="flex items-center text-xs text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Saved {post.savedAt}</span>
-                        </div>
-                      }
-                      isSaved={true}
-                    />
+                    <div/>
+                    {/**/}
                   </AnimatedCard>
                 ))}
               </div>
@@ -285,16 +269,7 @@ export default function SavedPostsPage() {
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
                   <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <PostCard
-                      {...post}
-                      additionalInfo={
-                        <div className="flex items-center text-xs text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Saved {post.savedAt}</span>
-                        </div>
-                      }
-                      isSaved={true}
-                    />
+                    <div/>
                   </AnimatedCard>
                 ))}
               </div>
@@ -320,16 +295,7 @@ export default function SavedPostsPage() {
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
                   <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <PostCard
-                      {...post}
-                      additionalInfo={
-                        <div className="flex items-center text-xs text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Saved {post.savedAt}</span>
-                        </div>
-                      }
-                      isSaved={true}
-                    />
+                    <div/>
                   </AnimatedCard>
                 ))}
               </div>
@@ -355,16 +321,7 @@ export default function SavedPostsPage() {
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
                   <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <PostCard
-                      {...post}
-                      additionalInfo={
-                        <div className="flex items-center text-xs text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Saved {post.savedAt}</span>
-                        </div>
-                      }
-                      isSaved={true}
-                    />
+                    <div/>
                   </AnimatedCard>
                 ))}
               </div>
