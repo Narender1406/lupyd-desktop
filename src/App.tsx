@@ -25,16 +25,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={
-          <LandingLayout>
-            <LandingPage />
-          </LandingLayout>
-        } />
-        <Route path="/community" element={
-          <LandingLayout>
-            <CommunityPage />
-          </LandingLayout>
-        } />
+        <Route path="/" element={<LandingLayout><LandingPage /></LandingLayout>} />
+        <Route path="/community" element={<LandingLayout><CommunityPage /></LandingLayout>} />
         <Route path="/features" element={<LandingLayout> <FeaturesPage /> </LandingLayout>} />
         <Route path="/experience" element={<LandingLayout><ExperiencePage /> </LandingLayout>} />
         <Route path="/creator-tools" element={<LandingLayout> <CreatorToolsPage /></LandingLayout>} />

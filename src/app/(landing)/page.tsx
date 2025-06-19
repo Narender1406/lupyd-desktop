@@ -171,7 +171,7 @@ export default function LandingPage() {
                 Experience the future of social networking
               </h2>
               <Link
-                to="/signin"
+                to="/dashboard"
                 className="inline-flex h-9 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-medium text-black shadow transition-colors hover:bg-gray-200"
               >
                 Get Started

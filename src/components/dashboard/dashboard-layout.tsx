@@ -31,7 +31,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context"
-import { userPfpSrc } from "@/lib/utils"
 import { UserAvatar } from "../user-avatar"
 
 interface DashboardLayoutProps {
@@ -86,45 +85,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     url.pathname = "/dashboard/discover"
     url.searchParams.set("q", searchText)
     router.push(url.toString())
-
-    // console.log(`Searching for '${searchText}'`)
-
-    // if (searchText.length < 2) {
-    //   console.log(`Not enough info to search for`)
-    //   return
-    // }
-
-
-    // const promises: Array<Promise<any>> = []
-    // // posts
-    // {
-    //   if (searchText.length > 3) {
-    //     const postsFuture = getPosts({
-    //       fetchType: FetchType.Search,
-    //       fetchTypeFields: searchText,
-    //     }).then((posts) => {
-    //       for (const post of posts) {
-    //         console.log(post)
-    //       }
-    //     })
-
-    //     promises.push(postsFuture)
-    //   }
-    // }
-
-    // {
-    //   const usersFuture = getUsers(searchText).then((users) => {
-    //     for (const user of users) {
-    //       console.log(user)
-    //     }
-    //   })
-    //   promises.push(usersFuture)
-
-    // }
-
-    // await Promise.all(promises)
   }
-
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -251,9 +212,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       )
                     })}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => auth.logout()} className="text-red-600">
+                    <DropdownMenuItem onClick={() =>  username == null ? router.push("/signin") : auth.logout()} className="text-red-600">
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                      <span>{username == null ? "Sign In" : "Sign Out"}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
