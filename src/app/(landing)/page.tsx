@@ -1,14 +1,14 @@
 "use client"
 
 
-import {Link} from "react-router-dom"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Share2, MessageSquare, Settings, Zap } from "lucide-react"
 import { AnimatedCard } from "@/components/animated-card"
 
 export default function LandingPage() {
-  
+
   return (
     <>
       {/* Hero Section */}
@@ -23,16 +23,16 @@ export default function LandingPage() {
               and personalized environment.
             </p>
             <div className="space-x-4">
-              <Link to="/signin">
+              <Link to="/dashboard">
                 <Button className="bg-white text-black hover:bg-gray-200">Get Started</Button>
               </Link>
-              
+
             </div>
           </div>
         </div>
       </section>
 
-      
+
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-50">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center mb-12">
