@@ -3424,8 +3424,8 @@ lucide@^0.487.0:
   integrity sha512-SJk/ANI/Qu6ieS1uZqy6ZQcEB7/oH+gVtCGrmzcvSQKJVWsGSlbR/SMTxIdqqbb1/h+eJBSVkWB7I0jGnjuOFw==
 
 "lupyd-js@https://github.com/ash-hashtag/lupyd-js":
-  version "1.0.1"
-  resolved "https://github.com/ash-hashtag/lupyd-js#9fbb273a35f7d8a3f32f9bcaca394664be1ff347"
+  version "1.0.2"
+  resolved "https://github.com/ash-hashtag/lupyd-js#2e71ef6961cd2761d3de8d2dc02c91eb0a23db57"
   dependencies:
     base-x "^5.0.1"
     firebase "^11.6.0"
