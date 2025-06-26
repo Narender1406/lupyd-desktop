@@ -4,9 +4,11 @@ import { PageHeader } from "@/components/page-header"
 import { AnimatedCard } from "@/components/animated-card"
 import { Share2, MessageSquare, Settings, Zap, Users, Lock } from "lucide-react"
 import {Link} from "react-router-dom"
+import LandingLayout from "../layout"
 
 export default function FeaturesPage() {
   return (
+    <LandingLayout>
     <div className="container py-12 md:py-24 lg:py-32">
       <PageHeader
         title="Key Features"
@@ -160,6 +162,7 @@ export default function FeaturesPage() {
         </Link>
       </div>
     </div>
+  </LandingLayout>
   )
 }
 

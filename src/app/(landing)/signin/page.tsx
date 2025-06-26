@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { AnimatedCard } from "@/components/animated-card"
 import { AuthHandler, rawEmailRegex } from "lupyd-js"
 import { useSnackbar } from "@/components/snackbar"
+import LandingLayout from "../layout"
 
 export default function SignupPage() {
   // const [showPassword, setShowPassword] = useState(false)
@@ -41,6 +42,7 @@ export default function SignupPage() {
   }
 
   return (
+    <LandingLayout>
     verificationMailSent ? <SendVerificationMailComponent {...{ email }} /> :
 
 
@@ -132,6 +134,7 @@ export default function SignupPage() {
           </Card>
         </AnimatedCard>
       </div>
+    </LandingLayout>
   )
 }
 

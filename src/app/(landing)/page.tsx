@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Share2, MessageSquare, Settings, Zap } from "lucide-react"
 import { AnimatedCard } from "@/components/animated-card"
+import LandingLayout from "./layout"
 
 export default function LandingPage() {
 
   return (
-    <>
+    <LandingLayout>
       {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-black text-white">
         <div className="container px-4 md:px-6">
@@ -193,7 +194,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-    </>
+    </LandingLayout>
   )
 }
 

@@ -4,9 +4,11 @@ import { PageHeader } from "@/components/page-header"
 import { AnimatedCard } from "@/components/animated-card"
 import { Zap, Smartphone, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
+import LandingLayout from "../layout"
 
 export default function ExperiencePage() {
   return (
+    <LandingLayout>
     <div className="container py-12 md:py-24 lg:py-32">
       <PageHeader
         title="User Experience"
@@ -151,6 +153,7 @@ export default function ExperiencePage() {
         </Link>
       </div>
     </div>
+  </LandingLayout>
   )
 }
 

@@ -4,9 +4,10 @@ import { PageHeader } from "@/components/page-header"
 import { AnimatedCard } from "@/components/animated-card"
 import { UserPlus, Users, Network } from "lucide-react"
 import { Link } from "react-router-dom"
+import LandingLayout from "../layout"
 
 export default function CommunityPage() {
-  return (
+  return (<LandingLayout>
     <div className="container py-12 md:py-24 lg:py-32">
       <PageHeader
         title="Community & Connections"
@@ -151,6 +152,8 @@ export default function CommunityPage() {
         </Link>
       </div>
     </div>
+  </LandingLayout>
+
   )
 }
 

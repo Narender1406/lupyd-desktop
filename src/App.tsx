@@ -18,25 +18,26 @@ import PrivacyPage from './app/(landing)/privacy/page'
 import FeaturesPage from './app/(landing)/features/page'
 import CreatorToolsPage from './app/(landing)/creator-tools/page'
 import ExperiencePage from './app/(landing)/experience/page'
-import LandingLayout from './app/(landing)/layout'
+import ActivityPage from './app/dashboard/activity/page'
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingLayout><LandingPage /></LandingLayout>} />
-        <Route path="/community" element={<LandingLayout><CommunityPage /></LandingLayout>} />
-        <Route path="/features" element={<LandingLayout> <FeaturesPage /> </LandingLayout>} />
-        <Route path="/experience" element={<LandingLayout><ExperiencePage /> </LandingLayout>} />
-        <Route path="/creator-tools" element={<LandingLayout> <CreatorToolsPage /></LandingLayout>} />
-        <Route path="/privacy" element={<LandingLayout><PrivacyPage /></LandingLayout>} />
-        <Route path="/signin" element={<LandingLayout><SignupPage /></LandingLayout>} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/experience" element={<ExperiencePage />} />
+        <Route path="/creator-tools" element={ <CreatorToolsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/signin" element={<SignupPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/saved-posts" element={<SavedPostsPage />} />
         <Route path="/dashboard/create-post" element={<CreatePostPage />} />
         <Route path="/dashboard/connections" element={<ConnectionsPage />} />
         <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
+        <Route path="/dashboard/activity" element={<ActivityPage/>} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
         <Route path="/dashboard/discover" element={<DiscoverPage />} />
         <Route path="/dashboard/post/:postId" element={<PostPage />} />

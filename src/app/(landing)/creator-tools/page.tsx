@@ -4,9 +4,11 @@ import { PageHeader } from "@/components/page-header"
 import { AnimatedCard } from "@/components/animated-card"
 import { DollarSign, BarChart, Activity, Palette, Video, Calendar } from "lucide-react"
 import {Link} from "react-router-dom"
+import LandingLayout from "../layout"
 
 export default function CreatorToolsPage() {
   return (
+    <LandingLayout>
     <div className="container py-12 md:py-24 lg:py-32">
       <PageHeader
         title="Creator Tools"
@@ -195,6 +197,7 @@ export default function CreatorToolsPage() {
         </Link>
       </div>
     </div>
+  </LandingLayout>
   )
 }
 
