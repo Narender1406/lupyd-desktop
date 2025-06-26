@@ -43,30 +43,28 @@ export default function SignupPage() {
 
   return (
     <LandingLayout>
-    verificationMailSent ? <SendVerificationMailComponent {...{ email }} /> :
+      {verificationMailSent ? <SendVerificationMailComponent {...{ email }} /> :
+        <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
+          <AnimatedCard>
+            <Card className="w-full max-w-md border-none shadow-lg">
+              <CardHeader className="space-y-1 text-center">
+                <CardTitle className="text-2xl font-bold">Join Lupyd</CardTitle>
+                <CardDescription>Enter your information to get started</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
 
-
-      <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-        <AnimatedCard>
-          <Card className="w-full max-w-md border-none shadow-lg">
-            <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold">Join Lupyd</CardTitle>
-              <CardDescription>Enter your information to get started</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-
-              {/* <div className="space-y-2">
+                {/* <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input id="username" placeholder="" onChange={(e) => setUsername(e.target.value)} value={username} />
             </div> */}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="name@example.com" type="email" onChange={(e) => setEmail(e.target.value)} value={email} />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" placeholder="name@example.com" type="email" onChange={(e) => setEmail(e.target.value)} value={email} />
+                </div>
 
 
-              {/*
+                {/*
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
@@ -83,30 +81,30 @@ export default function SignupPage() {
               <p className="text-xs text-muted-foreground mt-1">Password must be at least 8 characters long</p>
             </div>
           */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={agreed} onCheckedChange={(e) => setAgreed(e == true)} />
-                <Label htmlFor="terms" className="text-sm font-normal">
-                  I agree to the{" "}
-                  <Link to="/terms" className="font-medium text-black hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="font-medium text-black hover:underline">
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-              <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={signupWithEmail}>Join</Button>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="terms" checked={agreed} onCheckedChange={(e) => setAgreed(e == true)} />
+                  <Label htmlFor="terms" className="text-sm font-normal">
+                    I agree to the{" "}
+                    <Link to="/terms" className="font-medium text-black hover:underline">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" className="font-medium text-black hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </Label>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                </div>
-              </div>
+                <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={signupWithEmail}>Join</Button>
 
-              {/*
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                  </div>
+                </div>
+
+                {/*
               <div className="grid grid-cols-2 gap-4">
                 <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
                   <Github className="mr-2 h-4 w-4" />
@@ -118,9 +116,9 @@ export default function SignupPage() {
                 </Button>
               </div>
             */}
-            </CardContent>
+              </CardContent>
 
-            {/*
+              {/*
           <CardFooter className="flex justify-center">
             <div className="text-center text-sm">
               Already have an account?{" "}
@@ -131,9 +129,10 @@ export default function SignupPage() {
           </CardFooter>
         */}
 
-          </Card>
-        </AnimatedCard>
-      </div>
+            </Card>
+          </AnimatedCard>
+        </div>
+      }
     </LandingLayout>
   )
 }

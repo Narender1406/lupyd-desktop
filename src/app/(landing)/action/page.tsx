@@ -114,7 +114,7 @@ export default function ActionHandler() {
     await AuthHandler.signUp(user)
     console.log(`User signed up`)
 
-    router("/", { replace: true})
+    router("/dashboard", { replace: true})
     store.remove("unassignedUsername")
   }
 

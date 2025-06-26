@@ -19,6 +19,7 @@ import FeaturesPage from './app/(landing)/features/page'
 import CreatorToolsPage from './app/(landing)/creator-tools/page'
 import ExperiencePage from './app/(landing)/experience/page'
 import ActivityPage from './app/dashboard/activity/page'
+import ActionHandler from './app/(landing)/action/page'
 
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/signin" element={<SignupPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/action" element={<ActionHandler/>}/>
         <Route path="/dashboard/saved-posts" element={<SavedPostsPage />} />
         <Route path="/dashboard/create-post" element={<CreatePostPage />} />
         <Route path="/dashboard/connections" element={<ConnectionsPage />} />
