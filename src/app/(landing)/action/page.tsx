@@ -12,6 +12,7 @@ import { AuthHandler, isValidUsername, UserProtos } from "lupyd-js";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import store from "store2";
+import { useSnackbar } from "@/components/snackbar";
 
 
 export default function ActionHandler() {
@@ -21,19 +22,27 @@ export default function ActionHandler() {
   const [allowSettingUsername, setAllowSettingUsername] = useState(false)
   const [errorText, setErrorText] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
-  // const [password, setPassword] = useState("")
-  // const [showPassword, setShowPassword] = useState(false)
+  const [isCreatingUser, setIsCreatingUser] = useState(false)
 
   const auth = useAuth()
+  const snackbar = useSnackbar()
 
 
   useEffect(() => {
     if (auth.username) {
-      router("/dashboard", { replace: true})
+      router("/dashboard", { replace: true })
     }
     const user = auth.user
     if (user?.emailVerified) {
       setAllowSettingUsername(true)
+
+      AuthHandler.getUsername(user).then((uname) => {
+        if (uname) {
+          router("/dashboard", { replace: true })
+        }
+      })
+
+
     }
   }, [auth])
 
@@ -59,7 +68,22 @@ export default function ActionHandler() {
     verify(mail)
   }, [])
 
-  const verify = (mail: string | undefined = undefined) => {
+  const verify = async (mail: string | undefined = undefined) => {
+
+    if (isVerifying) {
+      snackbar("Verifying... Be Patient")
+      return
+    }
+
+    if (auth.user?.emailVerified) {
+      setAllowSettingUsername(true);
+      const uname = await AuthHandler.getUsername(auth.user)
+      if (uname) {
+        router("/dashboard", { replace: true })
+      }
+      return;
+    }
+
     const verificationLink = location.href
     const url = new URL(verificationLink)
     if (url.searchParams.get("mode") !== "signIn" && url.searchParams.has("oobCode")) {
@@ -67,55 +91,59 @@ export default function ActionHandler() {
       return
     }
 
-    if (!(mail ?? email)) {
+    const mailToVerify = mail ?? email
+
+    if (!(mailToVerify)) {
       console.error(`Email is not valid ${email}`)
       return
     }
 
-    console.log(`Verifying link '${verificationLink}' with email '${email}'`)
+    console.log(`Verifying link '${verificationLink}' with email '${mailToVerify}'`)
 
-    if (isVerifying) {
-      return
-    }
     setIsVerifying(true)
-    AuthHandler.signIn(mail ?? email, verificationLink).then(async (user) => {
+    AuthHandler.signIn(mailToVerify, verificationLink).then(async (user) => {
       const username = await AuthHandler.getUsername(user)
       if (username != null) {
-        router("/", { replace: true})
+        router("/", { replace: true })
       } else {
         setAllowSettingUsername(true)
       }
-    }).catch(err => { console.error(err); setErrorText("Username might be taken") }).finally(() =>
+      console.log(`Signed in successfully`)
+    }).catch(err => { console.error(err); setErrorText("Link is invalid") }).finally(() =>
       setIsVerifying(false)
     )
   }
 
   const createUser = async () => {
-
-    if (!isValidUsername(username)) {
-      console.error(`Not a valid username`)
+    if (isCreatingUser) {
+      snackbar("Assinging username... Be Patient")
       return
     }
 
+    if (!isValidUsername(username)) {
+      console.error(`Not a valid username`)
+      setErrorText("Username is not valid, a username should only include a-zA-Z0-9_ and between length 3 to 30")
+      return
+    }
 
-    // if (password.length < 8) {
-    //   console.error(`Password must be longer than 8 characters`)
-    //   return
-    // }
 
     const user = UserProtos.FullUser.create({
       uname: username
     })
 
+    setIsCreatingUser(true)
+    try {
+      await AuthHandler.signUp(user)
+      console.log(`User signed up`)
 
-    // await AuthHandler.changePassword(password)
-    // console.log(`Password is linked`)
-
-    await AuthHandler.signUp(user)
-    console.log(`User signed up`)
-
-    router("/dashboard", { replace: true})
-    store.remove("unassignedUsername")
+      router("/dashboard", { replace: true })
+      store.remove("unassignedUsername")
+    } catch (err) {
+      console.error(err)
+      setErrorText("Username might be taken")
+    } finally {
+      setIsCreatingUser(false)
+    }
   }
 
   return <>
@@ -129,37 +157,17 @@ export default function ActionHandler() {
                 <Input id="username" placeholder="" onChange={(e) => setUsername(e.target.value)} value={username} />
                 <p>{errorText}</p>
 
-
-                {/*
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Input id="password" placeholder="••••••••" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition-colors"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">Password must be at least 8 characters long</p>
-        </div>
-
-      */}
-
                 <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={createUser}>Assign Username</Button>
               </div>
+              {isCreatingUser && <p>Username is being assigned, Please be patient</p>}
             </> :
-              <div>
-
-                <p>Verifying...</p>
+              <>
+                <p>Confirm email</p>
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" placeholder="" onChange={(e) => setEmail(e.target.value)} value={email} />
                 <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={isVerifying ? undefined : () => verify()} >Confirm Verification</Button>
-              </div>
-
+                {isVerifying && <p>Email is being verified, Please be patient</p>}
+              </>
             }
           </CardContent>
         </Card>

@@ -12,24 +12,22 @@ import { UserImageProvider } from "@/context/user-image-context"
 
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
 
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-      <DialogProvider>
-        <SnackbarProvider>
-          <AuthProvider>
-            <UserImageProvider>
-              <UserDataProvider>
-                <div className="flex min-h-screen flex-col">
-                  <App />
-                </div>
-              </UserDataProvider>
-            </UserImageProvider>
-          </AuthProvider>
-        </SnackbarProvider>
-      </DialogProvider>
-    </ThemeProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+    <DialogProvider>
+      <SnackbarProvider>
+        <AuthProvider>
+          <UserImageProvider>
+            <UserDataProvider>
+              <div className="flex min-h-screen flex-col">
+                <App />
+              </div>
+            </UserDataProvider>
+          </UserImageProvider>
+        </AuthProvider>
+      </SnackbarProvider>
+    </DialogProvider>
+  </ThemeProvider>
 
 
-  </StrictMode>,
 )
