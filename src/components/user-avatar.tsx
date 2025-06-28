@@ -35,7 +35,7 @@ export function UserAvatar(props: { username: string }) {
 
   return (<>
     <Avatar>
-      <AvatarImage src={src ?? ""} alt={props.username} />
+      <AvatarImage src={src ?? ""} alt={props.username} loading="lazy" />
       <AvatarFallback>{props.username == "" ? "U" : props.username[0].toUpperCase()}</AvatarFallback>
     </Avatar>
   </>
