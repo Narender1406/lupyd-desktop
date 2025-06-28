@@ -3425,7 +3425,7 @@ lucide@^0.487.0:
 
 "lupyd-js@https://github.com/ash-hashtag/lupyd-js":
   version "1.0.2"
-  resolved "https://github.com/ash-hashtag/lupyd-js#2e71ef6961cd2761d3de8d2dc02c91eb0a23db57"
+  resolved "https://github.com/ash-hashtag/lupyd-js#ff34247252e538a268d54f683264f8e1ecd31812"
   dependencies:
     base-x "^5.0.1"
     firebase "^11.6.0"
