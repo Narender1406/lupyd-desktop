@@ -152,10 +152,10 @@ export default function DiscoverPage() {
       return
     }
 
-    const url = new URL(location.href)
-    url.searchParams.set("q", searchText)
 
-    router(url.toString())
+    const to = `/dashboard/discover?q=${encodeURIComponent(searchText)}`
+
+    router(to)
 
     // search(searchText)
   }

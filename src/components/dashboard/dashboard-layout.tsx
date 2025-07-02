@@ -81,10 +81,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       return
     }
 
-    const url = new URL(window.location.toString())
-    url.pathname = "/dashboard/discover"
-    url.searchParams.set("q", searchText)
-    router.push(url.toString())
+    const to = `/dashboard/discover?q=${encodeURIComponent(searchText)}`
+    router.push(to)
   }
 
   return (
