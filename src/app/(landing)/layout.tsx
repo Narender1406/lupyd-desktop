@@ -1,11 +1,16 @@
-import {Link} from "react-router-dom"
+import { useAuth } from "@/context/auth-context"
 import type React from "react"
+import { Link } from "react-router-dom"
 
 export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+
+  const auth = useAuth()
+
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b bg-background">
@@ -38,12 +43,12 @@ export default function LandingLayout({
               Log In
             </Link>
             */}
-            <Link
+            { auth.isAuthenticated ? <div></div> : <Link
               to="/signin"
               className="inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
             >
               Sign In
-            </Link>
+            </Link>}
           </div>
         </div>
       </header>

@@ -2,26 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
-import {
-  Home,
-  MessageSquare,
-  Compass,
-  Activity,
-  Bookmark,
-  BarChart,
-  Settings,
-  Bell,
-  Search,
-  Menu,
-  X,
-  LogOut,
-  PlusSquare,
-  User,
-} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +11,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
+import {
+  Activity,
+  BarChart,
+  Bell,
+  Bookmark,
+  Compass,
+  Home,
+  LogOut,
+  Menu,
+  MessageSquare,
+  PlusSquare,
+  Search,
+  Settings,
+  User,
+  X,
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
 
 interface DashboardLayoutProps {
@@ -48,6 +48,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
 
   const auth = useAuth()
+
 
   useEffect(() => { setUsername(auth.username) }, [auth])
 
@@ -88,7 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-64 border-r bg-white">
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white">
         <div className="p-4 border-b">
           <Link to="/dashboard" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
@@ -110,30 +111,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )
           })}
         </nav>
-        <div className="p-4 border-t">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <UserAvatar username={username ?? ""} />
-              <div className="ml-3">
-                <p className="text-sm font-medium">{username}</p>
-                <p className="text-xs text-muted-foreground">@{username}</p>
+
+        {
+          auth.isAuthenticated &&
+          <div className="p-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <UserAvatar username={username ?? ""} />
+                <div className="ml-3">
+                  <p className="text-sm font-medium">{username}</p>
+                  <p className="text-xs text-muted-foreground">@{username}</p>
+                </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => console.log("Logout")}
+                className="text-gray-500 hover:text-black hover:bg-gray-100"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => console.log("Logout")}
-              className="text-gray-500 hover:text-black hover:bg-gray-100"
-              title="Logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
           </div>
-        </div>
+
+        }
+
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden md:ml-64">
         {/* Top Navigation Bar */}
         <div className="sticky top-0 z-10 bg-white border-b">
           <div className="flex items-center justify-between p-4">
@@ -155,7 +162,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 } />
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative" onClick={() => alert("Notifications not implemented")}>
                 <Bell className="h-5 w-5" />
               </Button>
 
@@ -210,7 +217,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       )
                     })}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() =>  username == null ? router.push("/signin") : auth.logout()} className="text-red-600">
+                    <DropdownMenuItem onClick={() => username == null ? router.push("/signin") : auth.logout()} className="text-red-600">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{username == null ? "Sign In" : "Sign Out"}</span>
                     </DropdownMenuItem>
@@ -242,6 +249,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 )
               })}
             </nav>
+            
             <div className="p-4 border-t">
               <div className="relative w-full">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

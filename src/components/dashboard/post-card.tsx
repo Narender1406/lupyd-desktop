@@ -5,19 +5,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Link } from "react-router-dom"
-import { Bookmark, MessageCircle, Send, ThumbsDown, ThumbsUp, MoreVertical, Flag, Delete } from "lucide-react"
-import { CDN_STORAGE, dateToRelativeString, DEFAULT_USER_ICON, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, UiIcon, ulidStringify } from "lupyd-js"
+import { Bookmark, Delete, Flag, MessageCircle, MoreVertical, Send, ThumbsDown, ThumbsUp } from "lucide-react"
+import { dateToRelativeString, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, UiIcon, ulidStringify } from "lupyd-js"
 import { micromark } from "micromark"
 import { type Extension, type HtmlExtension } from "micromark-util-types"
 import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 
-import van from "vanjs-core"
-import { UserAvatar } from "../user-avatar"
-import { useGlobalDialog } from "@/context/dialog-context"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useSnackbar } from "../snackbar"
 import { useAuth } from "@/context/auth-context"
+import { useGlobalDialog } from "@/context/dialog-context"
+import van from "vanjs-core"
+import { useSnackbar } from "../snackbar"
+import { UserAvatar } from "../user-avatar"
 
 
 type FullPost = PostProtos.FullPost
@@ -164,6 +164,10 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
   }
 
 
+    function savePost() {
+      alert("Successfully Saved Post")
+    }
+
   const element = (
     <Card className="border-none shadow-sm">
       <CardHeader className="p-4 pb-0">
@@ -242,7 +246,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
             </Button>
             <ShareModal title={post.title} url={postUrl} />
           </div>
-          <Button variant="ghost" size="sm" className="px-2">
+          <Button variant="ghost" size="sm" className="px-2" onClick={savePost}>
             <Bookmark className="h-4 w-4" />
           </Button>
         </div>

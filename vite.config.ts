@@ -1,6 +1,6 @@
-import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 
 // https://vite.dev/config/
 
@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 8080,
       proxy: buildProxy(emulatorAddr),
+      host: "0.0.0.0"
     },
   };
 });

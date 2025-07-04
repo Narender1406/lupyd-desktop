@@ -1,45 +1,45 @@
 'use client'
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from '@/context/auth-context';
 import { CDN_STORAGE, type ChatMessage, ChatSession, dateToRelativeString } from 'lupyd-js';
-import { useEffect,  useState } from 'react';
-import { useParams} from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  Send,
-  Paperclip,
-  Smile,
-  Phone,
-  Video,
-  Info,
-  MoreVertical,
-  ArrowLeft,
-  Reply,
-  Forward,
-  MoreHorizontal,
-  ImageIcon,
-  Mic,
-  X,
-} from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from '@/components/user-avatar';
+import {
+  ArrowLeft,
+  Forward,
+  ImageIcon,
+  Info,
+  Mic,
+  MoreHorizontal,
+  MoreVertical,
+  Paperclip,
+  Phone,
+  Reply,
+  Send,
+  Smile,
+  Video,
+  X,
+} from "lucide-react";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
-export default function MessagePage() {
+export default function UserMessagePage() {
   const params = useParams();
   const receiver = params.username?.toString();
   const auth = useAuth()
-
+  const navigate = useNavigate();
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [session, setSession] = useState<ChatSession | null>(null)
@@ -193,7 +193,7 @@ export default function MessagePage() {
             variant="ghost"
             size="icon"
             className="md:hidden mr-1"
-            onClick={() => console.warn(`Close conversation`)}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

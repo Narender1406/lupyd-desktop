@@ -1,25 +1,26 @@
 import './App.css'
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from './app/(landing)/page'
-import DashboardPage from './app/dashboard/page'
-import SignupPage from './app/(landing)/signin/page'
-import PostPage from './app/dashboard/post/[postId]/page'
-import ProfilePage from './app/dashboard/user/[username]/page'
-import MessagesPage from './app/dashboard/messages/page'
-import SettingsPage from './app/dashboard/settings/page'
-import DiscoverPage from './app/dashboard/discover/page'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import ActionHandler from './app/(landing)/action/page'
 import CommunityPage from './app/(landing)/community/page'
-import CreatePostPage from './app/dashboard/create-post/page'
-import ConnectionsPage from './app/dashboard/connections/page'
-import AnalyticsPage from './app/dashboard/analytics/page'
-import SavedPostsPage from './app/dashboard/saved-posts/page'
-import PrivacyPage from './app/(landing)/privacy/page'
-import FeaturesPage from './app/(landing)/features/page'
 import CreatorToolsPage from './app/(landing)/creator-tools/page'
 import ExperiencePage from './app/(landing)/experience/page'
+import FeaturesPage from './app/(landing)/features/page'
+import LandingPage from './app/(landing)/page'
+import PrivacyPage from './app/(landing)/privacy/page'
+import SignupPage from './app/(landing)/signin/page'
 import ActivityPage from './app/dashboard/activity/page'
-import ActionHandler from './app/(landing)/action/page'
+import AnalyticsPage from './app/dashboard/analytics/page'
+import ConnectionsPage from './app/dashboard/connections/page'
+import CreatePostPage from './app/dashboard/create-post/page'
+import DiscoverPage from './app/dashboard/discover/page'
+import UserMessagePage from './app/dashboard/messages/[username]/page'
+import MessagesPage from './app/dashboard/messages/page'
+import DashboardPage from './app/dashboard/page'
+import PostPage from './app/dashboard/post/[postId]/page'
+import SavedPostsPage from './app/dashboard/saved-posts/page'
+import SettingsPage from './app/dashboard/settings/page'
+import ProfilePage from './app/dashboard/user/[username]/page'
 
 
 function App() {
@@ -45,7 +46,7 @@ function App() {
         <Route path="/dashboard/post/:postId" element={<PostPage />} />
         <Route path="/dashboard/user/:username" element={<ProfilePage />} />
         <Route path="/dashboard/messages" element={<MessagesPage />} />
-        <Route path="/dashboard/messages/:username" element={<MessagesPage />} />
+        <Route path="/dashboard/messages/:username" element={<UserMessagePage />} />
       </Routes>
     </BrowserRouter>)
 }
