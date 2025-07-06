@@ -124,11 +124,7 @@ export function ShareModal({ title, url, children }: ShareModalProps) {
             </div>
           </TabsContent>
         </Tabs>
-        <div className="mt-4 flex justify-end">
-          <DialogClose asChild>
-            <Button variant="outline">Close</Button>
-          </DialogClose>
-        </div>
+        
       </DialogContent>
     </Dialog>
   )
