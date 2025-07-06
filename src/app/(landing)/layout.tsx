@@ -1,15 +1,16 @@
+"use client"
 import { useAuth } from "@/context/auth-context"
 import type React from "react"
 import { Link } from "react-router-dom"
+import { useState } from "react"
 
 export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-
   const auth = useAuth()
-
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -37,20 +38,123 @@ export default function LandingLayout({
               Creator Tools
             </Link>
           </nav>
+
           <div className="flex items-center gap-4">
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden p-2 relative z-50"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform duration-200"
+              >
+                {mobileMenuOpen ? (
+                  <path d="M18 6L6 18M6 6l12 12" />
+                ) : (
+                  <>
+                    <path d="M3 12h18" />
+                    <path d="M3 6h18" />
+                    <path d="M3 18h18" />
+                  </>
+                )}
+              </svg>
+            </button>
+
             {/*
             <Link to="/login" className="text-sm font-medium hover:underline">
               Log In
             </Link>
             */}
-            { auth.isAuthenticated ? <div></div> : <Link
-              to="/signin"
-              className="inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
-            >
-              Sign In
-            </Link>}
+            {auth.isAuthenticated ? (
+              <div></div>
+            ) : (
+              <Link
+                to="/signin"
+                className="hidden md:inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Dropdown Menu */}
+            <div className="absolute top-full left-0 right-0 bg-white border-b shadow-lg z-50 md:hidden">
+              <div className="container py-4">
+                {/* Navigation Links */}
+                <div className="flex flex-col space-y-4 mb-6">
+                  <Link
+                    to="/features"
+                    className="text-sm font-medium py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Features
+                  </Link>
+                  <Link
+                    to="/experience"
+                    className="text-sm font-medium py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Experience
+                  </Link>
+                  <Link
+                    to="/community"
+                    className="text-sm font-medium py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Community
+                  </Link>
+                  <Link
+                    to="/privacy"
+                    className="text-sm font-medium py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Privacy
+                  </Link>
+                  <Link
+                    to="/creator-tools"
+                    className="text-sm font-medium py-2 px-4 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Creator Tools
+                  </Link>
+                </div>
+
+                {/* Auth Button for Mobile */}
+                {!auth.isAuthenticated && (
+                  <div className="pt-4 border-t">
+                    <Link
+                      to="/signin"
+                      className="inline-flex w-full h-10 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t bg-background">
@@ -210,4 +314,3 @@ export default function LandingLayout({
     </div>
   )
 }
-
