@@ -85,6 +85,7 @@ export default function ConnectionsPage() {
             <BarChart className="mr-3 h-5 w-5" />
             <span>Analytics</span>
           </Link>
+          
           <Link
             to="/dashboard/settings"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
