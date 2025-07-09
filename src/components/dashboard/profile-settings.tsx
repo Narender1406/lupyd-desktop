@@ -25,27 +25,17 @@ export function ProfileSettings() {
         <h3 className="text-sm font-medium text-gray-500">Account</h3>
 
         <Link
-          to="/dashboard/profile/edit"
+          to="/dashboard/settings"
           className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-md"
         >
           <div className="flex items-center">
             <User className="h-5 w-5 mr-3 text-gray-500" />
-            <span>Edit Profile</span>
+            <span>Profile Settings</span>
           </div>
           <ChevronRight className="h-4 w-4 text-gray-400" />
         </Link>
 
-        <Link
-          to="/dashboard/profile/security"
-          className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-md"
-        >
-          <div className="flex items-center">
-            <Lock className="h-5 w-5 mr-3 text-gray-500" />
-            <span>Security</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-        </Link>
-
+        
         <div className="flex items-center justify-between p-2">
           <div className="flex items-center">
             <Bell className="h-5 w-5 mr-3 text-gray-500" />
@@ -54,13 +44,7 @@ export function ProfileSettings() {
           <Switch checked={notifications} onCheckedChange={setNotifications} aria-label="Toggle notifications" />
         </div>
 
-        <div className="flex items-center justify-between p-2">
-          <div className="flex items-center">
-            <Shield className="h-5 w-5 mr-3 text-gray-500" />
-            <span>Private Account</span>
-          </div>
-          <Switch checked={privateAccount} onCheckedChange={setPrivateAccount} aria-label="Toggle private account" />
-        </div>
+        
       </div>
 
       <Separator />

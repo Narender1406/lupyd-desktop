@@ -21,6 +21,8 @@ import PostPage from './app/dashboard/post/[postId]/page'
 import SavedPostsPage from './app/dashboard/saved-posts/page'
 import SettingsPage from './app/dashboard/settings/page'
 import ProfilePage from './app/dashboard/user/[username]/page'
+import SubscriptionPage from './app/dashboard/subscription/page'
+import CheckoutPage from './app/dashboard/subscription/checkout/page'
 
 
 function App() {
@@ -42,6 +44,8 @@ function App() {
         <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
         <Route path="/dashboard/activity" element={<ActivityPage/>} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
+        <Route path="/dashboard/subscription" element={<SubscriptionPage />} />
+        <Route path="/dashboard/subscription/checkout" element={<CheckoutPage />} />
         <Route path="/dashboard/discover" element={<DiscoverPage />} />
         <Route path="/dashboard/post/:postId" element={<PostPage />} />
         <Route path="/dashboard/user/:username" element={<ProfilePage />} />

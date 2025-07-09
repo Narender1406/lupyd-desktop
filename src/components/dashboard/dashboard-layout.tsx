@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,6 +18,7 @@ import {
   Bell,
   Bookmark,
   Compass,
+  Crown,
   Home,
   LogOut,
   Menu,
@@ -62,6 +62,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/dashboard/activity", label: "Activity", icon: Activity },
     { path: "/dashboard/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/dashboard/analytics", label: "Analytics", icon: BarChart },
+    { path: "/dashboard/subscription", label : "subscriptions", icon : Crown},
     { path: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
@@ -117,7 +118,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
+                <Link to = {`/dashboard/user/${auth.username}`}>
                 <UserAvatar username={username ?? ""} />
+                </Link>
                 <div className="ml-3">
                   <p className="text-sm font-medium">{username}</p>
                   <p className="text-xs text-muted-foreground">@{username}</p>
