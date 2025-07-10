@@ -242,7 +242,7 @@ export default function SubscriptionPage() {
                     {plan.cta}
                   </Button>
                 ) : (
-                  <Link to={`/dashboard/subscription/checkout?plan=${plan.name.toLowerCase()}`}>
+                  <Link to={`/dashboard/subscription/checkout?plan&price=${plan.name.toLowerCase()}`}>
                     <Button
                       className={`w-full ${
                         plan.popular
