@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Bookmark, Delete, Flag, MessageCircle, MoreVertical, Send, ThumbsDown, ThumbsUp } from "lucide-react"
-import { dateToRelativeString, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, UiIcon, ulidStringify } from "lupyd-js"
+import { createPost, dateToRelativeString, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, UiIcon, ulidStringify } from "lupyd-js"
 import { micromark } from "micromark"
 import { type Extension, type HtmlExtension } from "micromark-util-types"
 import { useEffect, useRef, useState } from "react"
@@ -18,6 +18,7 @@ import { useGlobalDialog } from "@/context/dialog-context"
 import van from "vanjs-core"
 import { useSnackbar } from "../snackbar"
 import { UserAvatar } from "../user-avatar"
+import { CreatePostDetails } from "node_modules/lupyd-js/dist/protos/post"
 
 
 type FullPost = PostProtos.FullPost
@@ -96,10 +97,24 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
 
 
   const handleComment = () => {
-    // In a real app, this would send the comment to the server
     console.log(`Commenting on post ${ulidStringify(post.id)}: ${commentText}`)
-    setCommentText("")
-    // For demo purposes, we'd add the comment to the comments array
+
+    const details = CreatePostDetails.create({
+      replyingTo: post.id,
+      postType: post.postType,
+      expiry: post.expiry,
+      body: PostProtos.PostBody.create({ plainText: commentText })
+    })
+
+    snackbar("Commenting...")
+    // TODO: have better way to show progress
+    createPost(details).then((comment) => {
+      setComments(comments => [comment, ...comments]);
+      setCommentText("")
+    }).catch(err => {
+      console.error(err);
+      snackbar("Failed to create comment");
+    })
   }
 
   const handleLike = async () => {
@@ -164,9 +179,9 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
   }
 
 
-    function savePost() {
-      alert("Successfully Saved Post")
-    }
+  function savePost() {
+    alert("Successfully Saved Post")
+  }
 
   const element = (
     <Card className="border-none shadow-sm">
