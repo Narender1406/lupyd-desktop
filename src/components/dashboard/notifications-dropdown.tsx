@@ -1,190 +1,254 @@
 "use client"
 
-import { useState } from "react"
-import { Bell, Check, Clock, User, MessageSquare, Heart, Star } from "lucide-react"
+import type React from "react"
+import { useState, useRef, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import {Link} from "react-router-dom"
 
 // Mock notifications data
-const notifications = [
+const mockNotifications = [
   {
-    id: "notif1",
-    type: "follow",
-    user: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "SJ",
-    },
-    content: "started following you",
-    time: "2 minutes ago",
-    read: false,
-  },
-  {
-    id: "notif2",
+    id: 1,
     type: "like",
-    user: {
-      name: "Alex Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "AC",
-    },
+    user: { name: "Sarah Chen", username: "sarahc", avatar: "/placeholder.svg?height=40&width=40" },
     content: "liked your post",
-    time: "15 minutes ago",
+    post: "Amazing sunset at the beach today! 🌅",
+    timestamp: "2 min ago",
     read: false,
   },
   {
-    id: "notif3",
+    id: 2,
     type: "comment",
-    user: {
-      name: "Emily Wong",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "EW",
-    },
+    user: { name: "Mike Johnson", username: "mikej", avatar: "/placeholder.svg?height=40&width=40" },
     content: "commented on your post",
-    time: "1 hour ago",
+    comment: "Beautiful shot! What camera did you use?",
+    timestamp: "5 min ago",
+    read: false,
+  },
+  {
+    id: 3,
+    type: "follow",
+    user: { name: "Emma Wilson", username: "emmaw", avatar: "/placeholder.svg?height=40&width=40" },
+    content: "started following you",
+    timestamp: "1 hour ago",
     read: true,
   },
   {
-    id: "notif4",
+    id: 4,
     type: "mention",
-    user: {
-      name: "Michael Brown",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "MB",
-    },
-    content: "mentioned you in a comment",
-    time: "3 hours ago",
+    user: { name: "Alex Rivera", username: "alexr", avatar: "/placeholder.svg?height=40&width=40" },
+    content: "mentioned you in a post",
+    post: "Great collaboration with @yourhandle on this project!",
+    timestamp: "2 hours ago",
     read: true,
   },
 ]
 
+function NotificationIcon({ type }: { type: string }) {
+  const iconClass = "h-4 w-4"
+  switch (type) {
+    case "like":
+      return <Heart className={`${iconClass} text-red-500`} fill="currentColor" />
+    case "comment":
+      return <MessageCircle className={`${iconClass} text-blue-500`} />
+    case "follow":
+      return <UserPlus className={`${iconClass} text-green-500`} />
+    case "mention":
+      return <AtSign className={`${iconClass} text-purple-500`} />
+    case "share":
+      return <Share2 className={`${iconClass} text-orange-500`} />
+    default:
+      return <Bell className={`${iconClass} text-gray-500`} />
+  }
+}
+
 export function NotificationsDropdown() {
-  const [open, setOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("all")
-  const [notifs, setNotifs] = useState(notifications)
+  const [notifications, setNotifications] = useState(mockNotifications)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const navigate = useNavigate()
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const unreadCount = notifs.filter((n) => !n.read).length
-
-  const markAllAsRead = () => {
-    setNotifs(notifs.map((n) => ({ ...n, read: true })))
-  }
-
-  const markAsRead = (id: string) => {
-    setNotifs(notifs.map((n) => (n.id === id ? { ...n, read: true } : n)))
-  }
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "follow":
-        return <User className="h-4 w-4 text-blue-500" />
-      case "like":
-        return <Heart className="h-4 w-4 text-red-500" />
-      case "comment":
-        return <MessageSquare className="h-4 w-4 text-green-500" />
-      case "mention":
-        return <Star className="h-4 w-4 text-yellow-500" />
-      default:
-        return <Bell className="h-4 w-4" />
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
     }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
+
+  const unreadCount = notifications.filter((n) => !n.read).length
+
+  const handleMouseEnter = () => {
+    if (isMobile) return
+
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+      hideTimeoutRef.current = null
+    }
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowDropdown(true)
+    }, 200)
   }
 
-  const filteredNotifications =
-    activeTab === "all" ? notifs : activeTab === "unread" ? notifs.filter((n) => !n.read) : notifs.filter((n) => n.read)
+  const handleMouseLeave = () => {
+    if (isMobile) return
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowDropdown(false)
+    }, 300)
+  }
+
+  const handleClick = () => {
+    navigate("/dashboard/notification")
+  }
+
+  const markAsRead = (id: number, event: React.MouseEvent) => {
+    event.stopPropagation()
+    setNotifications((prev) => prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
+  }
+
+  const markAllAsRead = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
+  }
+
+  const handleNotificationClick = (notification: any) => {
+    // Mark as read when clicked
+    setNotifications((prev) => prev.map((notif) => (notif.id === notification.id ? { ...notif, read: true } : notif)))
+
+    // Navigate to full notifications page
+    navigate("/dashboard/notification")
+  }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-black text-white rounded-full text-[10px] flex items-center justify-center">
-              {unreadCount}
-            </span>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end">
-        <div className="flex items-center justify-between p-2">
-          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={markAllAsRead}>
-              Mark all as read
-            </Button>
-          )}
-        </div>
-        <DropdownMenuSeparator />
+    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <Button variant="ghost" size="icon" className="relative" onClick={handleClick}>
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <Badge
+            variant="destructive"
+            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+          >
+            {unreadCount}
+          </Badge>
+        )}
+      </Button>
 
-        <Tabs defaultValue="all" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-          <div className="px-2 pt-1">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="unread">Unread</TabsTrigger>
-              <TabsTrigger value="read">Read</TabsTrigger>
-            </TabsList>
+      {/* Dropdown - Only show on desktop when hovering */}
+      {showDropdown && !isMobile && (
+        <div
+          className="absolute right-0 top-full mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+          onMouseEnter={() => {
+            if (hideTimeoutRef.current) {
+              clearTimeout(hideTimeoutRef.current)
+              hideTimeoutRef.current = null
+            }
+          }}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-black flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notifications
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="bg-black text-white text-sm">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </h3>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-black text-xs"
+                  onClick={markAllAsRead}
+                >
+                  Mark all read
+                </Button>
+              )}
+            </div>
           </div>
 
-          <TabsContent value={activeTab} className="max-h-[300px] overflow-y-auto">
-            <DropdownMenuGroup>
-              {filteredNotifications.length > 0 ? (
-                filteredNotifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="p-0 focus:bg-transparent">
-                    <div
-                      className={`flex items-start w-full p-2 ${!notification.read ? "bg-gray-50" : ""} hover:bg-gray-100 rounded-md`}
-                    >
-                      <Avatar className="h-8 w-8 mr-2">
-                        <AvatarImage src={notification.user.avatar} alt={notification.user.name} />
-                        <AvatarFallback>{notification.user.avatarFallback}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <p className="text-sm">
-                            <span className="font-medium">{notification.user.name}</span>{" "}
-                            <span className="text-muted-foreground">{notification.content}</span>
-                          </p>
-                          <div className="flex items-center">
-                            {!notification.read && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  markAsRead(notification.id)
-                                }}
-                              >
-                                <Check className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{notification.time}</span>
-                          <span className="ml-2 flex items-center">{getNotificationIcon(notification.type)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <div className="py-6 text-center text-sm text-muted-foreground">No notifications to display</div>
-              )}
-            </DropdownMenuGroup>
-          </TabsContent>
-        </Tabs>
+          <div className="max-h-96 overflow-y-auto">
+            {notifications.slice(0, 4).map((notification) => (
+              <div
+                key={notification.id}
+                className={`flex items-start gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                  !notification.read ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
+                }`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <div className="relative">
+                  
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={notification.user.avatar || "/placeholder.svg"} alt={notification.user.name} />
+                    <AvatarFallback className="bg-gray-100 text-black text-sm">
+                      {notification.user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="absolute -bottom-1 -right-1 bg-white border-2 border-gray-200 rounded-full p-1">
+                    <NotificationIcon type={notification.type} />
+                  </div>
+                </div>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="justify-center text-sm font-medium">View all notifications</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-black text-sm">{notification.user.name}</span>
+                    <span className="text-gray-500 text-xs">{notification.timestamp}</span>
+                    {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                  </div>
+                  <p className="text-gray-700 text-sm mb-1">{notification.content}</p>
+                  {(notification.post || notification.comment) && (
+                    <p className="text-gray-600 text-xs bg-gray-100 rounded p-2 line-clamp-2">
+                      {notification.comment || notification.post}
+                    </p>
+                  )}
+                </div>
+
+                {!notification.read && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-green-600 p-1"
+                    onClick={(e) => markAsRead(notification.id, e)}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="p-3 border-t border-gray-200">
+            <Button
+              variant="ghost"
+              className="w-full text-center text-black hover:bg-gray-100 font-medium"
+              onClick={() => navigate("/dashboard/notification")}
+            >
+              View all notifications
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

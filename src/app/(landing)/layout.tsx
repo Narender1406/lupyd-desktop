@@ -34,6 +34,9 @@ export default function LandingLayout({
             <Link to="/privacy" className="text-sm font-medium hover:text-gray-500 transition-colors">
               Privacy
             </Link>
+            <Link to="/dashboard/subscription" className="text-sm font-medium hover:text-gray-500 transition-colors">
+              Subscriptions
+            </Link>
             <Link to="/creator-tools" className="text-sm font-medium hover:text-gray-500 transition-colors">
               Creator Tools
             </Link>
