@@ -15,7 +15,6 @@ import { useAuth } from "@/context/auth-context"
 import {
   Activity,
   BarChart,
-  Bell,
   Bookmark,
   Compass,
   Crown,
@@ -32,6 +31,7 @@ import {
 import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
+import { NotificationsDropdown } from "./notifications-dropdown"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -43,16 +43,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [searchText, setSearchText] = useState("")
-
   const [username, setUsername] = useState<string | null>(null)
-
-
   const auth = useAuth()
 
+  useEffect(() => {
+    setUsername(auth.username)
+  }, [auth])
 
-  useEffect(() => { setUsername(auth.username) }, [auth])
-
-  // Mock user data
   // Navigation items
   const navItems = [
     { path: "/dashboard", label: "Home", icon: Home },
@@ -62,7 +59,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/dashboard/activity", label: "Activity", icon: Activity },
     { path: "/dashboard/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/dashboard/analytics", label: "Analytics", icon: BarChart },
-    { path: "/dashboard/subscription", label : "subscriptions", icon : Crown},
+    { path: "/dashboard/subscription", label: "subscriptions", icon: Crown },
     { path: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
@@ -75,14 +72,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return null
   }
 
-
-
   const searchSubmit = async (e: React.KeyboardEvent) => {
     const keyCode = e.code || e.key
-    if (keyCode != 'Enter') {
+    if (keyCode != "Enter") {
       return
     }
-
     const to = `/dashboard/discover?q=${encodeURIComponent(searchText)}`
     router.push(to)
   }
@@ -112,14 +106,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )
           })}
         </nav>
-
-        {
-          auth.isAuthenticated &&
+        {auth.isAuthenticated && (
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Link to = {`/dashboard/user/${auth.username}`}>
-                <UserAvatar username={username ?? ""} />
+                <Link to={`/dashboard/user/${auth.username}`}>
+                  <UserAvatar username={username ?? ""} />
                 </Link>
                 <div className="ml-3">
                   <p className="text-sm font-medium">{username}</p>
@@ -137,9 +129,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
             </div>
           </div>
-
-        }
-
+        )}
       </aside>
 
       {/* Main Content */}
@@ -157,18 +147,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             <div className="relative w-full max-w-md mx-4 hidden md:block">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="search" placeholder="Search..." className="pl-8 bg-gray-100 border-none"
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-8 bg-gray-100 border-none"
                 onKeyDown={searchSubmit}
                 value={searchText}
-                onChange={
-                  (e) => { setSearchText(e.target.value); }
-                } />
+                onChange={(e) => {
+                  setSearchText(e.target.value)
+                }}
+              />
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative" onClick={() => alert("Notifications not implemented")}>
-                <Bell className="h-5 w-5" />
-              </Button>
-
+              <NotificationsDropdown />
               <Button
                 variant="ghost"
                 size="icon"
@@ -177,17 +168,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <MessageSquare className="h-5 w-5" />
               </Button>
-
-              {/*}<Link to={`/dashboard/user/${username}`}><UserAvatar username={username ?? ""}/></Link>*/}
-
               {/* Mobile Profile Dropdown */}
               <div className="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-
                       <UserAvatar username={username ?? ""} />
-
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -213,14 +199,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                           <div className="cursor-pointer">
                             <Icon className="mr-2 h-4 w-4" />
                             <span>{item.label}</span>
-
                           </div>
-
                         </DropdownMenuItem>
                       )
                     })}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => username == null ? router.push("/signin") : auth.logout()} className="text-red-600">
+                    <DropdownMenuItem
+                      onClick={() => (username == null ? router.push("/signin") : auth.logout())}
+                      className="text-red-600"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>{username == null ? "Sign In" : "Sign Out"}</span>
                     </DropdownMenuItem>
@@ -242,8 +229,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center px-3 py-2 rounded-md ${isActive ? "bg-gray-100" : "hover:bg-gray-100"
-                      }`}
+                    className={`flex items-center px-3 py-2 rounded-md ${
+                      isActive ? "bg-gray-100" : "hover:bg-gray-100"
+                    }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Icon className="mr-3 h-5 w-5" />
@@ -252,11 +240,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 )
               })}
             </nav>
-            
+
             <div className="p-4 border-t">
               <div className="relative w-full">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="Search..." className="pl-8 bg-gray-100 border-none w-full" value={searchText} onChange={(e) => { setSearchText(e.target.value); }} onKeyDown={searchSubmit} />
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  className="pl-8 bg-gray-100 border-none w-full"
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.target.value)
+                  }}
+                  onKeyDown={searchSubmit}
+                />
               </div>
             </div>
           </div>

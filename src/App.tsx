@@ -23,6 +23,8 @@ import SettingsPage from './app/dashboard/settings/page'
 import ProfilePage from './app/dashboard/user/[username]/page'
 import SubscriptionPage from './app/dashboard/subscription/page'
 import CheckoutPage from './app/dashboard/subscription/checkout/page'
+import NotificationsPage from './app/dashboard/notification/notifications-page'
+
 
 
 function App() {
@@ -50,6 +52,7 @@ function App() {
         <Route path="/dashboard/post/:postId" element={<PostPage />} />
         <Route path="/dashboard/user/:username" element={<ProfilePage />} />
         <Route path="/dashboard/messages" element={<MessagesPage />} />
+        <Route path="/dashboard/notification" element={<NotificationsPage />} />
         <Route path="/dashboard/messages/:username" element={<UserMessagePage />} />
       </Routes>
     </BrowserRouter>)

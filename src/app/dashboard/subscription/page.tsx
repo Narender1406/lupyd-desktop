@@ -393,7 +393,7 @@ export default function SubscriptionPage() {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-2xl mx-auto">
             <Gift className="h-16 w-16 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold mb-4">30-Day Money-Back Guarantee</h2>
+            <h2 className="text-3xl font-bold mb-4">14-Day Money-Back Guarantee</h2>
             <p className="text-gray-300 mb-8">
               Try Lupyd risk-free. If you're not completely satisfied within 30 days, we'll refund your money, no
               questions asked.

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -29,21 +28,41 @@ import {
   ChevronRight,
   Save,
   Trash2,
+  Edit3,
+  Undo,
+  Redo,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  Link,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-
 import { useAuth } from "@/context/auth-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
-import { CDN_STORAGE, createPost, createPostWithFiles, type PickedFileUrl, PostProtos, sanitizeFilename, ulidStringify } from "lupyd-js"
+import {
+  CDN_STORAGE,
+  createPost,
+  createPostWithFiles,
+  type PickedFileUrl,
+  PostProtos,
+  sanitizeFilename,
+  ulidStringify,
+} from "lupyd-js"
 import { useSnackbar } from "@/components/snackbar"
-
 
 interface MediaItem {
   file: File
   type: "image" | "video"
   previewUrl: string
+}
+
+interface EditHistory {
+  title: string
+  description: string
+  timestamp: number
 }
 
 export default function CreatePostPage() {
@@ -66,6 +85,12 @@ export default function CreatePostPage() {
   const [isDraft, setIsDraft] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false)
   const [draftId, setDraftId] = useState<string | null>(null)
+
+  // Edit functionality
+  const [isEditing, setIsEditing] = useState(false)
+  const [editHistory, setEditHistory] = useState<EditHistory[]>([])
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1)
+  const [originalContent, setOriginalContent] = useState({ title: "", description: "" })
 
   // Load draft if it exists
   useEffect(() => {
@@ -96,6 +121,105 @@ export default function CreatePostPage() {
       }
     }
   }, [])
+
+  // Save to edit history
+  const saveToHistory = () => {
+    const newEntry: EditHistory = {
+      title,
+      description,
+      timestamp: Date.now(),
+    }
+
+    const newHistory = editHistory.slice(0, currentHistoryIndex + 1)
+    newHistory.push(newEntry)
+    setEditHistory(newHistory)
+    setCurrentHistoryIndex(newHistory.length - 1)
+  }
+
+  // Start editing mode
+  const startEditing = () => {
+    setOriginalContent({ title, description })
+    setIsEditing(true)
+    saveToHistory()
+    setActiveTab("edit")
+  }
+
+  // Cancel editing
+  const cancelEditing = () => {
+    setTitle(originalContent.title)
+    setDescription(originalContent.description)
+    setIsEditing(false)
+    setActiveTab("create")
+  }
+
+  // Apply edit changes
+  const applyEdits = () => {
+    setIsEditing(false)
+    setOriginalContent({ title, description })
+    saveToHistory()
+    setActiveTab("create")
+    toast({
+      title: "Changes applied",
+      description: "Your post has been updated with the changes.",
+      duration: 3000,
+    })
+  }
+
+  // Undo edit
+  const undoEdit = () => {
+    if (currentHistoryIndex > 0) {
+      const prevIndex = currentHistoryIndex - 1
+      const prevEntry = editHistory[prevIndex]
+      setTitle(prevEntry.title)
+      setDescription(prevEntry.description)
+      setCurrentHistoryIndex(prevIndex)
+    }
+  }
+
+  // Redo edit
+  const redoEdit = () => {
+    if (currentHistoryIndex < editHistory.length - 1) {
+      const nextIndex = currentHistoryIndex + 1
+      const nextEntry = editHistory[nextIndex]
+      setTitle(nextEntry.title)
+      setDescription(nextEntry.description)
+      setCurrentHistoryIndex(nextIndex)
+    }
+  }
+
+  // Text formatting functions
+  const formatText = (format: string) => {
+    const textarea = document.getElementById("description") as HTMLTextAreaElement
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selectedText = description.substring(start, end)
+    let formattedText = ""
+
+    switch (format) {
+      case "bold":
+        formattedText = `**${selectedText}**`
+        break
+      case "italic":
+        formattedText = `*${selectedText}*`
+        break
+      case "underline":
+        formattedText = `<u>${selectedText}</u>`
+        break
+      case "list":
+        formattedText = `\n- ${selectedText}`
+        break
+      case "link":
+        formattedText = `[${selectedText}](url)`
+        break
+      default:
+        formattedText = selectedText
+    }
+
+    const newDescription = description.substring(0, start) + formattedText + description.substring(end)
+    setDescription(newDescription)
+  }
 
   // Handle file uploads
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,67 +336,19 @@ export default function CreatePostPage() {
     })
   }
 
-  // Create a preview post object for the PostCard component
-  // const previewPost = {
-  //   id: "preview",
-  //   author: {
-  //     id: "user",
-  //     name: isAnonymous ? "Anonymous" :  "User",
-  //     avatar: isAnonymous
-  //       ? "/placeholder.svg?height=40&width=40"
-  //       : user?.avatar || "/placeholder.svg?height=40&width=40",
-  //     avatarFallback: isAnonymous
-  //       ? "AN"
-  //       : user?.name
-  //         ?.split(" ")
-  //         .map((n) => n[0])
-  //         .join("") || "U",
-  //   },
-  //   content: {
-  //     text: description || "Your post content will appear here",
-  //     image:
-  //       mediaItems.length > 0 && mediaItems[currentSlideIndex].type === "image"
-  //         ? {
-  //           src: mediaItems[currentSlideIndex].previewUrl,
-  //           alt: title || "Post image",
-  //           width: 600,
-  //           height: 400,
-  //         }
-  //         : undefined,
-  //     video:
-  //       mediaItems.length > 0 && mediaItems[currentSlideIndex].type === "video"
-  //         ? {
-  //           src: mediaItems[currentSlideIndex].previewUrl,
-  //           poster: "/placeholder.svg?height=400&width=600",
-  //           title: title || "Post video",
-  //         }
-  //         : undefined,
-  //   },
-  //   stats: {
-  //     likes: 0,
-  //     dislikes: 0,
-  //     comments: 0,
-  //   },
-  //   timestamp: "Just now",
-  // }
-
   // Handle form submission
-
   const auth = useAuth()
   const snackbar = useSnackbar()
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+    e.preventDefault()
     if (!auth.isAuthenticated) {
       snackbar("User is not authenticated")
     }
 
-
-    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const submitter = (e.nativeEvent as SubmitEvent).submitter
     if (!submitter || submitter.id !== "publish-button") {
       return
     }
-
 
     // In a real app, this would send the post data to the server
     console.log({
@@ -286,49 +362,39 @@ export default function CreatePostPage() {
       mediaItems,
     })
 
-
     let postType = 0
-
     if (isAnonymous) {
       postType = PostProtos.postType.ANONYMOUS | postType
     }
-
     if (tags.includes("nsfw")) {
       postType = PostProtos.postType.NSFW | postType
     }
-
     if (tags.includes("dangerous")) {
       postType = PostProtos.postType.DANGEROUS | postType
     }
-
     if (postType == 0) {
       postType = PostProtos.postType.SAFE
     }
 
-
     if (mediaItems.length == 0) {
-
       const details = PostProtos.CreatePostDetails.create({
         title,
         body: PostProtos.PostBody.create({ plainText: description }),
-        postType
+        postType,
       })
-
       const post = await createPost(details)
       console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
-
     } else {
-
       const postFiles: PickedFileUrl[] = []
-
       let bodyMarkdown = description
-      for (const e of mediaItems) {
 
+      for (const e of mediaItems) {
         const cdnUrl = `${CDN_STORAGE}/posts/${sanitizeFilename(e.file.name)}`
         // const url = e.previewUrl // for preview
         const url = cdnUrl
         let name = e.file.name
         const mimeType = e.file.type
+
         if (mimeType.startsWith("image")) {
           bodyMarkdown += `\n![${name}](${url})`
         } else if (mimeType.startsWith("video")) {
@@ -338,12 +404,10 @@ export default function CreatePostPage() {
         } else {
           bodyMarkdown += `\n![|File|${name}](${url})`
         }
+
         const length = BigInt(e.file.size)
-
-
         name = cdnUrl // will be replaced by /apicdn with an actual url
         const file = PostProtos.File.create({ length, name, mimeType })
-
         postFiles.push({
           blobUrl: e.previewUrl,
           cdnUrl,
@@ -352,20 +416,21 @@ export default function CreatePostPage() {
       }
 
       console.log(`Final markdown "${bodyMarkdown}"`)
-
       const fields = PostProtos.CreatePostDetails.create({
         title,
         body: PostProtos.PostBody.create({ markdown: bodyMarkdown }),
-        postType
+        postType,
       })
-      const files = postFiles.map(e => e.file)
+      const files = postFiles.map((e) => e.file)
       const details = PostProtos.CreatePostWithFiles.create({
         fields,
         files,
       })
-
-      const post = await createPostWithFiles(details, mediaItems.map(e => e.previewUrl), (total, sent) => console.log(`${sent}/${total}`))
-
+      const post = await createPostWithFiles(
+        details,
+        mediaItems.map((e) => e.previewUrl),
+        (total, sent) => console.log(`${sent}/${total}`),
+      )
       if (post) {
         console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
       } else {
@@ -373,7 +438,6 @@ export default function CreatePostPage() {
         return
       }
     }
-
 
     // Clear draft if it exists
     if (isDraft) {
@@ -394,6 +458,11 @@ export default function CreatePostPage() {
               Draft
             </Badge>
           )}
+          {isEditing && (
+            <Badge variant="secondary" className="ml-2">
+              Editing
+            </Badge>
+          )}
         </h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -403,6 +472,14 @@ export default function CreatePostPage() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4"
             >
               Create
+            </TabsTrigger>
+            <TabsTrigger
+              value="edit"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4"
+              disabled={!isEditing}
+            >
+              <Edit3 className="h-4 w-4 mr-2" />
+              Edit
             </TabsTrigger>
             <TabsTrigger
               value="preview"
@@ -492,8 +569,9 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
-                                  }`}
+                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${
+                                  index === currentSlideIndex ? "border-black" : "border-transparent"
+                                }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -632,7 +710,10 @@ export default function CreatePostPage() {
                             <div className="flex-1">
                               <Popover>
                                 <PopoverTrigger asChild>
-                                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal bg-transparent"
+                                  >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {scheduleDate ? format(scheduleDate, "PPP") : "Select date"}
                                   </Button>
@@ -678,12 +759,26 @@ export default function CreatePostPage() {
                       <Button type="submit" className="flex-1 sm:flex-none" id="publish-button">
                         Publish Now
                       </Button>
-                      <Button type="button" variant="outline" className="flex-1 sm:flex-none" disabled={!scheduleDate}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 sm:flex-none bg-transparent"
+                        disabled={!scheduleDate}
+                      >
                         Schedule Post
                       </Button>
                       <Button type="button" variant="secondary" className="flex-1 sm:flex-none" onClick={saveAsDraft}>
                         <Save className="h-4 w-4 mr-2" />
                         {draftSaved ? "Saved!" : "Save Draft"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 sm:flex-none bg-transparent"
+                        onClick={startEditing}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Edit Post
                       </Button>
                       {isDraft && (
                         <Button
@@ -743,10 +838,246 @@ export default function CreatePostPage() {
                     </CardContent>
                   </Card>
 
-                  <Button variant="outline" className="w-full mb-4" onClick={() => setActiveTab("preview")}>
+                  <Button
+                    variant="outline"
+                    className="w-full mb-4 bg-transparent"
+                    onClick={() => setActiveTab("preview")}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     Preview Post
                   </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="edit" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card className="border-none shadow-sm mb-6">
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">Edit Post Content</CardTitle>
+                        <CardDescription>Make changes to your post before publishing</CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={undoEdit}
+                          disabled={currentHistoryIndex <= 0}
+                          title="Undo"
+                        >
+                          <Undo className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={redoEdit}
+                          disabled={currentHistoryIndex >= editHistory.length - 1}
+                          title="Redo"
+                        >
+                          <Redo className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-title">Title</Label>
+                        <Input
+                          id="edit-title"
+                          placeholder="Add a title to your post"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="edit-description">Description</Label>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => formatText("bold")}
+                              title="Bold"
+                            >
+                              <Bold className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => formatText("italic")}
+                              title="Italic"
+                            >
+                              <Italic className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => formatText("underline")}
+                              title="Underline"
+                            >
+                              <Underline className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => formatText("list")}
+                              title="List"
+                            >
+                              <List className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-transparent"
+                              onClick={() => formatText("link")}
+                              title="Link"
+                            >
+                              <Link className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Textarea
+                          id="edit-description"
+                          placeholder="What's on your mind?"
+                          className="min-h-[200px]"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                        />
+                      </div>
+
+                      {editHistory.length > 0 && (
+                        <div className="pt-4 border-t">
+                          <Label className="text-sm font-medium">Edit History</Label>
+                          <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                            {editHistory.map((entry, index) => (
+                              <div
+                                key={index}
+                                className={`text-xs p-2 rounded border cursor-pointer ${
+                                  index === currentHistoryIndex ? "bg-black text-white" : "bg-gray-50 hover:bg-gray-100"
+                                }`}
+                                onClick={() => {
+                                  setTitle(entry.title)
+                                  setDescription(entry.description)
+                                  setCurrentHistoryIndex(index)
+                                }}
+                              >
+                                <div className="font-medium">{new Date(entry.timestamp).toLocaleTimeString()}</div>
+                                <div className="truncate">
+                                  {entry.title || "Untitled"} - {entry.description.substring(0, 50)}...
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-4 flex gap-3">
+                    <Button onClick={applyEdits} className="flex-1 sm:flex-none">
+                      Apply Changes
+                    </Button>
+                    <Button variant="outline" onClick={cancelEditing} className="flex-1 sm:flex-none bg-transparent">
+                      Cancel
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+
+              <div className="hidden lg:block">
+                <div className="sticky top-24">
+                  <Card className="border-none shadow-sm">
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-lg">Edit Tools</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium mb-2">Formatting</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => formatText("bold")}
+                              className="justify-start"
+                            >
+                              <Bold className="h-3 w-3 mr-2" />
+                              Bold
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => formatText("italic")}
+                              className="justify-start"
+                            >
+                              <Italic className="h-3 w-3 mr-2" />
+                              Italic
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => formatText("list")}
+                              className="justify-start"
+                            >
+                              <List className="h-3 w-3 mr-2" />
+                              List
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => formatText("link")}
+                              className="justify-start"
+                            >
+                              <Link className="h-3 w-3 mr-2" />
+                              Link
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium mb-2">Actions</p>
+                          <div className="space-y-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={undoEdit}
+                              disabled={currentHistoryIndex <= 0}
+                              className="w-full justify-start bg-transparent"
+                            >
+                              <Undo className="h-3 w-3 mr-2" />
+                              Undo
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={redoEdit}
+                              disabled={currentHistoryIndex >= editHistory.length - 1}
+                              className="w-full justify-start"
+                            >
+                              <Redo className="h-3 w-3 mr-2" />
+                              Redo
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium">Changes</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {editHistory.length} edit{editHistory.length !== 1 ? "s" : ""} made
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </div>
@@ -815,8 +1146,9 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
-                                  }`}
+                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${
+                                  index === currentSlideIndex ? "border-black" : "border-transparent"
+                                }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -837,10 +1169,32 @@ export default function CreatePostPage() {
                       </div>
                     )}
 
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">{title || "Your post title will appear here"}</h3>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src="/test.webp" />
+                            <AvatarFallback>
+                              {isAnonymous
+                                ? "AN"
+                                : username
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("") || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{isAnonymous ? "Anonymous" : username || "User"}</p>
+                            <p className="text-xs text-gray-500">Just now</p>
+                          </div>
+                        </div>
+                      </div>
 
-                    <p>Preview Redo</p>
-
-                    {/*<PostCard {...previewPost} /> */}
+                      <div className="prose prose-sm max-w-none">
+                        <p className="whitespace-pre-wrap">{description || "Your post content will appear here"}</p>
+                      </div>
+                    </div>
 
                     {tags.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -869,6 +1223,15 @@ export default function CreatePostPage() {
                         </p>
                       </div>
                     )}
+
+                    {isEditing && (
+                      <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                        <p className="text-sm text-orange-700 flex items-center gap-2">
+                          <Edit3 className="h-4 w-4" />
+                          This post has unsaved edits
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                   <CardFooter className="p-4 flex flex-col sm:flex-row gap-3">
                     <Button type="button" onClick={() => setActiveTab("create")} className="w-full sm:w-auto">
@@ -877,7 +1240,7 @@ export default function CreatePostPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto bg-transparent"
                       onClick={() => router("/dashboard")}
                     >
                       Cancel
@@ -903,20 +1266,14 @@ export default function CreatePostPage() {
                           <p className="text-sm font-medium">Author</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Avatar className="h-6 w-6">
-                              <AvatarImage
-                                src={"/test.webp"
-                                  // isAnonymous
-                                  //   ? "/placeholder.svg?height=24&width=24"
-                                  //   : user?.avatar || "/placeholder.svg?height=24&width=24"
-                                }
-                              />
+                              <AvatarImage src="/test.webp" />
                               <AvatarFallback>
                                 {isAnonymous
                                   ? "AN"
                                   : username
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .join("") || "U"}
+                                      ?.split(" ")
+                                      .map((n) => n[0])
+                                      .join("") || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <p className="text-sm">{isAnonymous ? "Anonymous" : username || "User"}</p>
@@ -954,6 +1311,12 @@ export default function CreatePostPage() {
                                 className={`h-2 w-2 rounded-full ${isDraft ? "bg-purple-500" : "bg-gray-300"}`}
                               ></span>
                               Draft: {isDraft ? "Yes" : "No"}
+                            </p>
+                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <span
+                                className={`h-2 w-2 rounded-full ${isEditing ? "bg-orange-500" : "bg-gray-300"}`}
+                              ></span>
+                              Editing: {isEditing ? "Yes" : "No"}
                             </p>
                           </div>
                         </div>
