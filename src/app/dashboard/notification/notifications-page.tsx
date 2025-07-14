@@ -9,6 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { dateToRelativeString, getTimestampFromUlid, ulidStringify, type NotificationProtos } from "lupyd-js"
+import { UserAvatar } from "@/components/user-avatar"
+import { NotificationType } from "node_modules/lupyd-js/dist/protos/notification"
 
 // Mock data for notifications
 const initialNotifications = [
@@ -58,29 +61,34 @@ const initialNotifications = [
   },
 ]
 
-function NotificationIcon({ type }: { type: string }) {
+function NotificationIcon({ type }: { type: NotificationType }) {
   const iconClass = "h-4 w-4"
-  switch (type) {
-    case "like":
-      return <Heart className={`${iconClass} text-red-500`} fill="currentColor" />
-    case "comment":
-      return <MessageCircle className={`${iconClass} text-blue-500`} />
-    case "follow":
-      return <UserPlus className={`${iconClass} text-green-500`} />
-    case "mention":
-      return <AtSign className={`${iconClass} text-purple-500`} />
-    case "share":
-      return <Share2 className={`${iconClass} text-orange-500`} />
-    default:
-      return <Bell className={`${iconClass} text-gray-500`} />
+
+  if (type.comment) {
+    return <MessageCircle className={`${iconClass} text-blue-500`} />
   }
+
+  if (type.like) {
+    return <Heart className={`${iconClass} text-red-500`} fill="currentColor" />
+  }
+
+  if (type.follow) {
+
+    return <UserPlus className={`${iconClass} text-green-500`} />
+  }
+
+  // case "mention":
+  //   return <AtSign className={`${iconClass} text-purple-500`} />
+  // case "share":
+  //   return <Share2 className={`${iconClass} text-orange-500`} />
+  return <Bell className={`${iconClass} text-gray-500`} />
 }
 
-function NotificationItem({ notification, onMarkAsRead }: { notification: any; onMarkAsRead: (id: number) => void }) {
+function NotificationItem({ notification, onMarkAsRead }: { notification: NotificationProtos.Notification; onMarkAsRead: (id: Uint8Array) => void }) {
   const handleClick = () => {
     // Handle notification click - could expand details, mark as read, etc.
     console.log("Notification clicked:", notification.id)
-    if (!notification.read) {
+    if (!notification.seen) {
       onMarkAsRead(notification.id)
     }
   }
@@ -90,47 +98,62 @@ function NotificationItem({ notification, onMarkAsRead }: { notification: any; o
     onMarkAsRead(notification.id)
   }
 
+  const timestamp = getTimestampFromUlid(notification.id);
+
+  const otherUsername = notification.notificationType?.comment?.commentedBy ||
+    notification.notificationType?.follow?.uname || notification.notificationType?.like?.likedBy;
+
+
+  const getContent = () => {
+    if (notification.notificationType?.comment) {
+      return "commented on your post"
+    }
+    if (notification.notificationType?.like) {
+      return "liked your post"
+    }
+    if (notification.notificationType?.follow) {
+      return "started following you"
+    }
+
+    return "";
+  }
+
+
+
+
   return (
     <div
-      className={`flex items-start gap-4 p-6 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
-        !notification.read ? "bg-blue-50 border-l-4 border-l-blue-500" : "bg-white"
-      }`}
+      className={`flex items-start gap-4 p-6 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${!notification.seen ? "bg-blue-50 border-l-4 border-l-blue-500" : "bg-white"
+        }`}
       onClick={handleClick}
     >
       <div className="relative">
-        <Avatar className="h-12 w-12 border-2 border-gray-300">
-          <AvatarImage src={notification.user.avatar || "/placeholder.svg"} alt={notification.user.name} />
-          <AvatarFallback className="bg-white text-black border border-gray-300 font-medium">
-            {notification.user.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar username={otherUsername || ""}></UserAvatar>
+
         <div className="absolute -bottom-1 -right-1 bg-white border-2 border-gray-300 rounded-full p-1.5">
-          <NotificationIcon type={notification.type} />
+          <NotificationIcon type={notification.notificationType!} />
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-2">
-          <span className="font-semibold text-black text-base">{notification.user.name}</span>
-          <span className="text-gray-600 text-sm">@{notification.user.username}</span>
-          <span className="text-gray-500 text-sm">{notification.timestamp}</span>
-          {!notification.read && (
+          <span className="font-semibold text-black text-base">{otherUsername}</span>
+          <span className="text-gray-500 text-sm">{dateToRelativeString(new Date(timestamp))}</span>
+          {!notification.seen && (
             <Badge variant="secondary" className="bg-black text-white text-xs px-2 py-1 font-medium">
               New
             </Badge>
           )}
         </div>
-        <p className="text-gray-700 text-sm mb-3 leading-relaxed">{notification.content}</p>
-        {(notification.post || notification.comment) && (
+        <p className="text-gray-700 text-sm mb-3 leading-relaxed">{
+          getContent()}</p>
+        {(notification.notificationType?.like || notification.notificationType?.comment) && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
-            <p className="text-gray-800 leading-relaxed">{notification.comment || notification.post}</p>
-          </div>
+            {       /*     <p className="text-gray-800 leading-relaxed">{notification.comment || notification.post}</p>*/
+            }          </div>
         )}
       </div>
       <div className="flex items-center gap-2">
-        {!notification.read && (
+        {!notification.seen && (
           <Button
             variant="ghost"
             size="sm"
@@ -150,17 +173,17 @@ function NotificationItem({ notification, onMarkAsRead }: { notification: any; o
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(initialNotifications)
+  const [notifications, setNotifications] = useState<NotificationProtos.Notification[]>([])
   const navigate = useNavigate()
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.seen).length
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
   }
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications((prev) => prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
+  const handleMarkAsRead = (id: Uint8Array) => {
+    setNotifications((prev) => prev.map((notif) => (indexedDB.cmp(notif.id, id) ? { ...notif, read: true } : notif)))
   }
 
   const handleGoBack = () => {
@@ -214,7 +237,7 @@ export default function NotificationsPage() {
             ) : (
               <div>
                 {notifications.map((notification) => (
-                  <NotificationItem key={notification.id} notification={notification} onMarkAsRead={handleMarkAsRead} />
+                  <NotificationItem key={ulidStringify(notification.id)} notification={notification} onMarkAsRead={handleMarkAsRead} />
                 ))}
               </div>
             )}

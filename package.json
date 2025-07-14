@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-spa-js": "^2.2.0",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.2",
@@ -49,7 +50,7 @@
     "framer-motion": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "lupyd-js": "https://github.com/ash-hashtag/lupyd-js",
+    "lupyd-js": "https://github.com/lupyd/lupyd-js",
     "micromark": "^4.0.2",
     "micromark-extension-gfm-strikethrough": "^2.1.0",
     "micromark-extension-gfm-table": "^2.1.1",

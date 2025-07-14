@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedCard } from "@/components/animated-card"
-import { AuthHandler, rawEmailRegex } from "lupyd-js"
+import { rawEmailRegex } from "lupyd-js"
 import { useSnackbar } from "@/components/snackbar"
 import LandingLayout from "../layout"
 
