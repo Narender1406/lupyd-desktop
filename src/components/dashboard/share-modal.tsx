@@ -2,13 +2,13 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Share2, Copy, Twitter, Facebook, Linkedin, Mail, Link2, Check } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { Check, Copy, Facebook, Link2, Linkedin, Mail, Share2, Twitter } from "lucide-react"
+import { useState } from "react"
 
 interface ShareModalProps {
   title: string

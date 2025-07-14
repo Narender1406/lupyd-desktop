@@ -205,7 +205,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     })}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => (username == null ? router.push("/signin") : auth.logout())}
+                      onClick={(username == null ? () => {
+                        if (auth.user) {
+                          if (!auth.user["uname"]) {
+                            router.push("/assignUsername")
+                          }
+                        } else {
+                          auth.login()
+                        }
+                      } : () => auth.logout())}
                       className="text-red-600"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -229,9 +237,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center px-3 py-2 rounded-md ${
-                      isActive ? "bg-gray-100" : "hover:bg-gray-100"
-                    }`}
+                    className={`flex items-center px-3 py-2 rounded-md ${isActive ? "bg-gray-100" : "hover:bg-gray-100"
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Icon className="mr-3 h-5 w-5" />

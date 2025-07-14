@@ -1,9 +1,10 @@
 "use client"
 
-import { AuthHandler, fbElement, initFbElement } from "lupyd-js"
+// import { AuthHandler, fbElement, initFbElement } from "lupyd-js"
 import { createContext, useContext, useState, type ReactNode } from "react"
 
-import type { User } from "firebase/auth"
+import { Auth0Handler, getAuthHandler } from "lupyd-js"
+import type { User } from "@auth0/auth0-spa-js"
 
 
 type AuthContextType = {
@@ -11,6 +12,7 @@ type AuthContextType = {
   username: string | null
   isAuthenticated: boolean
   logout: () => void
+  login: () => void
 }
 
 
@@ -22,32 +24,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null)
 
   if (typeof window !== "undefined") {
-    console.log(`Assigned FB User callback`)
 
-    const fbConfigBase64 =
-      process.env.NEXT_PUBLIC_JS_ENV_FIREBASE_CONFIG
+    console.log(`initalizing auth`)
+    const clientId = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_CLIENT_ID
 
-    if (!fbConfigBase64) {
-      throw Error("Missing NEXT_PUBLIC_JS_ENV_FIREBASE_CONFIG env var")
+    if (!clientId) {
+      throw new Error("Missing CLIENT_ID env var")
     }
-    const config = JSON.parse(atob(fbConfigBase64))
+    const audience = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_AUDIENCE
+    if (!audience) {
+      throw new Error("Missing AUDIENCE env var")
+    }
 
-    const emulatorAddress = process.env.NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR
 
-    initFbElement(config, emulatorAddress)
-      .setOnAuthStateChangeCallback((username, user) => {
-        // if (username != null) {
-        console.log(`User [${username}] status `, user)
-        setUser(user)
-        setUsername(username)
-      })
+    Auth0Handler.initialize(clientId, audience, (user) => {
+      setUser(user || null)
+      if (user) {
+        setUsername(user["uname"])
+      } else {
+        setUsername(null)
+      }
+    })
+
+
+    // console.log(`Assigned FB User callback`)
+
+    // const fbConfigBase64 =
+    //   process.env.NEXT_PUBLIC_JS_ENV_FIREBASE_CONFIG
+
+    // if (!fbConfigBase64) {
+    //   throw Error("Missing NEXT_PUBLIC_JS_ENV_FIREBASE_CONFIG env var")
+    // }
+    // const config = JSON.parse(atob(fbConfigBase64))
+
+    // const emulatorAddress = process.env.NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR
+
+    // initFbElement(config, emulatorAddress)
+    //   .setOnAuthStateChangeCallback((username, user) => {
+    //     // if (username != null) {
+    //     console.log(`User [${username}] status `, user)
+    //     setUser(user)
+    //     setUsername(username)
+    //   })
 
   }
 
-  const logout = () => AuthHandler.signOut()
+  const logout = () => getAuthHandler()!.logout()
+  const login = () => getAuthHandler()!.login()
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, logout, username }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!username, logout, username, login }}>{children}</AuthContext.Provider>
   )
 }
 

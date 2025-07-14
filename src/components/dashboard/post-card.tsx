@@ -18,7 +18,6 @@ import { useGlobalDialog } from "@/context/dialog-context"
 import van from "vanjs-core"
 import { useSnackbar } from "../snackbar"
 import { UserAvatar } from "../user-avatar"
-import { CreatePostDetails } from "node_modules/lupyd-js/dist/protos/post"
 
 
 type FullPost = PostProtos.FullPost
@@ -99,7 +98,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
   const handleComment = () => {
     console.log(`Commenting on post ${ulidStringify(post.id)}: ${commentText}`)
 
-    const details = CreatePostDetails.create({
+    const details = PostProtos.CreatePostDetails.create({
       replyingTo: post.id,
       postType: post.postType,
       expiry: post.expiry,

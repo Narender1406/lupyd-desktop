@@ -1,15 +1,20 @@
 "use client"
 import { useAuth } from "@/context/auth-context"
 import type React from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { getAuthHandler } from "lupyd-js"
+import { useSnackbar } from "@/components/snackbar"
 
 export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const navigate = useNavigate()
   const auth = useAuth()
+  const snackbar =useSnackbar()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -81,12 +86,27 @@ export default function LandingLayout({
             {auth.isAuthenticated ? (
               <div></div>
             ) : (
-              <Link
-                to="/signin"
+              <Button
+                onClick={() => {
+                  if (auth.username) {
+                    navigate("/dashboard")
+                  } else {
+                    if (auth.user && !auth.username) {
+                      navigate("/assignUsername")
+                    } else {
+                      getAuthHandler()?.login().then(() => {
+                        navigate("/assignUsername")
+                      }).catch(err => {
+                        console.error(err)
+                        snackbar("Something went wrong")
+                      })
+                    }
+                  }
+                }}
                 className="hidden md:inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
               >
                 Sign In
-              </Link>
+              </Button>
             )}
           </div>
         </div>

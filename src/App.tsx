@@ -24,6 +24,7 @@ import ProfilePage from './app/dashboard/user/[username]/page'
 import SubscriptionPage from './app/dashboard/subscription/page'
 import CheckoutPage from './app/dashboard/subscription/checkout/page'
 import NotificationsPage from './app/dashboard/notification/notifications-page'
+import AssignUsernamePage from './app/assignUsername'
 
 
 
@@ -35,16 +36,19 @@ function App() {
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/experience" element={<ExperiencePage />} />
-        <Route path="/creator-tools" element={ <CreatorToolsPage />} />
+        <Route path="/creator-tools" element={<CreatorToolsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/signin" element={<SignupPage />} />
+        <Route path="/assignUsername" element={<AssignUsernamePage />} />
+        {/*        <Route path="/signin" element={<SignupPage />} />
+*/}
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/action" element={<ActionHandler/>}/>
+        {/*        <Route path="/action" element={<ActionHandler />} />
+*/}
         <Route path="/dashboard/saved-posts" element={<SavedPostsPage />} />
         <Route path="/dashboard/create-post" element={<CreatePostPage />} />
         <Route path="/dashboard/connections" element={<ConnectionsPage />} />
         <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
-        <Route path="/dashboard/activity" element={<ActivityPage/>} />
+        <Route path="/dashboard/activity" element={<ActivityPage />} />
         <Route path="/dashboard/settings" element={<SettingsPage />} />
         <Route path="/dashboard/subscription" element={<SubscriptionPage />} />
         <Route path="/dashboard/subscription/checkout" element={<CheckoutPage />} />

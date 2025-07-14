@@ -31,7 +31,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { AuthHandler, CDN_STORAGE, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
+import {  CDN_STORAGE, getAuthHandler, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
 
 
@@ -53,8 +53,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (auth.username) {
-
       getUser(auth.username).then((user) => {
+        if (!user) throw Error("User not found")
         if (user.pfp) {
           setPfpSrc(`${CDN_STORAGE}/users/${auth.username}`)
         }
@@ -64,15 +64,9 @@ export default function SettingsPage() {
 
         setInitialUserData(user)
       })
-
-
     }
-
   }, [auth])
-
-
   function pickProfileImage(): void {
-
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -123,22 +117,22 @@ export default function SettingsPage() {
 
 
   function deleteAccount(): void {
-    AuthHandler.deleteAccount()
+    getAuthHandler()!.deleteAccount()
   }
 
-  function updatePassword(): void {
-    if (password !== confirmPassword) {
-      console.error(`Passwords don't match`)
-      return
-    }
+  // function updatePassword(): void {
+  //   if (password !== confirmPassword) {
+  //     console.error(`Passwords don't match`)
+  //     return
+  //   }
 
-    if (password.length < 6) {
-      console.error(`Password length < 6`)
-      return
-    }
+  //   if (password.length < 6) {
+  //     console.error(`Password length < 6`)
+  //     return
+  //   }
 
-    AuthHandler.changePassword(password).then(() => auth.logout()).catch(console.error)
-  }
+  //   AuthHandler.changePassword(password).then(() => auth.logout()).catch(console.error)
+  // }
 
   // const user = {
   //   name: "John Doe",
@@ -348,9 +342,6 @@ export default function SettingsPage() {
                           <Input id="confirmPassword" type="password"
                             value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
                         </div>
-                        <Button onClick={updatePassword} className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
-                          Update Password
-                        </Button>
                       </div>
                     </div>
 
