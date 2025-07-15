@@ -3335,6 +3335,11 @@ jsonexport@^3.2.0:
   resolved "https://registry.yarnpkg.com/jsonexport/-/jsonexport-3.2.0.tgz#e5b4905ea1f6c8f8e0f62e4ceb26e4a31f1c93a8"
   integrity sha512-GbO9ugb0YTZatPd/hqCGR0FSwbr82H6OzG04yzdrG7XOe4QZ0jhQ+kOsB29zqkzoYJLmLxbbrFiuwbQu891XnQ==
 
+jwt-decode@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/jwt-decode/-/jwt-decode-4.0.0.tgz#2270352425fd413785b2faf11f6e755c5151bd4b"
+  integrity sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==
+
 katex@^0.16.0:
   version "0.16.22"
   resolved "https://registry.yarnpkg.com/katex/-/katex-0.16.22.tgz#d2b3d66464b1e6d69e6463b28a86ced5a02c5ccd"
@@ -3423,14 +3428,15 @@ lucide@^0.487.0:
   resolved "https://registry.yarnpkg.com/lucide/-/lucide-0.487.0.tgz#6701d2b0452fe58571d0f384dfcad7a79b7437c5"
   integrity sha512-SJk/ANI/Qu6ieS1uZqy6ZQcEB7/oH+gVtCGrmzcvSQKJVWsGSlbR/SMTxIdqqbb1/h+eJBSVkWB7I0jGnjuOFw==
 
-"lupyd-js@https://github.com/lupyd/lupyd-js":
+"lupyd-js@https://github.com/lupyd/lupyd-js.git":
   version "1.0.2"
-  resolved "https://github.com/lupyd/lupyd-js#2dc4701a0b15daa181c9dc2e92bf5820e2e30a9a"
+  resolved "https://github.com/lupyd/lupyd-js.git#8502a894044dc65f8008a839a61f2fb5ad47af8f"
   dependencies:
     "@auth0/auth0-spa-js" "^2.2.0"
     base-x "^5.0.1"
     firebase "^11.6.0"
     id128 "^1.6.6"
+    jwt-decode "^4.0.0"
     lucide "^0.487.0"
     micromark "^4.0.2"
     micromark-extension-gfm-strikethrough "^2.1.0"

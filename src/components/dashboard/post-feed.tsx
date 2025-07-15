@@ -58,7 +58,7 @@ export function PostFeed() {
 
 
   const fetchFollowedUsersPosts = async () => {
-    const follows = userData.follows.localUserFollows
+    const follows = userData.follows
     if (follows.length == 0) return
 
     const usersPosts = await getPosts({ fetchType: FetchType.Users, fetchTypeFields: follows })

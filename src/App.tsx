@@ -57,7 +57,7 @@ function App() {
         <Route path="/dashboard/user/:username" element={<ProfilePage />} />
         <Route path="/dashboard/messages" element={<MessagesPage />} />
         <Route path="/dashboard/notification" element={<NotificationsPage />} />
-        <Route path="/dashboard/messages/:username" element={<UserMessagePage />} />
+        {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
       </Routes>
     </BrowserRouter>)
 }

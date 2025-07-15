@@ -3,11 +3,10 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera, Edit, MoreHorizontal, UserPlus } from "lucide-react"
+import { Settings, MessageSquare, Grid, List, Bookmark, Camera,  MoreHorizontal, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,7 +63,7 @@ export default function ProfilePage() {
     if (!username) return
 
     getUser(username).then((user) => {
-      setUser(user)
+      setUser(user || null)
     }).catch(console.error)
 
     getPosts({
@@ -92,16 +91,16 @@ export default function ProfilePage() {
     if (!auth.username) return
     if (!getUsername()) return
 
-    setIsFollowing(userData.follows.doesFollowUser(getUsername()!))
+    setIsFollowing(userData.follows.includes(getUsername()!))
   }, [auth, userData])
 
   const handleFollow = async () => {
     const username = getUsername()
     if (!username) return
-    if (userData.follows.doesFollowUser(username)) {
-      await userData.follows.followUser(username)
+    if (userData.follows.includes(username)) {
+      await userData.relationState.followUser(username)
     } else {
-      await userData.follows.unfollowUser(username)
+      await userData.relationState.unfollowUser(username)
     }
   }
 
@@ -131,7 +130,7 @@ export default function ProfilePage() {
             <div className="flex flex-col md:flex-row md:items-end">
               <div className="relative">
                 <Avatar className="h-32 w-32 border-4 border-white">
-                  <AvatarImage src={user?.pfp ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
+                  <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
                   <AvatarFallback className="text-4xl">
                     {(user?.uname ?? "U")[0]}
                   </AvatarFallback>
@@ -175,7 +174,7 @@ export default function ProfilePage() {
                     {!isMobile && (
                       <>
                         <Button variant="outline" size="sm" onClick={
-                          user?.chats ?
+                          (((user?.settings ?? 0) & 1) == 1) ?
                             () => router(`/dashboard/messages/${getUsername()}`) : undefined}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           Message
