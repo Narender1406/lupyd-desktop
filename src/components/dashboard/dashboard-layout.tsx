@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
 import { NotificationsDropdown } from "./notifications-dropdown"
 
@@ -45,6 +45,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [searchText, setSearchText] = useState("")
   const [username, setUsername] = useState<string | null>(null)
   const auth = useAuth()
+
+
+  
 
   useEffect(() => {
     setUsername(auth.username)
@@ -77,7 +80,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (keyCode != "Enter") {
       return
     }
-    const to = `/dashboard/discover?q=${encodeURIComponent(searchText)}`
+
+    if (!searchText.trim()) {
+      return
+    }
+
+    const to = `/dashboard/discover?q=${encodeURIComponent(searchText.trim())}`
     router.push(to)
   }
 

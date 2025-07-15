@@ -164,10 +164,10 @@ export function FollowingFeed() {
   let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
 
   const fetchItems = async () => {
-    if (userData.follows.localUserFollows.length == 0) return;
+    if (userData.follows.length == 0) return;
     const details: GetPostsData = {
       fetchType: FetchType.Users,
-      fetchTypeFields: [...userData.follows.localUserFollows],
+      fetchTypeFields: [...userData.follows],
       allowedPostTypes: Number(store.get("allowedPostTypes") ?? "1"),
       start: minimumPostId ? ulidStringify(minimumPostId) : undefined
     }

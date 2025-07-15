@@ -7,61 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { dateToRelativeString, getTimestampFromUlid, ulidStringify, type NotificationProtos } from "lupyd-js"
+import { dateToRelativeString, getNotifications, getTimestampFromUlid, ulidStringify, type NotificationProtos } from "lupyd-js"
 import { UserAvatar } from "@/components/user-avatar"
-import { NotificationType } from "node_modules/lupyd-js/dist/protos/notification"
+import { useAuth } from "@/context/auth-context"
 
-// Mock data for notifications
-const initialNotifications = [
-  {
-    id: 1,
-    type: "like",
-    user: { name: "Sarah Chen", username: "sarahc", avatar: "/placeholder.svg?height=40&width=40" },
-    content: "liked your post",
-    post: "Amazing sunset at the beach today! 🌅",
-    timestamp: "2 min ago",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "comment",
-    user: { name: "Mike Johnson", username: "mikej", avatar: "/placeholder.svg?height=40&width=40" },
-    content: "commented on your post",
-    comment: "Beautiful shot! What camera did you use?",
-    timestamp: "5 min ago",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "follow",
-    user: { name: "Emma Wilson", username: "emmaw", avatar: "/placeholder.svg?height=40&width=40" },
-    content: "started following you",
-    timestamp: "1 hour ago",
-    read: true,
-  },
-  {
-    id: 4,
-    type: "mention",
-    user: { name: "Alex Rivera", username: "alexr", avatar: "/placeholder.svg?height=40&width=40" },
-    content: "mentioned you in a post",
-    post: "Great collaboration with @yourhandle on this project!",
-    timestamp: "2 hours ago",
-    read: true,
-  },
-  {
-    id: 5,
-    type: "share",
-    user: { name: "Lisa Park", username: "lisap", avatar: "/placeholder.svg?height=40&width=40" },
-    content: "shared your post",
-    post: "Tips for better photography composition",
-    timestamp: "3 hours ago",
-    read: true,
-  },
-]
 
-function NotificationIcon({ type }: { type: NotificationType }) {
+function NotificationIcon({ type }: { type: NotificationProtos.NotificationType }) {
   const iconClass = "h-4 w-4"
 
   if (type.comment) {
@@ -84,7 +37,7 @@ function NotificationIcon({ type }: { type: NotificationType }) {
   return <Bell className={`${iconClass} text-gray-500`} />
 }
 
-function NotificationItem({ notification, onMarkAsRead }: { notification: NotificationProtos.Notification; onMarkAsRead: (id: Uint8Array) => void }) {
+export function NotificationItem({ notification, onMarkAsRead }: { notification: NotificationProtos.Notification; onMarkAsRead: (id: Uint8Array) => void }) {
   const handleClick = () => {
     // Handle notification click - could expand details, mark as read, etc.
     console.log("Notification clicked:", notification.id)
@@ -189,6 +142,14 @@ export default function NotificationsPage() {
   const handleGoBack = () => {
     navigate(-1)
   }
+
+  const auth = useAuth()
+
+  useEffect(() => {
+    if (auth.username) {
+      getNotifications().then(result => setNotifications(result.notifications))
+    }
+  }, [auth])
 
   return (
     <div className="min-h-screen bg-white">

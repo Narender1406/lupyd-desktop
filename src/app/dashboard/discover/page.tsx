@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserData } from "@/context/userdata-context"
 import { Compass, Filter, Hash, MessageSquare, Search, ThumbsUp, TrendingUp, Users } from "lucide-react"
-import { getFollowedUsersState, CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
+import { CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import React, { useEffect, useRef, useState } from "react"
 
@@ -181,7 +181,7 @@ export default function DiscoverPage() {
     }
 
 
-  }, [])
+  }, [searchParams])
 
 
 
@@ -536,16 +536,16 @@ function UserCard(user: UserProtos.User) {
   }
 
   useEffect(() => {
-    setIsFollowing(userData.follows.doesFollowUser(user.uname))
+    setIsFollowing(userData.follows.includes(user.uname))
     console.log(`isFollowing '${user.uname}'? : ${isFollowing}`)
   }, [userData])
 
   const handleFollow = () => {
     if (isFollowing) {
-      userData.follows.unfollowUser(user.uname)
+      userData.relationState.unfollowUser(user.uname)
       setIsFollowing(false)
     } else {
-      userData.follows.followUser(user.uname)
+      userData.relationState.followUser(user.uname)
       setIsFollowing(true)
     }
   }
@@ -565,7 +565,7 @@ function UserCard(user: UserProtos.User) {
         </div>
       </div>
 
-      {user.chats &&
+      {((user.settings & 1) == 1)  &&
         <Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={connect}>
           Connect
         </Button>

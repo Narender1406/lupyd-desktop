@@ -31,7 +31,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import {  CDN_STORAGE, getAuthHandler, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
+import { CDN_STORAGE, getAuthHandler, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
 
 
@@ -55,10 +55,10 @@ export default function SettingsPage() {
     if (auth.username) {
       getUser(auth.username).then((user) => {
         if (!user) throw Error("User not found")
-        if (user.pfp) {
+        if ((user.settings & 16) == 16) {
           setPfpSrc(`${CDN_STORAGE}/users/${auth.username}`)
         }
-        setAllowChats(user.chats)
+        setAllowChats((user.settings & 1) == 1)
         const bioBody = PostProtos.PostBody.decode(user.bio)
         setBio(bioBody.plainText ?? bioBody.markdown ?? "")
 
@@ -98,10 +98,23 @@ export default function SettingsPage() {
       await updateUserProfilePicture(blob)
     }
 
+    let settings = initialUserData?.settings ?? 0;
+    if (allowChats) {
+      settings = settings | 1;
+    } else {
+      settings = settings & ~1;
+    }
+
+    if (pfpSrc) {
+      settings = settings | 16;
+    } else {
+      settings = settings & ~16;
+    }
+ 
+
     const info = UserProtos.UpdateUserInfo.create({
-      pfp: isPfpChanged ? UserProtos.BoolValue.create({ val: true }) : undefined,
       bio: isBioChanged ? PostProtos.PostBody.create({ plainText: bio }) : undefined,
-      chats: UserProtos.BoolValue.create({ val: allowChats })
+      settings: settings 
     })
 
 
@@ -109,8 +122,7 @@ export default function SettingsPage() {
     setInitialUserData(UserProtos.User.create({
       uname: initialUserData!.uname,
       bio: isBioChanged ? PostProtos.PostBody.encode(PostProtos.PostBody.create({ plainText: bio })).finish() : initialUserData!.bio,
-      chats: allowChats,
-      pfp: pfpSrc.length > 0
+      settings: settings,
     }))
 
   }
