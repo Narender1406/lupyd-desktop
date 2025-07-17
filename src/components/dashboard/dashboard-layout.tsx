@@ -63,6 +63,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/dashboard/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/dashboard/analytics", label: "Analytics", icon: BarChart },
     { path: "/dashboard/subscription", label: "subscriptions", icon: Crown },
+    { path: "/saas", label: "B", icon: Crown },
     { path: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
