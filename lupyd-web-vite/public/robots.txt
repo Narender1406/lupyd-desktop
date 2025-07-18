@@ -1,0 +1,6 @@
+# Allow all web crawlers access to all pages
+User-agent: *
+Disallow:
+
+# Sitemap location
+Sitemap: https://lupyd.com/sitemap.xml
