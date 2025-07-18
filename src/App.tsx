@@ -25,6 +25,15 @@ import SubscriptionPage from './app/dashboard/subscription/page'
 import CheckoutPage from './app/dashboard/subscription/checkout/page'
 import NotificationsPage from './app/dashboard/notification/notifications-page'
 import AssignUsernamePage from './app/assignUsername'
+import SaasPage from './app/saas/page'
+import { ClientsPage } from './app/saas/pages/clients-page'
+import { ServicesPage } from './app/saas/pages/services-page'
+import { AddClientPage } from './app/saas/pages/add-client-page'
+import { EditClientPage } from './app/saas/pages/editclient'
+import { ApiKeyPage } from './app/saas/pages/api-key-page'
+import { ClientDetailsPage } from './app/saas/pages/clientdetails'
+import { AddServicePage } from './app/saas/pages/add-service-page'
+import { AppSidebar } from './app/saas/layout/app-sidebar'
 
 
 
@@ -39,6 +48,8 @@ function App() {
         <Route path="/creator-tools" element={<CreatorToolsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/assignUsername" element={<AssignUsernamePage />} />
+        <Route path="/saas" element = {<SaasPage/>}/>
+        
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -57,6 +68,16 @@ function App() {
         <Route path="/dashboard/user/:username" element={<ProfilePage />} />
         <Route path="/dashboard/messages" element={<MessagesPage />} />
         <Route path="/dashboard/notification" element={<NotificationsPage />} />
+        <Route path ="/saas/pages/clients-page" element = {<ClientsPage />} />
+        <Route path ="/saas/pages/services-page" element = {<ServicesPage />} />
+        <Route path ="/saas/pages/add-client-page" element = {<AddClientPage />} />
+        <Route path ="/saas/pages/edit-client-page" element = {<EditClientPage />} />
+        <Route path ="/saas/pages/api-key-page" element = {<ApiKeyPage />} />
+        <Route path ="/saas/pages/clientdetails" element = {<ClientDetailsPage />} />
+        <Route path ="/saas/pages/add-service-page" element = {<AddServicePage />} />
+        <Route path = "/saas/layout/app-sidebar" element = {<AppSidebar/>} />
+        
+        
         {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
       </Routes>
     </BrowserRouter>)
