@@ -6,6 +6,7 @@ import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Area, AreaChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const usageData = [
   { name: "Jan", calls: 4000, chats: 2400, messages: 2400 },
@@ -27,6 +28,9 @@ const trafficData = [
 
 export function OverviewPage() {
   return (
+    <DashboardLayout>
+
+    
     <div className="space-y-4 md:space-y-6">
       <div>
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard Overview</h2>
@@ -174,5 +178,9 @@ export function OverviewPage() {
         </CardContent>
       </Card>
     </div>
+
+    </DashboardLayout>
+  
   )
+
 }
