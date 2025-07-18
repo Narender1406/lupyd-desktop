@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
   return {
+    base: "./",
     plugins: [react()],
 
     define: Object.fromEntries(
@@ -47,7 +48,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 8080,
       proxy: buildProxy(emulatorAddr),
-      host: "0.0.0.0"
+      host: "0.0.0.0",
     },
   };
 });
