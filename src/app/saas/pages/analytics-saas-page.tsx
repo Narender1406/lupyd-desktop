@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, Line, LineChart, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const performanceData = [
   { name: "Mon", calls: 4000, chats: 2400, messages: 2400 },
@@ -29,8 +30,9 @@ const responseTimeData = [
   { time: "20:00", responseTime: 38 },
 ]
 
-export function AnalyticsPage() {
+export function AnalyticssaasPage() {
   return (
+    <DashboardLayout>
     <div className="space-y-4 md:space-y-6">
       <div>
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics</h2>
@@ -149,5 +151,6 @@ export function AnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   )
 }

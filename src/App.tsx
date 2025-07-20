@@ -35,6 +35,10 @@ import { ClientDetailsPage } from './app/saas/pages/clientdetails'
 import { AddServicePage } from './app/saas/pages/add-service-page'
 import { AppSidebar } from './app/saas/layout/app-sidebar'
 import { OverviewPage } from './app/saas/pages/overview-page'
+import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
+import { MonitoringPage } from './app/saas/pages/monitoring-page'
+import { BillingPage } from './app/saas/pages/billing-page'
+import { SupportPage } from './app/saas/pages/support-page'
 
 
 
@@ -70,6 +74,10 @@ function App() {
         <Route path="/dashboard/messages" element={<MessagesPage />} />
         <Route path="/dashboard/notification" element={<NotificationsPage />} />
         <Route path="/saas/pages/clients-page" element={<ClientsPage />} />
+        <Route path="/saas/pages/analytics-saas-page" element={<AnalyticssaasPage />} />
+        <Route path="/saas/pages/monitoring-page" element={<MonitoringPage />} />
+        <Route path="/saas/pages/billing-page" element={<BillingPage />} />
+        <Route path="/saas/pages/support-page" element={<SupportPage />} />
         <Route path="/saas/pages/services-page" element={<ServicesPage />} />
         <Route path="/saas/pages/add-client-page" element={<AddClientPage />} />
         <Route path="/saas/pages/edit-client-page" element={<EditClientPage />} />

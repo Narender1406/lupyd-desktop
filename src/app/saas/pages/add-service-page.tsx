@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 export function AddServicePage() {
   const navigate = useNavigate()
@@ -40,9 +41,10 @@ export function AddServicePage() {
   }
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/services")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -206,5 +208,6 @@ export function AddServicePage() {
         </div>
       </form>
     </div>
+    </DashboardLayout>
   )
 }

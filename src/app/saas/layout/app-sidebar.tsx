@@ -29,27 +29,27 @@ const navigationItems = [
   },
   {
     title: "Services",
-    url: "/services",
+    url: "/saas/pages/services-page",
     icon: Server,
   },
   {
     title: "Analytics",
-    url: "/analytics",
+    url: "/saas/pages/analytics-saas-page",
     icon: BarChart3,
   },
   {
     title: "Monitoring",
-    url: "/monitoring",
+    url: "/saas/pages/monitoring-page",
     icon: Monitor,
   },
   {
     title: "Billing",
-    url: "/billing",
+    url: "/saas/pages/billing-page",
     icon: CreditCard,
   },
   {
     title: "Support",
-    url: "/support",
+    url: "/saas/pages/support-page",
     icon: HelpCircle,
   },
 ]
