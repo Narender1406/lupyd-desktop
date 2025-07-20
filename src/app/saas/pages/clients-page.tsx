@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useNavigate } from "react-router-dom"
+import DashboardPage from "@/app/dashboard/page"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 
 
@@ -45,6 +47,10 @@ const clients = [
 export function ClientsPage() {
   const navigate = useNavigate()
   return (
+
+    <DashboardLayout>
+
+    
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -186,5 +192,8 @@ export function ClientsPage() {
         </CardContent>
       </Card>
     </div>
+
+    </DashboardLayout>
+  
   )
 }

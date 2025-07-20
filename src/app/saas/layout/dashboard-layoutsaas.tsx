@@ -20,14 +20,17 @@ import { EditClientPage } from "../pages/editclient"
 import { ApiKeyPage } from "../pages/api-key-page"
 import { ClientDetailsPage } from "../pages/clientdetails"
 
-export function DashboardLayout() {
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
       <SidebarInset>
         <DashboardHeader />
         <main className="flex-1 space-y-4 p-2 md:p-4 lg:p-8 pt-4 md:pt-6 min-h-0 overflow-auto">
-          <Routes>
+          {
+          children
+
+          /*<Routes>
             <Route path="/" element={<OverviewPage />} />
             <Route path="/saas/pages/clients-page" element={<ClientsPage />} />
             <Route path="/saas/pages/services-page" element={<ServicesPage />} />
@@ -40,7 +43,7 @@ export function DashboardLayout() {
             <Route path ="/saas/pages/api-key-page" element = {<ApiKeyPage />} />
             <Route path ="/saas/pages/clientdetails" element = {<ClientDetailsPage />} />
             <Route path ="/saas/pages/add-service-page" element = {<AddServicePage />} />
-          </Routes>
+          </Routes>*/}
         </main>
       </SidebarInset>
     </SidebarProvider>
