@@ -12,6 +12,7 @@
   "dependencies": {
     "@auth0/auth0-spa-js": "^2.2.0",
     "@capacitor/android": "^7.4.2",
+    "@capacitor/app": "^7.0.1",
     "@capacitor/core": "^7.4.2",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
@@ -52,7 +53,7 @@
     "framer-motion": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "lupyd-js": "https://github.com/lupyd/lupyd-js.git",
+    "lupyd-js": "https://github.com/lupyd/lupyd-js",
     "micromark": "^4.0.2",
     "micromark-extension-gfm-strikethrough": "^2.1.0",
     "micromark-extension-gfm-table": "^2.1.1",
