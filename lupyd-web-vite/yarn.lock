@@ -188,6 +188,11 @@
   resolved "https://registry.yarnpkg.com/@capacitor/android/-/android-7.4.2.tgz#8fa1b6fbedfbb8506df3444dddaea75cc09ee8a9"
   integrity sha512-FZ7M9NwFkljR7EP5eXiE32mAIfZNcYw2CzRMCG3rQu0u0ZaIoeOeq5/oK4YcDnGpNmu8jpngKJqZ+9OiSQSwDg==
 
+"@capacitor/app@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/@capacitor/app/-/app-7.0.1.tgz#0d0709fb4dde5046c24853f2d6b77a7ea411f748"
+  integrity sha512-ArlVZAAla4MwQoKh26x2AaTDOBh5Vhp1VhMKR3RwqZSsZnazKTFGNrPbr9Ez5r1knnEDfApyjwp1uZnXK1WTYQ==
+
 "@capacitor/cli@^7.4.2":
   version "7.4.2"
   resolved "https://registry.yarnpkg.com/@capacitor/cli/-/cli-7.4.2.tgz#bfd4672b811423cd2c70f1ec609ec6be229919c4"
@@ -3745,9 +3750,9 @@ lucide@^0.487.0:
   resolved "https://registry.yarnpkg.com/lucide/-/lucide-0.487.0.tgz#6701d2b0452fe58571d0f384dfcad7a79b7437c5"
   integrity sha512-SJk/ANI/Qu6ieS1uZqy6ZQcEB7/oH+gVtCGrmzcvSQKJVWsGSlbR/SMTxIdqqbb1/h+eJBSVkWB7I0jGnjuOFw==
 
-"lupyd-js@https://github.com/lupyd/lupyd-js.git":
+"lupyd-js@https://github.com/lupyd/lupyd-js":
   version "1.0.2"
-  resolved "https://github.com/lupyd/lupyd-js.git#8502a894044dc65f8008a839a61f2fb5ad47af8f"
+  resolved "https://github.com/lupyd/lupyd-js#8502a894044dc65f8008a839a61f2fb5ad47af8f"
   dependencies:
     "@auth0/auth0-spa-js" "^2.2.0"
     base-x "^5.0.1"
