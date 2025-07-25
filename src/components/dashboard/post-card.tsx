@@ -157,7 +157,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
 
   }
 
-  const postUrl = `${window.origin}/dashboard/post/${ulidStringify(post.id)}`
+  const postUrl = `${window.origin}/post/${ulidStringify(post.id)}`
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
@@ -186,7 +186,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
     <Card className="border-none shadow-sm">
       <CardHeader className="p-4 pb-0">
         <div className="flex justify-between items-center">
-          <Link to={`/dashboard/user/${post.by}`}>
+          <Link to={`/user/${post.by}`}>
             <div className="flex items-center space-x-3">
               <UserAvatar username={post.by} />
               <div>

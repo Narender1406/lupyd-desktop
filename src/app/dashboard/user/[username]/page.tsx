@@ -175,7 +175,7 @@ export default function ProfilePage() {
                       <>
                         <Button variant="outline" size="sm" onClick={
                           (((user?.settings ?? 0) & 1) == 1) ?
-                            () => router(`/dashboard/messages/${getUsername()}`) : undefined}>
+                            () => router(`/messages/${getUsername()}`) : undefined}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           Message
                         </Button>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router(`/dashboard/messages/${getUsername()}`)}>
+                          <DropdownMenuItem onClick={() => router(`/messages/${getUsername()}`)}>
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Message
                           </DropdownMenuItem>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                             {isFollowing ? "Unfollow" : "Follow"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router("/dashboard/settings")}>
+                          <DropdownMenuItem onClick={() => router("/settings")}>
                             <Settings className="h-4 w-4 mr-2" />
                             Settings
                           </DropdownMenuItem>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
         <Button
           size="icon"
           className="rounded-full h-14 w-14 shadow-lg"
-          onClick={() => router("/dashboard/settings")}
+          onClick={() => router("/settings")}
         >
           <Camera className="h-6 w-6" />
         </Button>

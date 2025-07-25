@@ -24,7 +24,7 @@ export default function LandingPage() {
               and personalized environment.
             </p>
             <div className="space-x-4">
-              <Link to="/dashboard">
+              <Link to="/">
                 <Button className="bg-white text-black hover:bg-gray-200">Get Started</Button>
               </Link>
 
@@ -91,7 +91,7 @@ export default function LandingPage() {
             </AnimatedCard>
           </div>
           <div className="flex justify-center mt-12">
-            <Link to="/features">
+            <Link to="/about/features">
               <Button className="bg-black text-white hover:bg-gray-800">Explore All Features</Button>
             </Link>
           </div>
@@ -155,7 +155,7 @@ export default function LandingPage() {
             </AnimatedCard>
           </div>
           <div className="flex justify-center mt-12">
-            <Link to="/features">
+            <Link to="/about/features">
               <Button className="bg-black text-white hover:bg-gray-800">View All Features</Button>
             </Link>
           </div>
@@ -172,7 +172,7 @@ export default function LandingPage() {
                 Experience the future of social networking
               </h2>
               <Link
-                to="/dashboard"
+                to="/"
                 className="inline-flex h-9 items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-medium text-black shadow transition-colors hover:bg-gray-200"
               >
                 Get Started

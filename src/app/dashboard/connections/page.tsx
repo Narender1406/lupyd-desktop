@@ -40,13 +40,13 @@ export default function ConnectionsPage() {
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r bg-white">
         <div className="p-4 border-b">
-          <Link to="/dashboard" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           <Link
-            to="/dashboard"
+            to="/"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
             onClick={() => setActiveTab("feed")}
           >
@@ -54,7 +54,7 @@ export default function ConnectionsPage() {
             <span>Home</span>
           </Link>
           <Link
-            to="/dashboard/messages"
+            to="/messages"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
             onClick={() => setActiveTab("messages")}
           >
@@ -62,7 +62,7 @@ export default function ConnectionsPage() {
             <span>Messages</span>
           </Link>
           <Link
-            to="/dashboard/connections"
+            to="/connections"
             className="flex items-center px-3 py-2 rounded-md bg-gray-100"
             onClick={() => setActiveTab("connections")}
           >
@@ -70,7 +70,7 @@ export default function ConnectionsPage() {
             <span>Connections</span>
           </Link>
           <Link
-            to="/dashboard/discover"
+            to="/discover"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
             onClick={() => setActiveTab("discover")}
           >
@@ -78,7 +78,7 @@ export default function ConnectionsPage() {
             <span>Discover</span>
           </Link>
           <Link
-            to="/dashboard/analytics"
+            to="/analytics"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
             onClick={() => setActiveTab("analytics")}
           >
@@ -87,7 +87,7 @@ export default function ConnectionsPage() {
           </Link>
           
           <Link
-            to="/dashboard/settings"
+            to="/settings"
             className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100"
             onClick={() => setActiveTab("settings")}
           >
@@ -115,7 +115,7 @@ export default function ConnectionsPage() {
         <header className="sticky top-0 z-10 bg-white border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
-              <Link to="/dashboard">
+              <Link to="/">
                 <span className="text-xl font-bold">Lupyd</span>
               </Link>
             </div>
@@ -146,31 +146,31 @@ export default function ConnectionsPage() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router("/dashboard")}>
+                  <DropdownMenuItem onClick={() => router("/")}>
                     <Home className="mr-2 h-4 w-4" />
                     <span>Home</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/messages")}>
+                  <DropdownMenuItem onClick={() => router("/messages")}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     <span>Messages</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/connections")}>
+                  <DropdownMenuItem onClick={() => router("/connections")}>
                     <Users className="mr-2 h-4 w-4" />
                     <span>Connections</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/discover")}>
+                  <DropdownMenuItem onClick={() => router("/discover")}>
                     <Compass className="mr-2 h-4 w-4" />
                     <span>Discover</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/activity")}>
+                  <DropdownMenuItem onClick={() => router("/activity")}>
                     <Activity className="mr-2 h-4 w-4" />
                     <span>Activity</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/analytics")}>
+                  <DropdownMenuItem onClick={() => router("/analytics")}>
                     <BarChart className="mr-2 h-4 w-4" />
                     <span>Analytics</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router("/dashboard/settings")}>
+                  <DropdownMenuItem onClick={() => router("/settings")}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>

@@ -55,16 +55,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Navigation items
   const navItems = [
-    { path: "/dashboard", label: "Home", icon: Home },
-    { path: "/dashboard/create-post", label: "Create Post", icon: PlusSquare },
-    { path: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-    { path: "/dashboard/discover", label: "Discover", icon: Compass },
-    { path: "/dashboard/activity", label: "Activity", icon: Activity },
-    { path: "/dashboard/saved-posts", label: "Saved", icon: Bookmark },
-    { path: "/dashboard/analytics", label: "Analytics", icon: BarChart },
-    { path: "/dashboard/subscription", label: "subscriptions", icon: Crown },
-    { path: "/saas", label: "B", icon: Crown },
-    { path: "/dashboard/settings", label: "Settings", icon: Settings },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/create-post", label: "Create Post", icon: PlusSquare },
+    { path: "/messages", label: "Messages", icon: MessageSquare },
+    { path: "/discover", label: "Discover", icon: Compass },
+    { path: "/activity", label: "Activity", icon: Activity },
+    { path: "/saved-posts", label: "Saved", icon: Bookmark },
+    { path: "/analytics", label: "Analytics", icon: BarChart },
+    { path: "/subscription", label: "subscriptions", icon: Crown },
+    { path: "/business", label: "Business", icon: Crown },
+    { path: "/settings", label: "Settings", icon: Settings },
   ]
 
   // Handle client-side hydration
@@ -86,7 +86,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       return
     }
 
-    const to = `/dashboard/discover?q=${encodeURIComponent(searchText.trim())}`
+    const to = `/discover?q=${encodeURIComponent(searchText.trim())}`
     router.push(to)
   }
 
@@ -95,7 +95,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white">
         <div className="p-4 border-b">
-          <Link to="/dashboard" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
           </Link>
         </div>
@@ -119,7 +119,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Link to={`/dashboard/user/${auth.username}`}>
+                <Link to={`/user/${auth.username}`}>
                   <UserAvatar username={username ?? ""} />
                 </Link>
                 <div className="ml-3">
@@ -150,7 +150,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
                 {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
-              <Link to="/dashboard" className="ml-2">
+              <Link to="/" className="ml-2">
                 <span className="text-xl font-bold">Lupyd</span>
               </Link>
             </div>
@@ -172,7 +172,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => router.push("/dashboard/messages")}
+                onClick={() => router.push("/messages")}
                 className="relative"
               >
                 <MessageSquare className="h-5 w-5" />
@@ -193,7 +193,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/user/${username}`)}>
+                    <DropdownMenuItem onClick={() => router.push(`/user/${username}`)}>
                       <div className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
@@ -202,7 +202,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {navItems.map((item) => {
                       const Icon = item.icon
                       // Skip Profile since we already added it above
-                      if (item.path === `/dashboard/user/${username}`) return null
+                      if (item.path === `/user/${username}`) return null
                       return (
                         <DropdownMenuItem key={item.path} onClick={() => router.push(item.path)}>
                           <div className="cursor-pointer">
