@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const supportTickets = [
   {
@@ -55,6 +56,7 @@ const faqItems = [
 
 export function SupportPage() {
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Support</h2>
@@ -198,5 +200,6 @@ export function SupportPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   )
 }

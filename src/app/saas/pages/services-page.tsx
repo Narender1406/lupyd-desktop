@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Progress } from "@/components/ui/progress"
 import { useNavigate } from "react-router-dom"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const services = [
   {
@@ -45,6 +46,7 @@ export function ServicesPage() {
   const navigate = useNavigate()
 
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -145,5 +147,6 @@ export function ServicesPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   )
 }

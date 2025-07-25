@@ -34,6 +34,10 @@ import { ClientDetailsPage } from './app/saas/pages/clientdetails'
 import { AddServicePage } from './app/saas/pages/add-service-page'
 
 import { OverviewPage } from './app/saas/pages/overview-page'
+import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
+import { MonitoringPage } from './app/saas/pages/monitoring-page'
+import { BillingPage } from './app/saas/pages/billing-page'
+import { SupportPage } from './app/saas/pages/support-page'
 
 
 
@@ -41,12 +45,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="about/" element={<LandingPage />} />
-        <Route path="about/community" element={<CommunityPage />} />
-        <Route path="about/features" element={<FeaturesPage />} />
-        <Route path="about/experience" element={<ExperiencePage />} />
-        <Route path="about/creator-tools" element={<CreatorToolsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/about/" element={<LandingPage />} />
+        <Route path="/about/community" element={<CommunityPage />} />
+        <Route path="/about/features" element={<FeaturesPage />} />
+        <Route path="/about/experience" element={<ExperiencePage />} />
+        <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
+        <Route path="/about/privacy" element={<PrivacyPage />} />
         <Route path="/assignUsername" element={<AssignUsernamePage />} />
 
         {/*        <Route path="/signin" element={<SignupPage />} />
@@ -54,6 +58,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         {/*        <Route path="/action" element={<ActionHandler />} />
 */}
+
         <Route path="/saved-posts" element={<SavedPostsPage />} />
         <Route path="/create-post" element={<CreatePostPage />} />
         <Route path="/connections" element={<ConnectionsPage />} />
@@ -67,6 +72,7 @@ function App() {
         <Route path="/user/:username" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/notification" element={<NotificationsPage />} />
+
 
         <Route path="/business" element={<OverviewPage />} />
         <Route path="/business/clients-page" element={<ClientsPage />} />
