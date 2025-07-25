@@ -259,7 +259,7 @@ export default function ActivityPage() {
                         </div>
                       </div>
                       <div className="mt-4">
-                        <Link to="/dashboard/analytics">
+                        <Link to="/analytics">
                           <Button variant="outline" size="sm" className="w-full">
                             View Full Analytics
                           </Button>

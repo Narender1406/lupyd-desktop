@@ -31,7 +31,7 @@ export default function AssignUsernamePage() {
 
     setBottomText("Username is being assigned...");
     getAuthHandler()!.assignUsername(username).then(() => {
-      navigate("/dashboard", { replace: true })
+      navigate("/", { replace: true })
     }).catch((err) => {
       console.error(err)
       snackbar("Username may have already exist")
@@ -41,7 +41,7 @@ export default function AssignUsernamePage() {
 
   useEffect(() => {
     if (auth.username) {
-      navigate("/dashboard", { replace: true })
+      navigate("/", { replace: true })
     }
   }, [auth])
 

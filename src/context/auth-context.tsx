@@ -37,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Missing AUDIENCE env var")
       }
 
-
       Auth0Handler.initialize(clientId, audience, (user) => {
         setUser(user || null)
         if (user) {

@@ -242,7 +242,7 @@ export default function SubscriptionPage() {
                     {plan.cta}
                   </Button>
                 ) : (
-                  <Link to={`/dashboard/subscription/checkout?plan&price=${plan.name.toLowerCase()}`}>
+                  <Link to={`/subscription/checkout?plan&price=${plan.name.toLowerCase()}`}>
                     <Button
                       className={`w-full ${
                         plan.popular
@@ -399,10 +399,10 @@ export default function SubscriptionPage() {
               questions asked.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/dashboard/subscription/checkout?plan=pro">
+              <Link to="/subscription/checkout?plan=pro">
                 <Button className="bg-white text-black hover:bg-gray-200">Start Free Trial</Button>
               </Link>
-              <Link to="/dashboard/subscription/contact">
+              <Link to="/subscription/contact">
                 <Button
                   variant="outline"
                   className="border-white text-white hover:bg-white hover:text-black bg-transparent"

@@ -3,11 +3,9 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2, Check } from "lucide-react"
+import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2  } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Link } from "react-router-dom"
 import { getNotifications, type NotificationProtos } from "lupyd-js"
 import { NotificationItem } from "@/app/dashboard/notification/notifications-page"
 import { useAuth } from "@/context/auth-context"
@@ -124,7 +122,7 @@ export function NotificationsDropdown() {
   }
 
   const handleClick = () => {
-    navigate("/dashboard/notification")
+    navigate("/notification")
   }
 
   const markAsRead = (id: Uint8Array, event: React.MouseEvent) => {
@@ -142,7 +140,7 @@ export function NotificationsDropdown() {
     setNotifications((prev) => prev.map((notif) => (indexedDB.cmp(notif.id, notification.id) ? { ...notif, read: true } : notif)))
 
     // Navigate to full notifications page
-    navigate("/dashboard/notification")
+    navigate("/notification")
   }
 
   return (
@@ -203,7 +201,7 @@ export function NotificationsDropdown() {
             <Button
               variant="ghost"
               className="w-full text-center text-black hover:bg-gray-100 font-medium"
-              onClick={() => navigate("/dashboard/notification")}
+              onClick={() => navigate("/notification")}
             >
               View all notifications
             </Button>
