@@ -38,6 +38,10 @@ import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
 import { MonitoringPage } from './app/saas/pages/monitoring-page'
 import { BillingPage } from './app/saas/pages/billing-page'
 import { SupportPage } from './app/saas/pages/support-page'
+import GroupsPage from './app/dashboard/groupchat/groupchat'
+import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
+import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
+import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
 
 
 
@@ -65,6 +69,10 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/activity" element={<ActivityPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/groupchat" element={<GroupsPage />} />
+        <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
+        <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
+        <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/subscription/checkout" element={<CheckoutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
