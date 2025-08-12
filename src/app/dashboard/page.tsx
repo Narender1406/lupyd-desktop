@@ -77,7 +77,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                   <Button variant="ghost" size="sm" className="w-full mt-2">
-                    View all
+                    View all 
                   </Button>
                 </CardContent>
               </Card>
