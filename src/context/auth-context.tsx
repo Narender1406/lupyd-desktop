@@ -10,8 +10,8 @@ type AuthContextType = {
   user: DecodedToken | null
   username: string | null
   isAuthenticated: boolean
-  logout: () => void
-  login: () => void
+  logout: () => Promise<void>
+  login: () => Promise<void>
 }
 
 
@@ -21,6 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Default to logged in for development
   const [user, setUser] = useState<DecodedToken | null>(null)
   const [username, setUsername] = useState<string | null>(null)
+
+  const [isReady, setIsReady] = useState(false)
 
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUsername(null)
         }
         console.log({ user });
-      })
+      }).then(() => setIsReady(true)).catch(console.error)
 
     }
 
@@ -56,6 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = () => getAuthHandler()!.login()
 
   const isAuthenticated = useMemo(() => username != null, [username])
+
+  if (!isReady) {
+    return (<div/>);
+  }
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login }}>{children}</AuthContext.Provider>

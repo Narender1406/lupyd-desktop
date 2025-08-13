@@ -3009,6 +3009,10 @@ firebase@^11.6.0:
     "@firebase/storage-compat" "0.3.23"
     "@firebase/util" "1.12.0"
 
+"firefly-client-js@https://github.com/ash-hashtag/firefly-client-js.git":
+  version "1.0.0"
+  resolved "https://github.com/ash-hashtag/firefly-client-js.git#d1a31afc2e75bda863cac5577d4faf38f9814af6"
+
 flat-cache@^4.0.0:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/flat-cache/-/flat-cache-4.0.1.tgz#0ece39fcb14ee012f4b0410bd33dd9c1f011127c"
@@ -3430,7 +3434,7 @@ lucide@^0.487.0:
 
 "lupyd-js@https://github.com/lupyd/lupyd-js.git":
   version "1.0.2"
-  resolved "https://github.com/lupyd/lupyd-js.git#8502a894044dc65f8008a839a61f2fb5ad47af8f"
+  resolved "https://github.com/lupyd/lupyd-js.git#f5331ed00ed5334ffb5a0962d2e6621878f5e193"
   dependencies:
     "@auth0/auth0-spa-js" "^2.2.0"
     base-x "^5.0.1"

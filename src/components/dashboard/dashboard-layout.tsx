@@ -216,11 +216,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <DropdownMenuItem
                       onClick={(username == null ? () => {
                         if (auth.user) {
-                          if (!auth.user["uname"]) {
-                            router.push("/assignUsername")
+                          if (!auth.username) {
+                            router.push("/signin")
                           }
                         } else {
-                          auth.login()
+                          auth.login().then(() => router.push("/signin"))
                         }
                       } : () => auth.logout())}
                       className="text-red-600"

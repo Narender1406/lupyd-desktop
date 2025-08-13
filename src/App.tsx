@@ -16,6 +16,9 @@ import DiscoverPage from './app/dashboard/discover/page'
 
 import MessagesPage from './app/dashboard/messages/page'
 import DashboardPage from './app/dashboard/page'
+
+
+
 import PostPage from './app/dashboard/post/[postId]/page'
 import SavedPostsPage from './app/dashboard/saved-posts/page'
 import SettingsPage from './app/dashboard/settings/page'
@@ -34,7 +37,7 @@ import { ClientDetailsPage } from './app/saas/pages/clientdetails'
 import { AddServicePage } from './app/saas/pages/add-service-page'
 
 import { OverviewPage } from './app/saas/pages/overview-page'
-
+import { lazy, Suspense } from 'react'
 
 
 function App() {
@@ -47,7 +50,7 @@ function App() {
         <Route path="about/experience" element={<ExperiencePage />} />
         <Route path="about/creator-tools" element={<CreatorToolsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/assignUsername" element={<AssignUsernamePage />} />
+        <Route path="/signin" element={<AssignUsernamePage />} />
 
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
@@ -68,7 +71,7 @@ function App() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/notification" element={<NotificationsPage />} />
 
-        <Route path="/business" element={<OverviewPage />} />
+        {/*        <Route path="/business" element={<OverviewPage />} />
         <Route path="/business/clients-page" element={<ClientsPage />} />
         <Route path="/business/services-page" element={<ServicesPage />} />
         <Route path="/business/add-client-page" element={<AddClientPage />} />
@@ -77,7 +80,7 @@ function App() {
         <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
         <Route path="/business/add-service-page" element={<AddServicePage />} />
 
-        {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
+*/}        {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
       </Routes>
     </BrowserRouter>)
 }
