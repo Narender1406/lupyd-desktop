@@ -37,7 +37,15 @@ import { ClientDetailsPage } from './app/saas/pages/clientdetails'
 import { AddServicePage } from './app/saas/pages/add-service-page'
 
 import { OverviewPage } from './app/saas/pages/overview-page'
-import { lazy, Suspense } from 'react'
+import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
+import { MonitoringPage } from './app/saas/pages/monitoring-page'
+import { BillingPage } from './app/saas/pages/billing-page'
+import { SupportPage } from './app/saas/pages/support-page'
+import GroupsPage from './app/dashboard/groupchat/groupchat'
+import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
+import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
+import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
+
 
 
 function App() {
@@ -51,18 +59,22 @@ function App() {
         <Route path="about/creator-tools" element={<CreatorToolsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/signin" element={<AssignUsernamePage />} />
-
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
         <Route path="/" element={<DashboardPage />} />
         {/*        <Route path="/action" element={<ActionHandler />} />
 */}
+
         <Route path="/saved-posts" element={<SavedPostsPage />} />
         <Route path="/create-post" element={<CreatePostPage />} />
         <Route path="/connections" element={<ConnectionsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/activity" element={<ActivityPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/groupchat" element={<GroupsPage />} />
+        <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
+        <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
+        <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/subscription/checkout" element={<CheckoutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
@@ -72,6 +84,10 @@ function App() {
         <Route path="/notification" element={<NotificationsPage />} />
 
         {/*        <Route path="/business" element={<OverviewPage />} />
+=======
+
+        <Route path="/business" element={<OverviewPage />} />
+>>>>>>> 575634bf011d899830078228c675e5b3879e19e2
         <Route path="/business/clients-page" element={<ClientsPage />} />
         <Route path="/business/services-page" element={<ServicesPage />} />
         <Route path="/business/add-client-page" element={<AddClientPage />} />

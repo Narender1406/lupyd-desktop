@@ -16,11 +16,15 @@ import {
   Activity,
   BarChart,
   Bookmark,
+  BriefcaseBusinessIcon,
   Compass,
   Crown,
   Home,
   LogOut,
   Menu,
+  MessageCircleCodeIcon,
+  MessageCircleDashed,
+  MessageCircleHeart,
   MessageSquare,
   PlusSquare,
   Search,
@@ -46,9 +50,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [username, setUsername] = useState<string | null>(null)
   const auth = useAuth()
 
-
-  
-
   useEffect(() => {
     setUsername(auth.username)
   }, [auth])
@@ -63,7 +64,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/analytics", label: "Analytics", icon: BarChart },
     { path: "/subscription", label: "subscriptions", icon: Crown },
-    { path: "/business", label: "Business", icon: Crown },
+    {path : "/groupchat", label:"groups", icon : MessageCircleCodeIcon},
+    { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
 
@@ -81,11 +83,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (keyCode != "Enter") {
       return
     }
-
     if (!searchText.trim()) {
       return
     }
-
     const to = `/discover?q=${encodeURIComponent(searchText.trim())}`
     router.push(to)
   }
@@ -142,9 +142,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen max-w-full overflow-hidden md:ml-64">
-        {/* Top Navigation Bar */}
-        <div className="sticky top-0 z-10 bg-white border-b">
+      <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64">
+        {/* Sticky Top Navigation Bar */}
+        <div className="sticky top-0 z-20 bg-white border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -154,6 +154,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="text-xl font-bold">Lupyd</span>
               </Link>
             </div>
+            {/* SEARCH BAR will always be sticky */}
             <div className="relative w-full max-w-md mx-4 hidden md:block">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -162,9 +163,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 className="pl-8 bg-gray-100 border-none"
                 onKeyDown={searchSubmit}
                 value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value)
-                }}
+                onChange={(e) => setSearchText(e.target.value)}
               />
             </div>
             <div className="flex items-center space-x-4">
@@ -201,7 +200,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </DropdownMenuItem>
                     {navItems.map((item) => {
                       const Icon = item.icon
-                      // Skip Profile since we already added it above
                       if (item.path === `/user/${username}`) return null
                       return (
                         <DropdownMenuItem key={item.path} onClick={() => router.push(item.path)}>
@@ -256,7 +254,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 )
               })}
             </nav>
-
             <div className="p-4 border-t">
               <div className="relative w-full">
                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -265,9 +262,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   placeholder="Search..."
                   className="pl-8 bg-gray-100 border-none w-full"
                   value={searchText}
-                  onChange={(e) => {
-                    setSearchText(e.target.value)
-                  }}
+                  onChange={(e) => setSearchText(e.target.value)}
                   onKeyDown={searchSubmit}
                 />
               </div>
@@ -275,9 +270,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         )}
 
-        {/* Page Content */}
+        {/* Page Content - only this area is scrollable! */}
         <div className="flex-1 overflow-auto">
-          <div className="container mx-auto p-4 md:p-6 max-w-full">{children}</div>
+          <div className="container mx-auto p-4 md:p-6 max-w-full">
+            {children}
+          </div>
         </div>
       </main>
     </div>

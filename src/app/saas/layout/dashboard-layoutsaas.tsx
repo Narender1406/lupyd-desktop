@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/app/saas/layout/dashboard-headersaas"
 import { SidebarInset } from "@/components/ui/sidebar"
 // Pages
 
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>

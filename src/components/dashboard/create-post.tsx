@@ -14,7 +14,7 @@ export function CreatePost() {
   const router = useNavigate()
 
   const goToCreatePost = () => {
-    router("/dashboard/create-post")
+    router("/create-post")
   }
   
 

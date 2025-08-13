@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const billingData = [
   {
@@ -35,6 +36,7 @@ const billingData = [
 
 export function BillingPage() {
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Billing</h2>
@@ -163,5 +165,6 @@ export function BillingPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   )
 }
