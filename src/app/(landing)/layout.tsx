@@ -92,14 +92,15 @@ export default function LandingLayout({
                     navigate("/")
                   } else {
                     if (auth.user && !auth.username) {
-                      navigate("/assignUsername")
+                      navigate("/signin")
                     } else {
-                      getAuthHandler()?.login().then(() => {
-                        navigate("/assignUsername")
-                      }).catch(err => {
-                        console.error(err)
-                        snackbar("Something went wrong")
-                      })
+                      auth.login().then(() => navigate("/signin"))
+                      // getAuthHandler()?.login().then(() => {
+                      //   navigate("/signin")
+                      // }).catch(err => {
+                      //   console.error(err)
+                      //   snackbar("Something went wrong")
+                      // })
                     }
                   }
                 }}

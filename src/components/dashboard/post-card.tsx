@@ -19,6 +19,7 @@ import van from "vanjs-core"
 import { useSnackbar } from "../snackbar"
 import { UserAvatar } from "../user-avatar"
 
+import LazyLoad from "react-lazyload"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
@@ -108,7 +109,9 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
     snackbar("Commenting...")
     // TODO: have better way to show progress
     createPost(details).then((comment) => {
-      setComments(comments => [comment, ...comments]);
+      if (comment) {
+        setComments(comments => [comment, ...comments]);
+      }
       setCommentText("")
     }).catch(err => {
       console.error(err);
@@ -227,7 +230,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
       <CardContent className="p-4">
         <p className="mb-4">{post.title}</p>
         {post.body.length > 0 &&
-          <PostBodiesElement {...PostProtos.PostBodies.decode(post.body)} />}
+          <LazyLoad><PostBodiesElement {...PostProtos.PostBodies.decode(post.body)} /></LazyLoad>}
 
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center space-x-4">

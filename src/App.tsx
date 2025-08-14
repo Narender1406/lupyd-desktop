@@ -16,6 +16,9 @@ import DiscoverPage from './app/dashboard/discover/page'
 
 import MessagesPage from './app/dashboard/messages/page'
 import DashboardPage from './app/dashboard/page'
+
+
+
 import PostPage from './app/dashboard/post/[postId]/page'
 import SavedPostsPage from './app/dashboard/saved-posts/page'
 import SettingsPage from './app/dashboard/settings/page'
@@ -42,6 +45,8 @@ import GroupsPage from './app/dashboard/groupchat/groupchat'
 import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
 import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
 import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
+import UserMessagePage from './app/dashboard/messages/[username]/page'
+import { FireflyProvider } from './context/firefly-context'
 
 
 
@@ -49,14 +54,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/about/" element={<LandingPage />} />
-        <Route path="/about/community" element={<CommunityPage />} />
-        <Route path="/about/features" element={<FeaturesPage />} />
-        <Route path="/about/experience" element={<ExperiencePage />} />
-        <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
-        <Route path="/about/privacy" element={<PrivacyPage />} />
-        <Route path="/assignUsername" element={<AssignUsernamePage />} />
-
+        <Route path="about/" element={<LandingPage />} />
+        <Route path="about/community" element={<CommunityPage />} />
+        <Route path="about/features" element={<FeaturesPage />} />
+        <Route path="about/experience" element={<ExperiencePage />} />
+        <Route path="about/creator-tools" element={<CreatorToolsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/signin" element={<AssignUsernamePage />} />
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
         <Route path="/" element={<DashboardPage />} />
@@ -78,11 +82,17 @@ function App() {
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/user/:username" element={<ProfilePage />} />
-        <Route path="/messages" element={<MessagesPage />} />
+        <Route element={<FireflyProvider />}>
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:username" element={<UserMessagePage />} />
+        </Route>
         <Route path="/notification" element={<NotificationsPage />} />
 
+        {/*        <Route path="/business" element={<OverviewPage />} />
+=======
 
         <Route path="/business" element={<OverviewPage />} />
+>>>>>>> 575634bf011d899830078228c675e5b3879e19e2
         <Route path="/business/clients-page" element={<ClientsPage />} />
         <Route path="/business/services-page" element={<ServicesPage />} />
         <Route path="/business/add-client-page" element={<AddClientPage />} />
@@ -91,7 +101,7 @@ function App() {
         <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
         <Route path="/business/add-service-page" element={<AddServicePage />} />
 
-        {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
+*/}
       </Routes>
     </BrowserRouter>)
 }
