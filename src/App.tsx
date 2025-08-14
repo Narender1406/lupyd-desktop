@@ -45,6 +45,8 @@ import GroupsPage from './app/dashboard/groupchat/groupchat'
 import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
 import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
 import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
+import UserMessagePage from './app/dashboard/messages/[username]/page'
+import { FireflyProvider } from './context/firefly-context'
 
 
 
@@ -80,7 +82,10 @@ function App() {
         <Route path="/discover" element={<DiscoverPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/user/:username" element={<ProfilePage />} />
-        <Route path="/messages" element={<MessagesPage />} />
+        <Route element={<FireflyProvider />}>
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:username" element={<UserMessagePage />} />
+        </Route>
         <Route path="/notification" element={<NotificationsPage />} />
 
         {/*        <Route path="/business" element={<OverviewPage />} />
@@ -96,7 +101,7 @@ function App() {
         <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
         <Route path="/business/add-service-page" element={<AddServicePage />} />
 
-*/}        {/*<Route path="/dashboard/messages/:username" element={<UserMessagePage />} />*/}
+*/}
       </Routes>
     </BrowserRouter>)
 }

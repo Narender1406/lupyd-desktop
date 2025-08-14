@@ -11,7 +11,8 @@ type AuthContextType = {
   username: string | null
   isAuthenticated: boolean
   logout: () => Promise<void>
-  login: () => Promise<void>
+  login: () => Promise<void>,
+  getToken: () => Promise<string | undefined>
 }
 
 
@@ -57,6 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => getAuthHandler()!.logout()
   const login = () => getAuthHandler()!.login()
 
+  const getToken = () => getAuthHandler()!.getToken()
+
   const isAuthenticated = useMemo(() => username != null, [username])
 
   if (!isReady) {
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken }}>{children}</AuthContext.Provider>
   )
 }
 

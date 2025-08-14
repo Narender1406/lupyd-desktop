@@ -11,7 +11,7 @@ import { useUserData } from "@/context/userdata-context"
 import { Compass, Filter, Hash, MessageSquare, Search, ThumbsUp, TrendingUp, Users } from "lucide-react"
 import { CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useState } from "react"
 
 // Mock data for trending topics
 // const trendingTopics = [
@@ -153,7 +153,7 @@ export default function DiscoverPage() {
     }
 
 
-    const to = `/dashboard/discover?q=${encodeURIComponent(searchText)}`
+    const to = `/discover?q=${encodeURIComponent(searchText)}`
 
     router(to)
 
@@ -532,7 +532,7 @@ function UserCard(user: UserProtos.User) {
   const userData = useUserData()
 
   const connect = () => {
-    router(`/dashboard/messages/${user.uname}`)
+    router(`/messages/${user.uname}`)
   }
 
   useEffect(() => {

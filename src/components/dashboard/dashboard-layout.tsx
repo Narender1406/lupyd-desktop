@@ -20,6 +20,7 @@ import {
   Compass,
   Crown,
   Home,
+  LogIn,
   LogOut,
   Menu,
   MessageCircleCodeIcon,
@@ -64,7 +65,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/analytics", label: "Analytics", icon: BarChart },
     { path: "/subscription", label: "subscriptions", icon: Crown },
-    {path : "/groupchat", label:"groups", icon : MessageCircleCodeIcon},
+    { path: "/groupchat", label: "groups", icon: MessageCircleCodeIcon },
     { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
@@ -115,7 +116,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )
           })}
         </nav>
-        {auth.isAuthenticated && (
+        {auth.isAuthenticated ? (
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -138,7 +139,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
             </div>
           </div>
-        )}
+        ) : <Button className="m-4" onClick={auth.login}> <LogIn/> <span> Sign In </span></Button>}
       </aside>
 
       {/* Main Content */}
