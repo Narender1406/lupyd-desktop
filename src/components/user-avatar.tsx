@@ -39,7 +39,7 @@ export function UserAvatar(props: { username: string }) {
   const fallback = <AvatarFallback>{props.username == "" ? "U" : props.username[0].toUpperCase()}</AvatarFallback>
 
   return (<>
-    <LazyLoad placeholder={fallback}>
+    <LazyLoad placeholder={<Avatar> fallback</Avatar>}>
       <Avatar>
         <AvatarImage src={src ?? ""} alt={props.username} loading="lazy" />
         {fallback}
