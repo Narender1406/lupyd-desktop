@@ -3448,7 +3448,7 @@ lucide@^0.487.0:
 
 "lupyd-js@https://github.com/lupyd/lupyd-js.git":
   version "1.0.2"
-  resolved "https://github.com/lupyd/lupyd-js.git#ce86c769a0aff6eb9617610f93e4643200a70a7d"
+  resolved "https://github.com/lupyd/lupyd-js.git#1498f593300b7ef77eec635cfa653787c2a68a7f"
   dependencies:
     "@auth0/auth0-spa-js" "^2.2.0"
     base-x "^5.0.1"
