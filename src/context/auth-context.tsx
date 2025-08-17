@@ -40,7 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Missing AUDIENCE env var")
       }
 
-      Auth0Handler.initialize(clientId, audience, (user) => {
+      const redirectUrl = `${window.location.origin}/signin`
+
+      Auth0Handler.initialize(clientId, audience, redirectUrl, (user) => {
         setUser(user || null)
         if (user) {
           setUsername(user.uname || null)
@@ -63,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = useMemo(() => username != null, [username])
 
   if (!isReady) {
-    return (<div/>);
+    return (<div />);
   }
 
   return (

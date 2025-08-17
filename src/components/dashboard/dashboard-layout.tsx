@@ -91,6 +91,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     router.push(to)
   }
 
+
+  const onSigninButtonClick = () => {
+    if (username) {
+      auth.logout()
+    } else {
+      if (auth.user) {
+        if (!auth.username) {
+          router.push("/signin")
+        }
+      } else {
+        auth.login().then(() => router.push("/signin"))
+      }
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
@@ -116,7 +131,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )
           })}
         </nav>
-        {auth.isAuthenticated ? (
+        {auth.username ? (
           <div className="p-4 border-t">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -131,7 +146,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => console.log("Logout")}
+                onClick={onSigninButtonClick}
                 className="text-gray-500 hover:text-black hover:bg-gray-100"
                 title="Logout"
               >
@@ -139,7 +154,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
             </div>
           </div>
-        ) : <Button className="m-4" onClick={auth.login}> <LogIn/> <span> Sign In </span></Button>}
+        ) : <Button className="m-4" onClick={onSigninButtonClick}> <LogIn /> <span> Sign In </span></Button>}
       </aside>
 
       {/* Main Content */}
@@ -213,15 +228,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     })}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={(username == null ? () => {
-                        if (auth.user) {
-                          if (!auth.username) {
-                            router.push("/signin")
-                          }
-                        } else {
-                          auth.login().then(() => router.push("/signin"))
-                        }
-                      } : () => auth.logout())}
+                      onClick={onSigninButtonClick}
                       className="text-red-600"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
