@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
 import { getAuthHandler, isValidUsername } from "lupyd-js";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
 import { AnimatedCard } from "@/components/animated-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +35,7 @@ export default function AssignUsernamePage() {
       return
     }
 
-    
+
     if (!isValidUsername(username)) {
       setBottomText("Invalid username, should be greater than 2 characters and less than 30 characters and should only contain a-zA-Z0-9_")
       return;
@@ -52,7 +52,7 @@ export default function AssignUsernamePage() {
     })
   }
 
-  const params = useParams()
+  const [params, _setParams] = useSearchParams()
 
   const [targetPath, setTargetPath] = useState<string>("")
 
@@ -66,10 +66,10 @@ export default function AssignUsernamePage() {
 
 
   useEffect(() => {
-    const code = params["code"]
+    const code = params.get("code")
     if (code) {
-
       setBottomText("")
+      console.log(`Handling redirected callback`)
       auth.handleRedirectCallback().then(state => {
         if ("targetPath" in state && typeof state["targetPath"] == "string") {
           setTargetPath(state["targetPath"])
@@ -77,6 +77,8 @@ export default function AssignUsernamePage() {
 
 
       }).catch(console.error)
+    } else {
+      console.log(`No redirection code`)
     }
 
   }, [])
