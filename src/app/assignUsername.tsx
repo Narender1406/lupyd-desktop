@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
 import { getAuthHandler, isValidUsername } from "lupyd-js";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
 import { AnimatedCard } from "@/components/animated-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,20 @@ export default function AssignUsernamePage() {
 
   const snackbar = useSnackbar()
 
+  const navigateToNext = () => {
+    const navigateTo = targetPath != "" ? targetPath : "/"
+    navigate(navigateTo, { replace: true })
+  }
+
+
   const onSubmit = () => {
+
+    if (!auth.user) {
+      setBottomText("Signin Attempt Failed")
+      return
+    }
+
+    
     if (!isValidUsername(username)) {
       setBottomText("Invalid username, should be greater than 2 characters and less than 30 characters and should only contain a-zA-Z0-9_")
       return;
@@ -30,8 +43,8 @@ export default function AssignUsernamePage() {
 
 
     setBottomText("Username is being assigned...");
-    getAuthHandler()!.assignUsername(username).then(() => {
-      navigate("/", { replace: true })
+    auth.assignUsername(username).then(() => {
+      navigateToNext()
     }).catch((err) => {
       console.error(err)
       snackbar("Username may have already exist")
@@ -39,11 +52,34 @@ export default function AssignUsernamePage() {
     })
   }
 
+  const params = useParams()
+
+  const [targetPath, setTargetPath] = useState<string>("")
+
+
   useEffect(() => {
     if (auth.username) {
-      navigate("/", { replace: true })
+      navigateToNext()
     }
+
   }, [auth])
+
+
+  useEffect(() => {
+    const code = params["code"]
+    if (code) {
+
+      setBottomText("")
+      auth.handleRedirectCallback().then(state => {
+        if ("targetPath" in state && typeof state["targetPath"] == "string") {
+          setTargetPath(state["targetPath"])
+        }
+
+
+      }).catch(console.error)
+    }
+
+  }, [])
 
 
   return (

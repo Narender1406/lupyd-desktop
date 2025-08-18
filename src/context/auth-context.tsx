@@ -12,7 +12,9 @@ type AuthContextType = {
   isAuthenticated: boolean
   logout: () => Promise<void>
   login: () => Promise<void>,
-  getToken: () => Promise<string | undefined>
+  getToken: () => Promise<string | undefined>,
+  handleRedirectCallback: () => Promise<any>,
+  assignUsername: (username: string) => Promise<void>,
 }
 
 
@@ -58,9 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const logout = () => getAuthHandler()!.logout()
-  const login = () => getAuthHandler()!.login()
+  const login = () => getAuthHandler()!.login({ targetPath: window.location.toString().slice(window.location.origin.length) })
+
+
+  const handleRedirectCallback = () => getAuthHandler()!.handleRedirectCallback()
 
   const getToken = () => getAuthHandler()!.getToken()
+
+  const assignUsername = (username: string) => getAuthHandler()!.assignUsername(username)
 
   const isAuthenticated = useMemo(() => username != null, [username])
 
@@ -69,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback, assignUsername }}>{children}</AuthContext.Provider>
   )
 }
 

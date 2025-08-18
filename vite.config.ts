@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 
@@ -30,7 +31,7 @@ export default defineConfig(({ mode }) => {
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
   return {
-    plugins: [react()],
+    plugins: [react(), visualizer()],
 
     define: Object.fromEntries(
       Object.entries(env).map(([key, val]) => [
@@ -47,7 +48,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 8080,
       proxy: buildProxy(emulatorAddr),
-      host: "0.0.0.0"
+      host: "0.0.0.0",
     },
   };
 });
