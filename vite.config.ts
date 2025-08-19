@@ -1,4 +1,5 @@
-import react from "@vitejs/plugin-react";
+// import react from "@vitejs/plugin-react";
+import preact from "@preact/preset-vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
@@ -31,7 +32,7 @@ export default defineConfig(({ mode }) => {
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
   return {
-    plugins: [react(), visualizer()],
+    plugins: [preact(), visualizer()],
 
     define: Object.fromEntries(
       Object.entries(env).map(([key, val]) => [
@@ -42,6 +43,15 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+
+        react: "preact/compat",
+        "react-dom": "preact/compat",
+      },
+    },
+
+    build: {
+      rollupOptions: {
+        treeshake: "smallest",
       },
     },
 
