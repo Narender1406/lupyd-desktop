@@ -4,6 +4,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
+import { terser } from "rollup-plugin-terser";
 
 // https://vite.dev/config/
 
@@ -70,6 +71,13 @@ export default defineConfig(({ mode }) => {
             }
           },
         },
+        plugins: [
+          terser({
+            output: {
+              comments: false,
+            },
+          }),
+        ],
       },
     },
 

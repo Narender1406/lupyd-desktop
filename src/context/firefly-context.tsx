@@ -23,7 +23,7 @@ const FireflyContext = createContext<FireflyContextType | undefined>(undefined)
 
 
 
-export function FireflyProvider() {
+export default function  FireflyProvider() {
   const auth = useAuth()
 
 

@@ -1,14 +1,14 @@
-import { useSnackbar } from "@/components/snackbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
-import { getAuthHandler, isValidUsername } from "lupyd-js";
+import {  isValidUsername } from "lupyd-js";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate,  useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
 import { AnimatedCard } from "@/components/animated-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 
 export default function AssignUsernamePage() {
@@ -20,7 +20,6 @@ export default function AssignUsernamePage() {
 
   const navigate = useNavigate()
 
-  const snackbar = useSnackbar()
 
   const navigateToNext = () => {
     const navigateTo = targetPath != "" ? targetPath : "/"
@@ -47,7 +46,7 @@ export default function AssignUsernamePage() {
       navigateToNext()
     }).catch((err) => {
       console.error(err)
-      snackbar("Username may have already exist")
+      toast({title: "Username may have already exist"})
       setBottomText("Username may have already exist")
     })
   }

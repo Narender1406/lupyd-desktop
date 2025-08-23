@@ -4,8 +4,6 @@ import type React from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { getAuthHandler } from "lupyd-js"
-import { useSnackbar } from "@/components/snackbar"
 
 export default function LandingLayout({
   children,
@@ -14,7 +12,6 @@ export default function LandingLayout({
 }) {
   const navigate = useNavigate()
   const auth = useAuth()
-  const snackbar =useSnackbar()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
