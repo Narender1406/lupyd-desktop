@@ -13,7 +13,6 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
 import {
   CalendarIcon,
   Clock,
@@ -52,6 +51,12 @@ import {
   ulidStringify,
 } from "lupyd-js"
 import { useSnackbar } from "@/components/snackbar"
+
+
+const format = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    month: 'long', day: 'numeric', year: 'numeric'
+  })
 
 interface MediaItem {
   file: File
@@ -383,7 +388,9 @@ export default function CreatePostPage() {
         postType,
       })
       const post = await createPost(details)
-      console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
+      if (post) {
+        console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
+      }
     } else {
       const postFiles: PickedFileUrl[] = []
       let bodyMarkdown = description
@@ -569,9 +576,8 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${
-                                  index === currentSlideIndex ? "border-black" : "border-transparent"
-                                }`}
+                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
+                                  }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -715,7 +721,7 @@ export default function CreatePostPage() {
                                     className="w-full justify-start text-left font-normal bg-transparent"
                                   >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {scheduleDate ? format(scheduleDate, "PPP") : "Select date"}
+                                    {scheduleDate ? format(scheduleDate) : "Select date"}
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -962,9 +968,8 @@ export default function CreatePostPage() {
                             {editHistory.map((entry, index) => (
                               <div
                                 key={index}
-                                className={`text-xs p-2 rounded border cursor-pointer ${
-                                  index === currentHistoryIndex ? "bg-black text-white" : "bg-gray-50 hover:bg-gray-100"
-                                }`}
+                                className={`text-xs p-2 rounded border cursor-pointer ${index === currentHistoryIndex ? "bg-black text-white" : "bg-gray-50 hover:bg-gray-100"
+                                  }`}
                                 onClick={() => {
                                   setTitle(entry.title)
                                   setDescription(entry.description)
@@ -1146,9 +1151,8 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${
-                                  index === currentSlideIndex ? "border-black" : "border-transparent"
-                                }`}
+                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
+                                  }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -1179,9 +1183,9 @@ export default function CreatePostPage() {
                               {isAnonymous
                                 ? "AN"
                                 : username
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .join("") || "U"}
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("") || "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -1210,7 +1214,7 @@ export default function CreatePostPage() {
                       <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                         <p className="text-sm text-gray-700 flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4" />
-                          Scheduled for {format(scheduleDate, "PPP")} at {scheduleTime}
+                          Scheduled for {format(scheduleDate) } at {scheduleTime}
                         </p>
                       </div>
                     )}
@@ -1271,9 +1275,9 @@ export default function CreatePostPage() {
                                 {isAnonymous
                                   ? "AN"
                                   : username
-                                      ?.split(" ")
-                                      .map((n) => n[0])
-                                      .join("") || "U"}
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("") || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <p className="text-sm">{isAnonymous ? "Anonymous" : username || "User"}</p>
