@@ -62,6 +62,14 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         treeshake: "smallest",
+        output: {
+          inlineDynamicImports: false,
+          manualChunks: (id: string) => {
+            if (id.includes("lucide")) {
+              return "lucide";
+            }
+          },
+        },
       },
     },
 
