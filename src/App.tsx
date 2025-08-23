@@ -42,11 +42,11 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 // import { MonitoringPage } from './app/saas/pages/monitoring-page'
 // import { BillingPage } from './app/saas/pages/billing-page'
 // import { SupportPage } from './app/saas/pages/support-page'
-import GroupsPage from './app/dashboard/groupchat/groupchat'
-import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
-import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
-import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
-import UserMessagePage from './app/dashboard/messages/[username]/page'
+// import GroupsPage from './app/dashboard/groupchat/groupchat'
+// import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
+// import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
+// import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
+// import UserMessagePage from './app/dashboard/messages/[username]/page'
 import { FireflyProvider } from './context/firefly-context'
 
 
@@ -90,6 +90,14 @@ const ExperiencePage  = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage  = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage  = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage  = lazy(() => import('./app/(landing)/privacy/page'));
+
+
+
+const GroupsPage  = lazy(() => import('./app/dashboard/groupchat/groupchat'))
+const CreateGroupPage  = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
+const GroupSettingsPage  = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
+const GroupInfoPage  = lazy(() => import('./app/dashboard/groupchat/groupinfopage/groupinfo'))
+const UserMessagePage  = lazy(() => import('./app/dashboard/messages/[username]/page'))
 
 
 
