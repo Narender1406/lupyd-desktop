@@ -3,6 +3,7 @@ import preact from "@preact/preset-vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
+import rollupPluginLicense from "rollup-plugin-license";
 
 // https://vite.dev/config/
 
@@ -32,7 +33,16 @@ export default defineConfig(({ mode }) => {
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
   return {
-    plugins: [preact(), visualizer()],
+    plugins: [
+      preact(),
+      rollupPluginLicense({
+        thirdParty: {
+          includePrivate: true,
+          output: "dist/third-party-licenses.txt",
+        },
+      }),
+      visualizer(),
+    ],
 
     define: Object.fromEntries(
       Object.entries(env).map(([key, val]) => [

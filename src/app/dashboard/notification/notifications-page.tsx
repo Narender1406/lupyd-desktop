@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2, MoreHorizontal, ArrowLeft, Check } from "lucide-react"
+import { Bell, Heart, MessageCircle, UserPlus, MoreHorizontal, ArrowLeft, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
