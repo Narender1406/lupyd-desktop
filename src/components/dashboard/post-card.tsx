@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Bookmark, Delete, Flag, MessageCircle, MoreVertical, Send, ThumbsDown, ThumbsUp } from "lucide-react"
-import { createPost, dateToRelativeString, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, UiIcon, ulidStringify } from "lupyd-js"
-import { micromark } from "micromark"
+import { createPost, dateToRelativeString, deletePost, FetchType, getPosts, type GetPostsData, getTimestampFromUlid, type PickedFileUrl, PostProtos, putVote, reportPost, ulidStringify } from "lupyd-js"
 import { type Extension, type HtmlExtension } from "micromark-util-types"
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
@@ -16,10 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/context/auth-context"
 import { useGlobalDialog } from "@/context/dialog-context"
 import van from "vanjs-core"
-import { useSnackbar } from "../snackbar"
 import { UserAvatar } from "../user-avatar"
 
 import LazyLoad from "react-lazyload"
+import { toast } from "@/hooks/use-toast"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
@@ -106,7 +105,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
       body: PostProtos.PostBody.create({ plainText: commentText })
     })
 
-    snackbar("Commenting...")
+    toast({ title: "Commenting..." })
     // TODO: have better way to show progress
     createPost(details).then((comment) => {
       if (comment) {
@@ -115,7 +114,7 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
       setCommentText("")
     }).catch(err => {
       console.error(err);
-      snackbar("Failed to create comment");
+      toast({ title: "Failed to create comment" });
     })
   }
 
@@ -164,17 +163,16 @@ export function PostCard(props: { post: FullPost, onDelete?: (id: Uint8Array) =>
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
-  const snackbar = useSnackbar()
 
   const report = async () => {
     await reportPost(post.id, "")
     setIsDropdownOpen(false)
-    snackbar("Post has been reported")
+    toast({ title: "Post has been reported" })
   }
 
   const deleteThisPost = async () => {
     await deletePost(post.id)
-    snackbar("Post has been deleted")
+    toast({ title: "Post has been deleted" })
     if (props.onDelete) {
       props.onDelete(post.id)
     }
@@ -368,15 +366,18 @@ function MarkdownToHTMLElement(props: { markdown: string, pickedFileUrls: Picked
 
   useEffect(() => {
     if (_ref.current) {
-      _ref.current.replaceChildren(buildHtmlElementFromMarkdown(markdown, pickedFileUrls, onLinkClicked))
+      buildHtmlElementFromMarkdown(markdown, pickedFileUrls, onLinkClicked).then(elements => _ref.current?.replaceChildren(elements))
     }
   }, [])
 
-  return (<div ref={_ref} className="lupyd-markdown"></div>)
+  return (<div ref={_ref} className="lupyd-markdown">{markdown}</div>)
 }
 
 
-function buildHtmlElementFromMarkdown(markdown: string, pickedFileUrls: PickedFileUrl[], onLinkClicked: (url: string) => void) {
+async function buildHtmlElementFromMarkdown(markdown: string, pickedFileUrls: PickedFileUrl[], onLinkClicked: (url: string) => void) {
+
+
+  const {micromark} = await import("micromark")
 
   let modifiedMarkdown = markdown
 
@@ -442,7 +443,7 @@ function buildHtmlElementFromMarkdown(markdown: string, pickedFileUrls: PickedFi
       anchor.download = title;
       anchor.target = "_blank";
       anchor.classList.add("theme-anchor");
-      anchor.replaceChildren(span(title), UiIcon("download"), span(size));
+      anchor.replaceChildren(span(title), span(size));
     } else {
       anchor.classList.add("theme-anchor");
       anchor.target = "_blank";

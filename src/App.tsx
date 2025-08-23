@@ -47,7 +47,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 // import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
 // import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
 // import UserMessagePage from './app/dashboard/messages/[username]/page'
-import { FireflyProvider } from './context/firefly-context'
+// import { FireflyProvider } from './context/firefly-context'
 
 
 
@@ -66,6 +66,7 @@ import { FireflyProvider } from './context/firefly-context'
 
 
 
+const FireflyProvider = lazy(() => import("./context/firefly-context"));
 
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));

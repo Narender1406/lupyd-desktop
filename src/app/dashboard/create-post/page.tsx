@@ -50,7 +50,6 @@ import {
   sanitizeFilename,
   ulidStringify,
 } from "lupyd-js"
-import { useSnackbar } from "@/components/snackbar"
 
 
 const format = (date: Date) =>
@@ -343,11 +342,10 @@ export default function CreatePostPage() {
 
   // Handle form submission
   const auth = useAuth()
-  const snackbar = useSnackbar()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth.isAuthenticated) {
-      snackbar("User is not authenticated")
+      toast({ title: "User is not authenticated" })
     }
 
     const submitter = (e.nativeEvent as SubmitEvent).submitter
@@ -1214,7 +1212,7 @@ export default function CreatePostPage() {
                       <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                         <p className="text-sm text-gray-700 flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4" />
-                          Scheduled for {format(scheduleDate) } at {scheduleTime}
+                          Scheduled for {format(scheduleDate)} at {scheduleTime}
                         </p>
                       </div>
                     )}

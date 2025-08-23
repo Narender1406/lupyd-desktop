@@ -1,6 +1,5 @@
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -37,8 +36,8 @@ import {
 } from "lucide-react";
 import { useFirefly } from "@/context/firefly-context";
 import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringify } from "lupyd-js";
-import { useSnackbar } from "@/components/snackbar";
 import InfiniteScroll from "react-infinite-scroll-component";
+import { toast } from "@/hooks/use-toast";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -122,7 +121,6 @@ export default function UserMessagePage() {
     }
   }
 
-  const snackbar = useSnackbar()
   useEffect(() => {
     if (!sender || !receiver) {
       return
@@ -145,7 +143,7 @@ export default function UserMessagePage() {
       getOlderMessages()
     }).catch(err => {
       console.error(err)
-      snackbar(`User may not allow chat requests`)
+      toast({ title: `User may not allow chat requests`})
       setChatInitiated(false)
     })
 
