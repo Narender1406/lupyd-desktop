@@ -249,11 +249,16 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-
-                    <div>
-                      <Label htmlFor="allowChats">Allow Chats</Label>
-                      <Switch id="allowChats" checked={allowChats} onCheckedChange={(e) => setAllowChats(e)} />
-                    </div>
+                    <div className="flex items-center gap-2">
+                    <Label htmlFor="allowChats" className="text-base font-medium text-gray-700">
+                    Allow Chats
+                   </Label>
+                   <Switch
+                   id="allowChats"
+                   checked={allowChats}
+                   onCheckedChange={setAllowChats}
+                   />
+                  </div>
 
                     <Separator />
                     <div className="flex justify-end">
