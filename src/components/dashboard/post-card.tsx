@@ -327,7 +327,7 @@ export function PostBodyElement(body: PostBody) {
   } else if (body.plainText) {
     return <p>{body.plainText}</p>
   } else {
-    return <p>unsupported body format</p>
+    return <p></p>
   }
 }
 
