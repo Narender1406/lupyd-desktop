@@ -450,7 +450,7 @@ export default function CreatePostPage() {
     }
 
     // Navigate back to dashboard after posting
-    router("/dashboard")
+    router("/")
   }
 
   return (
@@ -1243,7 +1243,7 @@ export default function CreatePostPage() {
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto bg-transparent"
-                      onClick={() => router("/dashboard")}
+                      onClick={() => router("/")}
                     >
                       Cancel
                     </Button>
