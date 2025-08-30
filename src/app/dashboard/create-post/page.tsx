@@ -437,7 +437,9 @@ export default function CreatePostPage() {
         (total, sent) => console.log(`${sent}/${total}`),
       )
       if (post) {
-        console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
+        const s = `Post Uploaded successfully ${ulidStringify(post.id)}`
+        console.log(s)
+        toast({ title: s })
       } else {
         console.error(`Failed to upload post`)
         return
