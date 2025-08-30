@@ -4,7 +4,7 @@ import { lazy, Suspense } from 'react'
 
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { OverviewPage } from './app/saas/pages/overview-page';
+// import { OverviewPage } from './app/saas/pages/overview-page';
 // import CommunityPage from './app/(landing)/community/page'
 // import CreatorToolsPage from './app/(landing)/creator-tools/page'
 // import ExperiencePage from './app/(landing)/experience/page'
@@ -147,12 +147,10 @@ function App() {
         </Route>
         <Route path="/notification" element={<NotificationsPage />} />
 
-        <Route path="/business" element={<OverviewPage />} />
         {/* 
-=======
 
         <Route path="/business" element={<OverviewPage />} />
->>>>>>> 575634bf011d899830078228c675e5b3879e19e2
+        <Route path="/business" element={<OverviewPage />} />
         <Route path="/business/clients-page" element={<ClientsPage />} />
         <Route path="/business/services-page" element={<ServicesPage />} />
         <Route path="/business/add-client-page" element={<AddClientPage />} />
