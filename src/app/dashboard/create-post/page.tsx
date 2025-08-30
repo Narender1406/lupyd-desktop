@@ -437,7 +437,9 @@ export default function CreatePostPage() {
         (total, sent) => console.log(`${sent}/${total}`),
       )
       if (post) {
-        console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
+        const s = `Post Uploaded successfully ${ulidStringify(post.id)}`
+        console.log(s)
+        toast({ title: s })
       } else {
         console.error(`Failed to upload post`)
         return
@@ -450,7 +452,7 @@ export default function CreatePostPage() {
     }
 
     // Navigate back to dashboard after posting
-    router("/dashboard")
+    router("/")
   }
 
   return (
@@ -1243,7 +1245,7 @@ export default function CreatePostPage() {
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto bg-transparent"
-                      onClick={() => router("/dashboard")}
+                      onClick={() => router("/")}
                     >
                       Cancel
                     </Button>
