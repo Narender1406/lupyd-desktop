@@ -64,8 +64,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/activity", label: "Activity", icon: Activity },
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
     { path: "/analytics", label: "Analytics", icon: BarChart },
-    { path: "/subscription", label: "subscriptions", icon: Crown },
-    { path: "/groupchat", label: "groups", icon: MessageCircleCodeIcon },
+    { path: "/subscription", label: "Subscriptions", icon: Crown },
+    { path: "/groupchat", label: "Groups", icon: MessageCircleCodeIcon },
     { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
