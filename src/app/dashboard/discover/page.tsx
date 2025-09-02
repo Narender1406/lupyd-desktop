@@ -12,6 +12,7 @@ import { Compass, Filter, Hash, MessageSquare, Search, ThumbsUp, TrendingUp, Use
 import { CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import React, { useEffect, useState } from "react"
+import { UserAvatar } from "@/components/user-avatar"
 
 // Mock data for trending topics
 // const trendingTopics = [
@@ -553,10 +554,7 @@ function UserCard(user: UserProtos.User) {
   return (<>
     <div key={user.uname} className="flex items-center justify-between">
       <div className="flex items-center min-w-0">
-        <Avatar className="h-10 w-10 flex-shrink-0">
-          <AvatarImage src={pfpSrc} alt={user.uname} />
-          <AvatarFallback>{fallback}</AvatarFallback>
-        </Avatar>
+        <UserAvatar username={user.uname}/>
         <div className="ml-3 overflow-hidden">
           <p className="font-medium text-sm truncate">{user.uname}</p>
           <div className="text-xs text-muted-foreground truncate">
