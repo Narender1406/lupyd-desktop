@@ -49,7 +49,9 @@ import {
   PostProtos,
   sanitizeFilename,
   ulidStringify,
+  Utils,
 } from "lupyd-js"
+import { Progress } from "@/components/ui/progress"
 
 
 const format = (date: Date) =>
@@ -342,6 +344,8 @@ export default function CreatePostPage() {
 
   // Handle form submission
   const auth = useAuth()
+  const [uploadingPost, setUploadingPost] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0.0)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth.isAuthenticated) {
@@ -379,71 +383,102 @@ export default function CreatePostPage() {
       postType = PostProtos.postType.SAFE
     }
 
-    if (mediaItems.length == 0) {
-      const details = PostProtos.CreatePostDetails.create({
-        title,
-        body: PostProtos.PostBody.create({ plainText: description }),
-        postType,
-      })
-      const post = await createPost(details)
-      if (post) {
-        console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
-      }
-    } else {
-      const postFiles: PickedFileUrl[] = []
-      let bodyMarkdown = description
+    if (uploadingPost) {
+      return
+    }
+    try {
+      setUploadingPost(true)
+      setUploadProgress(0.0)
 
-      for (const e of mediaItems) {
-        const cdnUrl = `${CDN_STORAGE}/posts/${sanitizeFilename(e.file.name)}`
-        // const url = e.previewUrl // for preview
-        const url = cdnUrl
-        let name = e.file.name
-        const mimeType = e.file.type
 
-        if (mimeType.startsWith("image")) {
-          bodyMarkdown += `\n![${name}](${url})`
-        } else if (mimeType.startsWith("video")) {
-          bodyMarkdown += `\n![|Video|${name}](${url})`
-        } else if (mimeType.startsWith("audio")) {
-          bodyMarkdown += `\n![|Audio|${name}](${url})`
+      if (mediaItems.length == 0) {
+        const details = PostProtos.CreatePostDetails.create({
+          title,
+          body: PostProtos.PostBody.create({ plainText: description }),
+          postType,
+        })
+
+        // fake interpolate for better user experience
+        setUploadProgress(0.4)
+        const post = await createPost(details)
+        if (post) {
+          console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
         } else {
-          bodyMarkdown += `\n![|File|${name}](${url})`
+          throw Error(`Post failed to upload`)
         }
 
-        const length = BigInt(e.file.size)
-        name = cdnUrl // will be replaced by /apicdn with an actual url
-        const file = PostProtos.File.create({ length, name, mimeType })
-        postFiles.push({
-          blobUrl: e.previewUrl,
-          cdnUrl,
-          file,
+        setUploadProgress(1.0)
+      } else {
+        const postFiles: PickedFileUrl[] = []
+        let bodyMarkdown = description
+
+        for (const e of mediaItems) {
+          const cdnUrl = `${CDN_STORAGE}/posts/${sanitizeFilename(e.file.name)}`
+          // const url = e.previewUrl // for preview
+          const url = cdnUrl
+          let name = e.file.name
+          const mimeType = e.file.type
+
+          if (mimeType.startsWith("image")) {
+            bodyMarkdown += `\n![${name}](${url})`
+          } else if (mimeType.startsWith("video")) {
+            bodyMarkdown += `\n![|Video|${name}](${url})`
+          } else if (mimeType.startsWith("audio")) {
+            bodyMarkdown += `\n![|Audio|${name}](${url})`
+          } else {
+            bodyMarkdown += `\n![|File|${name}](${url})`
+          }
+
+          const length = BigInt(e.file.size)
+          name = cdnUrl // will be replaced by /apicdn with an actual url
+          const file = PostProtos.File.create({ length, name, mimeType })
+          postFiles.push({
+            blobUrl: e.previewUrl,
+            cdnUrl,
+            file,
+          })
+        }
+
+        console.log(`Final markdown "${bodyMarkdown}"`)
+        const fields = PostProtos.CreatePostDetails.create({
+          title,
+          body: PostProtos.PostBody.create({ markdown: bodyMarkdown }),
+          postType,
         })
+        const files = postFiles.map((e) => e.file)
+        const details = PostProtos.CreatePostWithFiles.create({
+          fields,
+          files,
+        })
+        const post = await createPostWithFiles(
+          details,
+          mediaItems.map((e) => e.previewUrl),
+          (total, sent) => {
+            console.log(`uploading: ${sent}/${total}`);
+            setUploadProgress(sent / total)
+          },
+        )
+        setUploadProgress(1.0)
+        if (post) {
+          const s = `Post Uploaded successfully ${ulidStringify(post.id)}`
+          console.log(s)
+          toast({ title: s })
+        } else {
+          throw Error(`Failed to upload post`)
+        }
       }
 
-      console.log(`Final markdown "${bodyMarkdown}"`)
-      const fields = PostProtos.CreatePostDetails.create({
-        title,
-        body: PostProtos.PostBody.create({ markdown: bodyMarkdown }),
-        postType,
+      // Navigate back to dashboard after posting
+      router("/")
+
+    } catch (e) {
+      console.error(e)
+      toast({
+        title: "Failed to upload post"
       })
-      const files = postFiles.map((e) => e.file)
-      const details = PostProtos.CreatePostWithFiles.create({
-        fields,
-        files,
-      })
-      const post = await createPostWithFiles(
-        details,
-        mediaItems.map((e) => e.previewUrl),
-        (total, sent) => console.log(`${sent}/${total}`),
-      )
-      if (post) {
-        const s = `Post Uploaded successfully ${ulidStringify(post.id)}`
-        console.log(s)
-        toast({ title: s })
-      } else {
-        console.error(`Failed to upload post`)
-        return
-      }
+
+    } finally {
+      setUploadingPost(false)
     }
 
     // Clear draft if it exists
@@ -451,8 +486,6 @@ export default function CreatePostPage() {
       localStorage.removeItem("postDraft")
     }
 
-    // Navigate back to dashboard after posting
-    router("/")
   }
 
   return (
@@ -762,6 +795,10 @@ export default function CreatePostPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 flex flex-wrap gap-3">
+
+                      <Progress value={Math.floor(100 * uploadProgress)}/>
+
+                      
                       <Button type="submit" className="flex-1 sm:flex-none" id="publish-button">
                         Publish Now
                       </Button>
@@ -1336,3 +1373,4 @@ export default function CreatePostPage() {
     </DashboardLayout>
   )
 }
+

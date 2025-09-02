@@ -9,7 +9,7 @@ import { terser } from "rollup-plugin-terser";
 // https://vite.dev/config/
 
 const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
-  return {
+  const proxy = {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
@@ -26,10 +26,15 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
       rewrite: (path) => path.replace(/^\/cdn/, ""),
     },
   };
+
+  console.log(proxy);
+
+  return proxy;
 };
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "NEXT_PUBLIC_");
+  console.log(env);
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
