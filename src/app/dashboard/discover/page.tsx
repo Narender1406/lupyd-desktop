@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserData } from "@/context/userdata-context"
 import { Compass, Filter, Hash, MessageSquare, Search, ThumbsUp, TrendingUp, Users } from "lucide-react"
 import { CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import React, { useEffect, useState } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import React, { useEffect, useMemo, useState } from "react"
 import { UserAvatar } from "@/components/user-avatar"
+import { useAuth } from "@/context/auth-context"
 
 // Mock data for trending topics
 // const trendingTopics = [
@@ -525,10 +526,8 @@ function UserCard(user: UserProtos.User) {
   const router = useNavigate()
   const [isFollowing, setIsFollowing] = useState(false)
 
-  const pfpSrc = `${CDN_STORAGE}/users/${user.uname}`
-  const fallback = ""
   const bio = user.bio.length > 0 ? PostProtos.PostBody.decode(user.bio) : PostProtos.PostBody.create({ plainText: "" })
-
+  const auth = useAuth()
 
   const userData = useUserData()
 
@@ -551,26 +550,33 @@ function UserCard(user: UserProtos.User) {
     }
   }
 
+  const isMe = useMemo(() => auth.username == user.uname, [auth])
+
   return (<>
-    <div key={user.uname} className="flex items-center justify-between">
-      <div className="flex items-center min-w-0">
-        <UserAvatar username={user.uname}/>
-        <div className="ml-3 overflow-hidden">
-          <p className="font-medium text-sm truncate">{user.uname}</p>
-          <div className="text-xs text-muted-foreground truncate">
-            <PostBodyElement {...bio} />
+    <Link to={`/user/${user.uname}`}>
+      <div key={user.uname} className="flex items-center justify-between">
+        <div className="flex items-center min-w-0">
+          <UserAvatar username={user.uname} />
+          <div className="ml-3 overflow-hidden">
+            <p className="font-medium text-sm truncate">{user.uname}</p>
+            <div className="text-xs text-muted-foreground truncate">
+              <PostBodyElement {...bio} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {((user.settings & 1) == 1)  &&
-        <Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={connect}>
-          Connect
-        </Button>
-      }
-      <Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={handleFollow}>
-        {!isFollowing ? "Follow" : "Unfollow"}
-      </Button>
-    </div>
+        {(!isMe && (user.settings & 1) == 1) &&
+          <Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={connect}>
+            Connect
+          </Button>
+        }
+        {
+          !isMe &&
+          (<Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={handleFollow}>
+            {!isFollowing ? "Follow" : "Unfollow"}
+          </Button>
+          )}
+      </div>
+    </Link>
   </>)
 }
