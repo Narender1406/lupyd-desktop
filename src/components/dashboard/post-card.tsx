@@ -370,14 +370,27 @@ async function buildHtmlElementFromMarkdown(
   for (const f of pickedFileUrls) {
     finalHtml = finalHtml.replaceAll(f.cdnUrl, f.blobUrl)
   }
-  const { span, div, audio, video } = van.tags
+  const { span, div, audio, video, a } = van.tags
   const el = div({ innerHTML: finalHtml, class: "lupyd-markdown" })
 
   // 1) Images: wrap each in a fixed-height responsive window using object-contain
   Array.from(el.querySelectorAll("img")).forEach((i: HTMLImageElement) => {
+
+
+    const tags = ["|Video|", "|Audio|", "|File|"]
+    if (tags.some(e => i.alt.startsWith(e))) {
+      const aTag = a({
+        textContent: i.alt,
+        href: i.src
+      })
+
+      i.replaceWith(aTag)
+      return
+    }
+
+    
     i.loading = "lazy"
     try {
-      // @ts-expect-error decoding exists on HTMLImageElement
       i.decoding = "async"
     } catch {}
     i.classList.add("w-full", "h-full", "object-contain")
@@ -397,6 +410,7 @@ async function buildHtmlElementFromMarkdown(
     if (anchor.textContent && anchor.textContent.startsWith("|Video|")) {
       const title = (anchor.textContent ?? "").replace("|Video|", "")
       const videoEl = video({
+        src,
         preload: "metadata",
         controls: true,
         title,
@@ -414,6 +428,7 @@ async function buildHtmlElementFromMarkdown(
     } else if (anchor.textContent && anchor.textContent.startsWith("|Audio|")) {
       const title = (anchor.textContent ?? "").replace("|Audio|", "")
       const audioEl = audio({
+        src,
         title,
         controls: true,
         preload: "metadata",
