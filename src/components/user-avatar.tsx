@@ -41,7 +41,7 @@ export function UserAvatar(props: { username: string }) {
   return (<>
     <LazyLoad placeholder={<Avatar> fallback</Avatar>}>
       <Avatar>
-        <AvatarImage src={props.username == "" ? "" : src} alt={props.username} loading="lazy" />
+        <AvatarImage className="object-cover"  src={props.username == "" ? "" : src} alt={props.username} loading="lazy" />
         {fallback}
       </Avatar>
     </LazyLoad>

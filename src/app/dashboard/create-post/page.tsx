@@ -422,11 +422,11 @@ export default function CreatePostPage() {
           if (mimeType.startsWith("image")) {
             bodyMarkdown += `\n![${name}](${url})`
           } else if (mimeType.startsWith("video")) {
-            bodyMarkdown += `\n![|Video|${name}](${url})`
+            bodyMarkdown += `\n[|Video|${name}](${url})`
           } else if (mimeType.startsWith("audio")) {
-            bodyMarkdown += `\n![|Audio|${name}](${url})`
+            bodyMarkdown += `\n[|Audio|${name}](${url})`
           } else {
-            bodyMarkdown += `\n![|File|${name}](${url})`
+            bodyMarkdown += `\n[|File|${name}](${url})`
           }
 
           const length = BigInt(e.file.size)
