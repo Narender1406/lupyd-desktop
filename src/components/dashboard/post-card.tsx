@@ -231,10 +231,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
         {showComments && (
           <div className="mt-4 pt-4 border-t">
             <div className="flex items-center space-x-2 mb-4">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Your Avatar" />
-                <AvatarFallback>YA</AvatarFallback>
-              </Avatar>
+              <UserAvatar username={auth.username ?? ""}/>
               <Input
                 placeholder="Write a comment..."
                 className="flex-1"
