@@ -286,12 +286,17 @@ export default function SettingsPage() {
                         <h3 className="font-medium">Delete Account</h3>
                         <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                       </div>
-                      <Button
-                        onClick={deleteAccount}
-                        className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
-                      >
-                        Delete
+                           <Button
+                            onClick={() => {
+                          if (window.confirm("Are you sure you want to delete your account permanently?")) {
+                           deleteAccount();
+                        }
+                        }}
+                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
+>
+                          Delete
                       </Button>
+
                     </div>
                   </CardContent>
                 </Card>
