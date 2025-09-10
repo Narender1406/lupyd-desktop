@@ -134,6 +134,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
     await reportPost(post.id, "")
     setIsDropdownOpen(false)
     toast({ title: "Post has been reported" })
+    
   }
 
   const deleteThisPost = async () => {
@@ -170,12 +171,21 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={report}>
+              {/*<DropdownMenuItem onClick={report} >
                 <div className="flex items-center cursor-pointer">
                   <Flag className="mr-2 h-4 w-4" />
                   <span>Report</span>
                 </div>
-              </DropdownMenuItem>
+              </DropdownMenuItem>*/}
+              <DropdownMenuItem onClick={() => {
+                report();
+                alert("Successfully reported!");
+              }}>
+              <div className="flex items-center cursor-pointer">
+                <Flag className="mr-2 h-4 w-4" />
+                <span>Report</span>
+              </div>
+            </DropdownMenuItem>
 
               {auth.username === post.by && (
                 <DropdownMenuItem onClick={deleteThisPost}>
