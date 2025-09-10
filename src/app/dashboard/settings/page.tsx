@@ -268,35 +268,6 @@ export default function SettingsPage() {
                 </Card>
               </AnimatedCard>
 
-              <AnimatedCard delay={0.1}>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Account Activity</CardTitle>
-                    <CardDescription>View and manage your account activity</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 mr-3 text-muted-foreground" />
-                        <div>
-                          <h3 className="font-medium">Login Activity</h3>
-                          <p className="text-sm text-muted-foreground">See where you're logged in and log out</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                      <div className="flex items-center">
-                        <Download className="h-5 w-5 mr-3 text-muted-foreground" />
-                        <div>
-                          <h3 className="font-medium">Download Your Information</h3>
-                          <p className="text-sm text-muted-foreground">Download a copy of your data</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-
               <AnimatedCard delay={0.2}>
                 <Card className="border-none shadow-sm">
                   <CardHeader className="p-4 sm:p-6">
@@ -315,12 +286,17 @@ export default function SettingsPage() {
                         <h3 className="font-medium">Delete Account</h3>
                         <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                       </div>
-                      <Button
-                        onClick={deleteAccount}
-                        className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
-                      >
-                        Delete
+                           <Button
+                            onClick={() => {
+                          if (window.confirm("Are you sure you want to delete your account permanently?")) {
+                           deleteAccount();
+                        }
+                        }}
+                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
+>
+                          Delete
                       </Button>
+
                     </div>
                   </CardContent>
                 </Card>
