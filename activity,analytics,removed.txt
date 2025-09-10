@@ -1,0 +1,1 @@
+{ path: "/activity", label: "Activity", icon: Activity },{ path: "/analytics", label: "Analytics", icon: BarChart },

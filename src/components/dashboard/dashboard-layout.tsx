@@ -50,12 +50,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/create-post", label: "Create Post", icon: PlusSquare },
     { path: "/messages", label: "Messages", icon: MessageSquare },
     { path: "/discover", label: "Discover", icon: Compass },
-    { path: "/activity", label: "Activity", icon: Activity },
+    
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
-    { path: "/analytics", label: "Analytics", icon: BarChart },
+    
     { path: "/subscription", label: "Subscriptions", icon: Crown },
     { path: "/groupchat", label: "Groups", icon: MessageCircle },
-    { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
+    { path: "/subscription", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
 
