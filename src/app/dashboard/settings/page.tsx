@@ -275,12 +275,12 @@ export default function SettingsPage() {
                     <CardDescription>Irreversible actions for your account</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                   {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Deactivate Account</h3>
                         <p className="text-sm text-muted-foreground">Temporarily disable your account</p>
                       </div>
-                    </div>
+                    </div>*/}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Delete Account</h3>
@@ -288,6 +288,7 @@ export default function SettingsPage() {
                       </div>
                            <Button
                             onClick={() => {
+                              
                           if (window.confirm("Are you sure you want to delete your account permanently?")) {
                            deleteAccount();
                         }
