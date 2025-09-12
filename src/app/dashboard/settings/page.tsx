@@ -292,8 +292,7 @@ export default function SettingsPage() {
                            deleteAccount();
                         }
                         }}
-                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
->
+                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0">
                           Delete
                       </Button>
 
@@ -319,24 +318,7 @@ export default function SettingsPage() {
                     <CardDescription>Manage your account security settings</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Password</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="currentPassword">Current password</Label>
-                          <Input id="currentPassword" type="password" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="newPassword">New password</Label>
-                          <Input id="newPassword" type="password" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm new password</Label>
-                          <Input id="confirmPassword" type="password"
-                            value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
-                        </div>
-                      </div>
-                    </div>
+                    
 
                     <Separator />
 
