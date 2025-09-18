@@ -18,6 +18,7 @@ import {
   BellOff,
   Accessibility,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -275,12 +276,12 @@ export default function SettingsPage() {
                     <CardDescription>Irreversible actions for your account</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                   {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Deactivate Account</h3>
                         <p className="text-sm text-muted-foreground">Temporarily disable your account</p>
                       </div>
-                    </div>*/}
+                    </div>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Delete Account</h3>
@@ -288,7 +289,6 @@ export default function SettingsPage() {
                       </div>
                            <Button
                             onClick={() => {
-                              
                           if (window.confirm("Are you sure you want to delete your account permanently?")) {
                            deleteAccount();
                         }
@@ -501,16 +501,7 @@ function PrivacySection() {
               </div>
               <Switch id="publicProfile" defaultChecked />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="flex items-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  <Label htmlFor="activityVisibility">Activity Visibility</Label>
-                </div>
-                <p className="text-sm text-muted-foreground">Show your online status to others</p>
-              </div>
-              <Switch id="activityVisibility" defaultChecked />
-            </div>
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center">
@@ -573,6 +564,7 @@ function PrivacySection() {
 }
 
 function PreferencesSection() {
+  const { theme, setTheme } = useTheme()
   return (
     <AnimatedCard>
       <Card className="border-none shadow-sm">
@@ -585,7 +577,10 @@ function PreferencesSection() {
             <h3 className="font-medium">Appearance</h3>
             <div className="space-y-2">
               <Label>Theme</Label>
-              <RadioGroup defaultValue="system">
+              <RadioGroup
+                value={theme ?? "system"} // ✅ fallback for undefined
+                // onValueChange={(value) => setTheme(value)}
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
