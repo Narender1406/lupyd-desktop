@@ -380,68 +380,8 @@ export default function SettingsPage() {
                     <CardDescription>Manage your connected social accounts and services</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
-                            f
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Facebook</h3>
-                            <p className="text-sm text-muted-foreground">Connected as John Doe</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Disconnect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-pink-500 flex items-center justify-center text-white mr-3">
-                            i
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Instagram</h3>
-                            <p className="text-sm text-muted-foreground">Not connected</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Connect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-400 flex items-center justify-center text-white mr-3">
-                            t
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Twitter</h3>
-                            <p className="text-sm text-muted-foreground">Connected as @johndoe</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Disconnect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-700 flex items-center justify-center text-white mr-3">
-                            l
-                          </div>
-                          <div>
-                            <h3 className="font-medium">LinkedIn</h3>
-                            <p className="text-sm text-muted-foreground">Not connected</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Connect
-                        </Button>
-                      </div>
-                    </div>
-
+                    
+                      
                     <Separator />
 
                     <div className="space-y-4">
