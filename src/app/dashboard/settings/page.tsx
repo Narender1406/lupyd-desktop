@@ -147,7 +147,7 @@ export default function SettingsPage() {
   // }
 
   // const user = {
-  //   name: "John Doe",
+ //   name: "John Doe",
   //   username: "johndoe",
   //   avatar: "/placeholder.svg?height=40&width=40",
   // }
@@ -306,18 +306,12 @@ export default function SettingsPage() {
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
-                        <h3 className="font-medium">Deactivate Account</h3>
-                        <p className="text-sm text-muted-foreground">Temporarily disable your account</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                      <div>
                         <h3 className="font-medium">Delete Account</h3>
                         <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                       </div>
                       <Button
                         onClick={deleteAccount}
-                        className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
+                        className="text-blue-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
                       >
                         Delete
                       </Button>
