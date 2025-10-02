@@ -32,6 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
 
       console.log(`initalizing auth`)
+
+
+      const domain = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_DOMAIN
+
+      if (!domain) {
+        throw new Error("Missing DOMAIN env var")
+      }
+      
       const clientId = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_CLIENT_ID
 
       if (!clientId) {
@@ -44,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const redirectUrl = `${window.location.origin}/signin`
 
-      Auth0Handler.initialize(clientId, audience, redirectUrl, (user) => {
+      Auth0Handler.initialize(domain, clientId, audience, redirectUrl, (user) => {
         setUser(user || null)
         if (user) {
           setUsername(user.uname || null)
