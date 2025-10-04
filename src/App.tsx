@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react'
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { OverviewPage } from './app/saas/pages/overview-page';
+import GroupChannelsPage from './app/dashboard/groups/[id]/channels/page';
 // import { OverviewPage } from './app/saas/pages/overview-page';
 // import CommunityPage from './app/(landing)/community/page'
 // import CreatorToolsPage from './app/(landing)/creator-tools/page'
@@ -96,10 +97,10 @@ const PrivacyPage  = lazy(() => import('./app/(landing)/privacy/page'));
 
 
 
-const GroupsPage  = lazy(() => import('./app/dashboard/groupchat/groupchat'))
-const CreateGroupPage  = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
-const GroupSettingsPage  = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
-const GroupInfoPage  = lazy(() => import('./app/dashboard/groupchat/groupinfopage/groupinfo'))
+const GroupsPage  = lazy(() => import('./app/dashboard/groups/page'))
+const CreateGroupPage  = lazy(() => import('./app/dashboard/groups/create/page'))
+const GroupSettingsPage  = lazy(() => import('./app/dashboard/groups/[id]/settings/page'))
+const GroupInfoPage  = lazy(() => import('./app/dashboard/groups/[id]/info/page'))
 const UserMessagePage  = lazy(() => import('./app/dashboard/messages/[username]/page'))
 
 
@@ -133,10 +134,11 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/activity" element={<ActivityPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/groupchat" element={<GroupsPage />} />
-        <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
-        <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
-        <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/create" element={<CreateGroupPage />} />
+        <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
+        <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
+        <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/subscription/checkout" element={<CheckoutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
