@@ -525,10 +525,7 @@ function PreferencesSection() {
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="dark" id="dark" />
-                  <Label htmlFor="dark">Dark</Label>
-                </div>
+                
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="system" id="system" />
                   <Label htmlFor="system">System default</Label>

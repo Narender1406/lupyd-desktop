@@ -1,10 +1,11 @@
 import './App.css'
-
 import { lazy, Suspense } from 'react'
-
-
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { OverviewPage } from './app/saas/pages/overview-page';
+import TermsOfUse from './components/TermsOfUse';
+import PrivacyPolicy from "./components/PrivacyPolicy";
+
+
 // import { OverviewPage } from './app/saas/pages/overview-page';
 // import CommunityPage from './app/(landing)/community/page'
 // import CreatorToolsPage from './app/(landing)/creator-tools/page'
@@ -12,16 +13,13 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 // import FeaturesPage from './app/(landing)/features/page'
 // import LandingPage from './app/(landing)/page'
 // import PrivacyPage from './app/(landing)/privacy/page'
-
 // import ActivityPage from './app/dashboard/activity/page'
 // import AnalyticsPage from './app/dashboard/analytics/page'
 // import ConnectionsPage from './app/dashboard/connections/page'
 // import CreatePostPage from './app/dashboard/create-post/page'
 // import DiscoverPage from './app/dashboard/discover/page'
-
 // import MessagesPage from './app/dashboard/messages/page'
 // import DashboardPage from './app/dashboard/page'
-
 // import PostPage from './app/dashboard/post/[postId]/page'
 // import SavedPostsPage from './app/dashboard/saved-posts/page'
 // import SettingsPage from './app/dashboard/settings/page'
@@ -30,7 +28,6 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 // import CheckoutPage from './app/dashboard/subscription/checkout/page'
 // import NotificationsPage from './app/dashboard/notification/notifications-page'
 // import AssignUsernamePage from './app/assignUsername'
-
 // import { ClientsPage } from './app/saas/pages/clients-page'
 // import { ServicesPage } from './app/saas/pages/services-page'
 // import { AddClientPage } from './app/saas/pages/add-client-page'
@@ -38,7 +35,6 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 // import { ApiKeyPage } from './app/saas/pages/api-key-page'
 // import { ClientDetailsPage } from './app/saas/pages/clientdetails'
 // import { AddServicePage } from './app/saas/pages/add-service-page'
-
 // import { OverviewPage } from './app/saas/pages/overview-page'
 // import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
 // import { MonitoringPage } from './app/saas/pages/monitoring-page'
@@ -50,10 +46,6 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 // import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
 // import UserMessagePage from './app/dashboard/messages/[username]/page'
 // import { FireflyProvider } from './context/firefly-context'
-
-
-
-
 // const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
 // const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
 // const AddClientPage = lazy(() => import('./app/saas/pages/add-client-page').then(m => ({ default: m.AddClientPage })));
@@ -69,7 +61,6 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 
 
 const FireflyProvider = lazy(() => import("./context/firefly-context"));
-
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
@@ -85,17 +76,12 @@ const CheckoutPage = lazy(() => import('./app/dashboard/subscription/checkout/pa
 const NotificationsPage = lazy(() => import('./app/dashboard/notification/notifications-page'));
 const AssignUsernamePage = lazy(() => import('./app/assignUsername'));
 const DashboardPage = lazy(() => import('./app/dashboard/page'));
-
-
 const CommunityPage  = lazy(() => import('./app/(landing)/community/page'));
 const CreatorToolsPage  = lazy(() => import('./app/(landing)/creator-tools/page'));
 const ExperiencePage  = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage  = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage  = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage  = lazy(() => import('./app/(landing)/privacy/page'));
-
-
-
 const GroupsPage  = lazy(() => import('./app/dashboard/groupchat/groupchat'))
 const CreateGroupPage  = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
 const GroupSettingsPage  = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
@@ -143,13 +129,13 @@ function App() {
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/user/:username" element={<ProfilePage />} />
         <Route element={<FireflyProvider />}>
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:username" element={<UserMessagePage />} />
-        </Route>
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
         <Route path="/notification" element={<NotificationsPage />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
-         {/*
-
+        {/*
         <Route path="/business" element={<OverviewPage />} />
         <Route path="/business" element={<OverviewPage />} />
         <Route path="/business/clients-page" element={<ClientsPage />} />
@@ -159,11 +145,10 @@ function App() {
         <Route path="/business/api-key-page" element={<ApiKeyPage />} />
         <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
         <Route path="/business/add-service-page" element={<AddServicePage />} />
+        */}
+        </Routes>
 
-*/}
-      </Routes>
-
-</Suspense>    
+      </Suspense>    
     </BrowserRouter>)
 }
 
