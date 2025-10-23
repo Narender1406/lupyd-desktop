@@ -8,15 +8,22 @@ import { ImageIcon, Video, FileText, Smile } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { UserAvatar } from "../user-avatar"
 import { useNavigate } from "react-router-dom"
-
+import { CapacitorHttp } from "@capacitor/core"
 export function CreatePost() {
   const { username } = useAuth()
   const router = useNavigate()
 
   const goToCreatePost = () => {
-    router("/dashboard/create-post")
+    router("/create-post")
   }
   
+
+  async function dosomething() 
+   {
+    await CapacitorHttp.get({url :"http://192.168.1.4:8080"})
+    console.log("doing-------smthng")
+    
+  }
 
   return (
     <Card className="border-none shadow-sm">
@@ -29,6 +36,10 @@ export function CreatePost() {
               <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Photo
+              </Button>
+              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={dosomething}>
+                <ImageIcon className="h-4 w-4 mr-2" />
+                developer
               </Button>
               <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
                 <Video className="h-4 w-4 mr-2" />

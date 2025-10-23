@@ -6,50 +6,26 @@ import { Link, useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { CDN_STORAGE, dateToRelativeString, getLastMessagesForEachUser, type LastChatMessagePair } from "lupyd-js"
+import { useFirefly } from "@/context/firefly-context"
+import { CDN_STORAGE, dateToRelativeString, getTimestampFromUlid } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { FireflyClient, protos as FireflyProtos } from "firefly-client-js"
+import { UserAvatar } from "@/components/user-avatar"
 
-// Types for our data structure
-interface Message {
-  id: string
-  sender: "me" | "them"
-  text: string
-  time: string
-  replyTo?: {
-    id: string
-    text: string
-    sender: "me" | "them"
-  }
-  reactions?: string[]
-}
 
-interface Conversation {
-  id: string
-  user: {
-    name: string
-    avatar: string
-    avatarFallback: string
-    isOnline: boolean
-  }
-  lastMessage: string
-  time: string
-  unread: boolean
-  messages: Message[]
-}
 
 
 // Emoji picker options
-const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
+// const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
 
 
 export default function MessagesPage() {
-  const { user, logout } = useAuth()
   const router = useNavigate()
   const [activeTab, setActiveTab] = useState("messages")
   // const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [messageText, setMessageText] = useState("")
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null)
+  const [replyingTo, setReplyingTo] = useState<FireflyProtos.UserMessage | null>(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -101,21 +77,72 @@ export default function MessagesPage() {
   }
 
 
-  const [lastConversations, setLastConversations] = useState<LastChatMessagePair[]>([])
+  const [lastConversations, setLastConversations] = useState<FireflyProtos.UserMessage[]>([])
 
   const auth = useAuth()
 
+  const onMessageCallback = (_: FireflyClient, message: FireflyProtos.ServerMessage) => {
+
+
+    if (message.userMessage) {
+      setLastConversations(lastMessages => {
+
+        const newLastMessages: FireflyProtos.UserMessage[] = []
+        const newOther = message.userMessage!.from == auth.username ? message.userMessage!.to : message.userMessage!.from
+
+
+        newLastMessages.push(message.userMessage!)
+        for (let i = 0; i < lastMessages.length; i++) {
+          const msg = lastMessages[i]
+
+          const other = msg.from == auth.username ? msg.to : msg.from
+          if (newOther == other) {
+            continue;
+          }
+          newLastMessages.push(msg)
+        }
+
+
+        return newLastMessages
+
+      })
+    }
+
+
+
+
+  }
+
+  const firefly = useFirefly()
+
+
+
+  useEffect(() => {
+    firefly.addEventListener(onMessageCallback);
+
+    return () => {
+      firefly.removeEventListener(onMessageCallback)
+    }
+  }, [])
+
+
   useEffect(() => {
     if (!auth.username) return
-    getLastMessagesForEachUser().then((messages) => {
-      const result = messages.sort((a, b) => {
-        const lastMsgTsA = Math.max(Number(a.lastMessageSeenByOther.ts), Number(a.lastMessageSeenByMe.ts))
-        const lastMsgTsB = Math.max(Number(b.lastMessageSeenByOther.ts), Number(b.lastMessageSeenByMe.ts))
-        return lastMsgTsA - lastMsgTsB
-      })
-      console.log({ result })
-      setLastConversations(result)
-    }).catch(console.error)
+
+    firefly.client.getUserChats().then((messages) => {
+      messages = messages.sort((a, b) => getTimestampFromUlid(a.id) - getTimestampFromUlid(b.id))
+      setLastConversations(messages)
+    })
+
+    // getLastMessagesForEachUser().then((messages) => {
+    //   const result = messages.sort((a, b) => {
+    //     const lastMsgTsA = Math.max(Number(a.lastMessageSeenByOther.ts), Number(a.lastMessageSeenByMe.ts))
+    //     const lastMsgTsB = Math.max(Number(b.lastMessageSeenByOther.ts), Number(b.lastMessageSeenByMe.ts))
+    //     return lastMsgTsA - lastMsgTsB
+    //   })
+    //   console.log({ result })
+    //   setLastConversations(result)
+    // }).catch(console.error)
   }, [auth])
 
   // Scroll to bottom of messages when conversation changes or new message is added
@@ -181,7 +208,7 @@ export default function MessagesPage() {
   //   }
   // }
 
-  const handleReply = (message: Message) => {
+  const handleReply = (message: FireflyProtos.UserMessage) => {
     setReplyingTo(message)
   }
 
@@ -230,36 +257,27 @@ export default function MessagesPage() {
         {
 
           lastConversations.map((conversation, index) => {
-            const username = conversation.other
-            const lastTs = new Date(Math.max(
-              Number(conversation.lastMessageSeenByMe.ts),
-              Number(conversation.lastMessageSeenByOther.ts),
-            ))
 
-            const unread = Number(conversation.lastMessageSeenByMe.ts) < Number(conversation.lastMessageSeenByOther.ts)
+            const username = auth.username == conversation.from ? conversation.to : conversation.from
+            const unread = false
 
-            const lastMsg = unread ? conversation.lastMessageSeenByOther.msg : conversation.lastMessageSeenByMe.msg
+            const lastMsg = conversation.text
+            const lastTs = new Date(getTimestampFromUlid(conversation.id))
 
 
             return (
               <AnimatedCard key={username} delay={0.1 * (index + 1)}>
-                <Link to={`/dashboard/messages/${username}`}>
+                <Link to={`/messages/${username}`}>
                   <div className="p-4 hover:bg-gray-50 cursor-pointer">
                     <div className="flex items-center space-x-3">
                       <div className="relative">
-                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-                          <AvatarImage
-                            src={`${CDN_STORAGE}/users/${username}`}
-                            alt={username}
-                          />
-                          <AvatarFallback>{username[0] ?? "U"}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar username={username}/>
                         {false && (
                           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 border-2 border-white"></span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="w-full flex justify-center">
+                      <div className="flex-1">
+                        <div className="w-full">
                           <div className="flex items-center justify-between w-full max-w-[800px]" >
                             <p className={`font-medium truncate ${unread ? "text-black" : ""}`}>
                               {username}

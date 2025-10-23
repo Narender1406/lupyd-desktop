@@ -1,14 +1,14 @@
-import { useSnackbar } from "@/components/snackbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
-import { getAuthHandler, isValidUsername } from "lupyd-js";
+import {  isValidUsername } from "lupyd-js";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,  useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
 import { AnimatedCard } from "@/components/animated-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 
 export default function AssignUsernamePage() {
@@ -20,9 +20,21 @@ export default function AssignUsernamePage() {
 
   const navigate = useNavigate()
 
-  const snackbar = useSnackbar()
+
+  const navigateToNext = () => {
+    const navigateTo = targetPath != "" ? targetPath : "/"
+    navigate(navigateTo, { replace: true })
+  }
+
 
   const onSubmit = () => {
+
+    if (!auth.user) {
+      setBottomText("Signin Attempt Failed")
+      return
+    }
+
+
     if (!isValidUsername(username)) {
       setBottomText("Invalid username, should be greater than 2 characters and less than 30 characters and should only contain a-zA-Z0-9_")
       return;
@@ -30,20 +42,45 @@ export default function AssignUsernamePage() {
 
 
     setBottomText("Username is being assigned...");
-    getAuthHandler()!.assignUsername(username).then(() => {
-      navigate("/dashboard", { replace: true })
+    auth.assignUsername(username).then(() => {
+      navigateToNext()
     }).catch((err) => {
       console.error(err)
-      snackbar("Username may have already exist")
+      toast({title: "Username may have already exist"})
       setBottomText("Username may have already exist")
     })
   }
 
+  const [params, _setParams] = useSearchParams()
+
+  const [targetPath, setTargetPath] = useState<string>("")
+
+
   useEffect(() => {
     if (auth.username) {
-      navigate("/dashboard", { replace: true })
+      navigateToNext()
     }
+
   }, [auth])
+
+
+  useEffect(() => {
+    const code = params.get("code")
+    if (code) {
+      setBottomText("")
+      console.log(`Handling redirected callback`)
+      auth.handleRedirectCallback().then(state => {
+        if ("targetPath" in state && typeof state["targetPath"] == "string") {
+          setTargetPath(state["targetPath"])
+        }
+
+
+      }).catch(console.error)
+    } else {
+      console.log(`No redirection code`)
+    }
+
+  }, [])
 
 
   return (

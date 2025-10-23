@@ -1,9 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.app',
+  appId: 'com.Lupyd.app',
   appName: 'lupyd-web',
-  webDir: 'dist'
+  webDir: 'dist',
+  plugins:{App:{
+    urlSchemes: ["lupyd"],
+    deeplinks: [
+      {
+        Scheme: "Lupyd",
+        host: "callback"
+      }
+    ]
+  }}
 };
 
 export default config;

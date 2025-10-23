@@ -1,12 +1,13 @@
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+import { FireflyClient, protos as FireflyProtos } from "firefly-client-js"
+
 import { useAuth } from '@/context/auth-context';
-import { CDN_STORAGE, type ChatMessage, ChatSession, dateToRelativeString } from 'lupyd-js';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -21,6 +22,7 @@ import {
   Forward,
   ImageIcon,
   Info,
+  Loader,
   Mic,
   MoreHorizontal,
   MoreVertical,
@@ -32,6 +34,11 @@ import {
   Video,
   X,
 } from "lucide-react";
+import { useFirefly } from "@/context/firefly-context";
+import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringify } from "lupyd-js";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { toast } from "@/hooks/use-toast";
+
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -41,24 +48,20 @@ export default function UserMessagePage() {
   const auth = useAuth()
   const navigate = useNavigate();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [session, setSession] = useState<ChatSession | null>(null)
+  const [messages, setMessages] = useState<FireflyProtos.UserMessage[]>([])
 
-  // const sessionStartLastMessage: ChatMessage | undefined = undefined;
+  const firefly = useFirefly()
 
-  const scrollToLast = () => { }
+  const [chatInitiated, setChatInitiated] = useState(false)
 
-
-
-
-  function mergeSorted(a: ChatMessage[], b: ChatMessage[]): ChatMessage[] {
-    const result: ChatMessage[] = [];
+  function mergeSorted(a: FireflyProtos.UserMessage[], b: FireflyProtos.UserMessage[]): FireflyProtos.UserMessage[] {
+    const result: FireflyProtos.UserMessage[] = [];
     let i = 0, j = 0;
 
     while (i < a.length && j < b.length) {
       // if (compare(a[i], b[j]) <= 0) {}
 
-      if (a[i].id < b[j].id) {
+      if (getTimestampFromUlid(a[i].id) < getTimestampFromUlid(b[j].id)) {
         result.push(a[i++]);
       } else {
         result.push(b[j++]);
@@ -71,15 +74,15 @@ export default function UserMessagePage() {
     return result;
   }
 
-  const addMessage = (prev: ChatMessage[], msg: ChatMessage) => {
+  const addMessage = (prev: FireflyProtos.UserMessage[], msg: FireflyProtos.UserMessage) => {
 
     if (prev.length > 0) {
-      if (prev[prev.length - 1].id < msg.id) {
+      if (getTimestampFromUlid(prev[prev.length - 1].id) < getTimestampFromUlid(msg.id)) {
         return [...prev, msg]
       } else {
         let i = 0;
         for (; i < prev.length; i++) {
-          if (prev[i].id > msg.id) {
+          if (getTimestampFromUlid(prev[i].id) > getTimestampFromUlid(msg.id)) {
             break
           }
           if (prev[i].id == msg.id) {
@@ -93,63 +96,74 @@ export default function UserMessagePage() {
     }
   }
 
-
-
-  // const addMsg = (msg: ChatMessage) => {
-  //   setMessages(prev => addMessage(prev, msg))
-  // }
-
-
   const getOlderMessages = async () => {
-    if (!session) return
-    if (messages.length == 0) return
+    const other = receiver
 
-    const msgs = await session.getPreviousChunk(messages[0].id)
+    const response = await firefly.client.sendRequest(FireflyProtos.Request.create({
+      getUserMessages: FireflyProtos.GetUserMessages.create({
+        from: other,
+        count: 100,
+        before: messages.length != 0 ? messages[0].id : undefined
+      })
+    }))
 
-    setMessages(prev =>
-      mergeSorted(prev, msgs)
-    )
+    if (!response.userMessages) {
+      setEndOfOlderMessages(false)
+      throw new Error(`Can't get messages ${JSON.stringify(response.error)}`)
+    }
 
+
+    if (response.userMessages!.messages.length == 0) {
+      setEndOfOlderMessages(false)
+    } else {
+      setMessages(prev =>
+        mergeSorted(prev, response.userMessages!.messages)
+      )
+    }
   }
 
-
   useEffect(() => {
-
-    if (session) return
-
-    const sender = auth.username
     if (!sender || !receiver) {
       return
     }
 
-    const _session = new ChatSession(sender, receiver,
-      (msg) => setMessages(prev => {
-        const result = addMessage(prev, msg)
-        return result
-      }), console.error, scrollToLast)
 
-    setSession(_session)
+    const callback = (_: FireflyClient, msg: FireflyProtos.ServerMessage) => {
+      if (msg.userMessage) {
+        const shouldHandle = msg.userMessage.from == receiver || msg.userMessage.to == receiver
+        if (shouldHandle) {
+          setMessages(prev => addMessage(prev, msg.userMessage!))
+        }
+      }
+    }
 
-    return () => _session.close()
+    firefly.client.createUserChat(receiver).then((chatId) => {
+      console.log(`Chat ID: ${chatId}`)
+      setChatInitiated(true)
+
+      getOlderMessages()
+    }).catch(err => {
+      console.error(err)
+      toast({ title: `User may not allow chat requests`})
+      setChatInitiated(false)
+    })
+
+    firefly.addEventListener(callback)
+
+    return () => firefly.removeEventListener(callback)
   }, [auth])
 
 
 
-
-
-
-
-  // const messagesEndRef = useRef<HTMLDivElement>(null)
-  // const messagesContainerRef = useRef<HTMLDivElement>(null)
-  // const inputContainerRef = useRef<HTMLDivElement>(null)
-
   const [messageText, setMessageText] = useState("")
-  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
-  function handleReaction(id: string, emoji: string): void {
+  const [replyingTo, setReplyingTo] = useState<FireflyProtos.UserMessage | null>(null)
+
+  const [endOfOlderMessages, setEndOfOlderMessages] = useState(false)
+  function handleReaction(id: Uint8Array, emoji: string): void {
     throw new Error('Function not implemented.');
   }
 
-  function handleReply(message: ChatMessage): void {
+  function handleReply(message: FireflyProtos.UserMessage): void {
     setReplyingTo(message)
   }
 
@@ -167,6 +181,8 @@ export default function UserMessagePage() {
 
   }
 
+  const sender = useMemo(() => auth.username, [auth])
+
   function addEmoji(emoji: string) {
     throw new Error('Function not implemented.');
   }
@@ -174,13 +190,18 @@ export default function UserMessagePage() {
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
-    if (!session) return
 
-    const chatMsg = await session.sendMessage(msg)
-    setMessages(prev =>
-      addMessage(prev, chatMsg))
+    firefly.client.sendUserMessage(FireflyProtos.UserMessage.create({
+      text: msg,
+      to: receiver,
+    }))
+
     setMessageText("")
     setReplyingTo(null)
+  }
+
+  if (!chatInitiated) {
+    return <div><Loader /></div>
   }
 
   return (
@@ -198,13 +219,8 @@ export default function UserMessagePage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
 
-          <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-            <AvatarImage
-              src={`${CDN_STORAGE}/users/${receiver}`}
-              alt={receiver || "User"}
-            />
-            <AvatarFallback>{"U"}</AvatarFallback>
-          </Avatar>
+          <UserAvatar username={receiver || ""} />
+
           <div>
             <p className="font-medium text-sm sm:text-base">{receiver}</p>
             {/*            <p className="text-xs text-muted-foreground">
@@ -240,29 +256,30 @@ export default function UserMessagePage() {
             WebkitOverflowScrolling: "touch", // Improve smooth scrolling on iOS
           }}
         >
-          {messages.map((message) => {
-            const isMine = message.by === session?.sender;
 
-            return (
-              <div
-                key={message.id}
-                className={`flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
-              >
+          <InfiniteScroll next={getOlderMessages}
+            hasMore={!endOfOlderMessages}
+            loader={<Loader />}
+            dataLength={messages.length}
+            inverse={true}
+          >
+            {messages.map((message) => {
+              const isMine = message.from === sender;
+
+              return (
                 <div
-                  className={`flex items-end ${isMine ? "flex-row-reverse" : ""} space-x-2 ${isMine ? "space-x-reverse" : ""}`}
+                  key={ulidStringify(message.id)}
+                  className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
                 >
-                  {message.by === session?.receiver && (
-                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8 mb-1 flex-shrink-0">
-                      <AvatarImage
-                        src={`${CDN_STORAGE}/users/${session.receiver}`}
-                        alt={session?.receiver || "User"}
-                      />
-                      <AvatarFallback>{"U"}</AvatarFallback>
-                    </Avatar>
-                  )}
+                  <div
+                    className={`flex items-end ${isMine ? "flex-row-reverse" : ""} space-x-2 ${isMine ? "space-x-reverse" : ""}`}
+                  >
+                    {!isMine && (
+                      <UserAvatar username={receiver || ""} />
+                    )}
 
-                  <div className="max-w-[75%] sm:max-w-[70%] w-auto">
-                    {/*message.replyTo && (
+                    <div className="max-w-[75%] sm:max-w-[70%] w-auto">
+                      {/*message.replyTo && (
                       <div
                         className={`${message.sender === "me" ? "bg-gray-700" : "bg-gray-200"} rounded-t-lg px-2 sm:px-3 py-1 sm:py-2 text-[10px] sm:text-xs ${message.sender === "me" ? "text-gray-300" : "text-gray-600"} mb-1 border-l-2 ${message.sender === "me" ? "border-gray-500" : "border-gray-400"} overflow-hidden`}
                       >
@@ -273,86 +290,86 @@ export default function UserMessagePage() {
                       </div>
                     )*/}
 
-                    {/* Message content */}
-                    <div
-                      className={`${isMine ? "bg-black text-white" : "bg-gray-100"
-                        } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
-                    >
-                      <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
-                        {message.msg}
-                      </p>
-                      <p
-                        className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
-                      >
-                        {dateToRelativeString(message.ts)}
-                      </p>
-
-                      {/* Message actions - Fixed position for better visibility */}
+                      {/* Message content */}
                       <div
-                        className={`absolute ${isMine ? "left-0 translate-x-[-50%]" : "right-0 translate-x-[50%]"} top-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md flex items-center scale-75 md:scale-100 z-10`}
+                        className={`${isMine ? "bg-black text-white" : "bg-gray-100"
+                          } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
                       >
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <Smile className="h-3 w-3" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-auto p-2"
-                            side={isMine ? "left" : "right"}
-                            align="center"
-                            sideOffset={5}
-                          >
-                            <div className="flex gap-1">
-                              {emojiOptions.map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  className="text-lg hover:bg-gray-100 p-1 rounded"
-                                  onClick={() => handleReaction(message.id, emoji)}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => handleReply(message)}
+                        <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
+                          {message.text}
+                        </p>
+                        <p
+                          className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
                         >
-                          <Reply className="h-3 w-3" />
-                        </Button>
+                          {dateToRelativeString(new Date(getTimestampFromUlid(message.id)))}
+                        </p>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <MoreHorizontal className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent side={isMine ? "left" : "right"}>
-                            <DropdownMenuItem className="flex items-center">
-                              <Forward className="h-4 w-4 mr-2" />
-                              Forward
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="flex items-center">
-                              <Reply className="h-4 w-4 mr-2" />
-                              Reply
-                            </DropdownMenuItem>
-                            {isMine && (
-                              <DropdownMenuItem className="flex items-center text-red-600">
-                                <X className="h-4 w-4 mr-2" />
-                                Delete
+                        {/* Message actions - Fixed position for better visibility */}
+                        <div
+                          className={`absolute ${isMine ? "left-0 translate-x-[-50%]" : "right-0 translate-x-[50%]"} top-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md flex items-center scale-75 md:scale-100 z-10`}
+                        >
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <Smile className="h-3 w-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-2"
+                              side={isMine ? "left" : "right"}
+                              align="center"
+                              sideOffset={5}
+                            >
+                              <div className="flex gap-1">
+                                {emojiOptions.map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    className="text-lg hover:bg-gray-100 p-1 rounded"
+                                    onClick={() => handleReaction(message.id, emoji)}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleReply(message)}
+                          >
+                            <Reply className="h-3 w-3" />
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <MoreHorizontal className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side={isMine ? "left" : "right"}>
+                              <DropdownMenuItem className="flex items-center">
+                                <Forward className="h-4 w-4 mr-2" />
+                                Forward
                               </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <DropdownMenuItem className="flex items-center">
+                                <Reply className="h-4 w-4 mr-2" />
+                                Reply
+                              </DropdownMenuItem>
+                              {isMine && (
+                                <DropdownMenuItem className="flex items-center text-red-600">
+                                  <X className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Reactions
+                      {/* Reactions
                     {message.reactions && message.reactions.length > 0 && (
                       <div className={`flex mt-1 ${isMine ? "justify-end" : "justify-start"}`}>
                         <div className="bg-white rounded-full shadow-sm px-1.5 py-0.5 text-xs sm:text-sm flex items-center">
@@ -365,15 +382,19 @@ export default function UserMessagePage() {
                       </div>
                     )}
                     */}
-                  </div>
+                    </div>
 
-                  {isMine && (
-                    <UserAvatar username={session.sender}/>
-                  )}
+                    {isMine && (
+                      <UserAvatar username={sender} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </InfiniteScroll>
+
+
+
           <div />
         </div>
 
@@ -388,9 +409,9 @@ export default function UserMessagePage() {
                 <div className="w-1 h-6 bg-black mr-2 flex-shrink-0"></div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium">
-                    Replying to {replyingTo.by === session?.sender ? "yourself" : session!.sender}
+                    Replying to {replyingTo.from === sender ? "yourself" : sender}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{replyingTo.msg}</p>
+                  <p className="text-xs text-muted-foreground truncate">{replyingTo.text}</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>

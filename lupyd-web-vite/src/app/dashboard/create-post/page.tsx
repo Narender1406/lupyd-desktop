@@ -13,7 +13,6 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
 import {
   CalendarIcon,
   Clock,
@@ -50,8 +49,15 @@ import {
   PostProtos,
   sanitizeFilename,
   ulidStringify,
+  Utils,
 } from "lupyd-js"
-import { useSnackbar } from "@/components/snackbar"
+import { Progress } from "@/components/ui/progress"
+
+
+const format = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    month: 'long', day: 'numeric', year: 'numeric'
+  })
 
 interface MediaItem {
   file: File
@@ -338,11 +344,12 @@ export default function CreatePostPage() {
 
   // Handle form submission
   const auth = useAuth()
-  const snackbar = useSnackbar()
+  const [uploadingPost, setUploadingPost] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0.0)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!auth.isAuthenticated) {
-      snackbar("User is not authenticated")
+      toast({ title: "User is not authenticated" })
     }
 
     const submitter = (e.nativeEvent as SubmitEvent).submitter
@@ -376,67 +383,102 @@ export default function CreatePostPage() {
       postType = PostProtos.postType.SAFE
     }
 
-    if (mediaItems.length == 0) {
-      const details = PostProtos.CreatePostDetails.create({
-        title,
-        body: PostProtos.PostBody.create({ plainText: description }),
-        postType,
-      })
-      const post = await createPost(details)
-      console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
-    } else {
-      const postFiles: PickedFileUrl[] = []
-      let bodyMarkdown = description
+    if (uploadingPost) {
+      return
+    }
+    try {
+      setUploadingPost(true)
+      setUploadProgress(0.0)
 
-      for (const e of mediaItems) {
-        const cdnUrl = `${CDN_STORAGE}/posts/${sanitizeFilename(e.file.name)}`
-        // const url = e.previewUrl // for preview
-        const url = cdnUrl
-        let name = e.file.name
-        const mimeType = e.file.type
 
-        if (mimeType.startsWith("image")) {
-          bodyMarkdown += `\n![${name}](${url})`
-        } else if (mimeType.startsWith("video")) {
-          bodyMarkdown += `\n![|Video|${name}](${url})`
-        } else if (mimeType.startsWith("audio")) {
-          bodyMarkdown += `\n![|Audio|${name}](${url})`
+      if (mediaItems.length == 0) {
+        const details = PostProtos.CreatePostDetails.create({
+          title,
+          body: PostProtos.PostBody.create({ plainText: description }),
+          postType,
+        })
+
+        // fake interpolate for better user experience
+        setUploadProgress(0.4)
+        const post = await createPost(details)
+        if (post) {
+          console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
         } else {
-          bodyMarkdown += `\n![|File|${name}](${url})`
+          throw Error(`Post failed to upload`)
         }
 
-        const length = BigInt(e.file.size)
-        name = cdnUrl // will be replaced by /apicdn with an actual url
-        const file = PostProtos.File.create({ length, name, mimeType })
-        postFiles.push({
-          blobUrl: e.previewUrl,
-          cdnUrl,
-          file,
+        setUploadProgress(1.0)
+      } else {
+        const postFiles: PickedFileUrl[] = []
+        let bodyMarkdown = description
+
+        for (const e of mediaItems) {
+          const cdnUrl = `${CDN_STORAGE}/posts/${sanitizeFilename(e.file.name)}`
+          // const url = e.previewUrl // for preview
+          const url = cdnUrl
+          let name = e.file.name
+          const mimeType = e.file.type
+
+          if (mimeType.startsWith("image")) {
+            bodyMarkdown += `\n![${name}](${url})`
+          } else if (mimeType.startsWith("video")) {
+            bodyMarkdown += `\n[|Video|${name}](${url})`
+          } else if (mimeType.startsWith("audio")) {
+            bodyMarkdown += `\n[|Audio|${name}](${url})`
+          } else {
+            bodyMarkdown += `\n[|File|${name}](${url})`
+          }
+
+          const length = BigInt(e.file.size)
+          name = cdnUrl // will be replaced by /apicdn with an actual url
+          const file = PostProtos.File.create({ length, name, mimeType })
+          postFiles.push({
+            blobUrl: e.previewUrl,
+            cdnUrl,
+            file,
+          })
+        }
+
+        console.log(`Final markdown "${bodyMarkdown}"`)
+        const fields = PostProtos.CreatePostDetails.create({
+          title,
+          body: PostProtos.PostBody.create({ markdown: bodyMarkdown }),
+          postType,
         })
+        const files = postFiles.map((e) => e.file)
+        const details = PostProtos.CreatePostWithFiles.create({
+          fields,
+          files,
+        })
+        const post = await createPostWithFiles(
+          details,
+          mediaItems.map((e) => e.previewUrl),
+          (total, sent) => {
+            console.log(`uploading: ${sent}/${total}`);
+            setUploadProgress(sent / total)
+          },
+        )
+        setUploadProgress(1.0)
+        if (post) {
+          const s = `Post Uploaded successfully ${ulidStringify(post.id)}`
+          console.log(s)
+          toast({ title: s })
+        } else {
+          throw Error(`Failed to upload post`)
+        }
       }
 
-      console.log(`Final markdown "${bodyMarkdown}"`)
-      const fields = PostProtos.CreatePostDetails.create({
-        title,
-        body: PostProtos.PostBody.create({ markdown: bodyMarkdown }),
-        postType,
+      // Navigate back to dashboard after posting
+      router("/")
+
+    } catch (e) {
+      console.error(e)
+      toast({
+        title: "Failed to upload post"
       })
-      const files = postFiles.map((e) => e.file)
-      const details = PostProtos.CreatePostWithFiles.create({
-        fields,
-        files,
-      })
-      const post = await createPostWithFiles(
-        details,
-        mediaItems.map((e) => e.previewUrl),
-        (total, sent) => console.log(`${sent}/${total}`),
-      )
-      if (post) {
-        console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
-      } else {
-        console.error(`Failed to upload post`)
-        return
-      }
+
+    } finally {
+      setUploadingPost(false)
     }
 
     // Clear draft if it exists
@@ -444,8 +486,6 @@ export default function CreatePostPage() {
       localStorage.removeItem("postDraft")
     }
 
-    // Navigate back to dashboard after posting
-    router("/dashboard")
   }
 
   return (
@@ -569,9 +609,8 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${
-                                  index === currentSlideIndex ? "border-black" : "border-transparent"
-                                }`}
+                                className={`relative rounded-md overflow-hidden aspect-square bg-gray-100 cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
+                                  }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -715,7 +754,7 @@ export default function CreatePostPage() {
                                     className="w-full justify-start text-left font-normal bg-transparent"
                                   >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {scheduleDate ? format(scheduleDate, "PPP") : "Select date"}
+                                    {scheduleDate ? format(scheduleDate) : "Select date"}
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -756,6 +795,10 @@ export default function CreatePostPage() {
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 flex flex-wrap gap-3">
+
+                      <Progress value={Math.floor(100 * uploadProgress)}/>
+
+                      
                       <Button type="submit" className="flex-1 sm:flex-none" id="publish-button">
                         Publish Now
                       </Button>
@@ -962,9 +1005,8 @@ export default function CreatePostPage() {
                             {editHistory.map((entry, index) => (
                               <div
                                 key={index}
-                                className={`text-xs p-2 rounded border cursor-pointer ${
-                                  index === currentHistoryIndex ? "bg-black text-white" : "bg-gray-50 hover:bg-gray-100"
-                                }`}
+                                className={`text-xs p-2 rounded border cursor-pointer ${index === currentHistoryIndex ? "bg-black text-white" : "bg-gray-50 hover:bg-gray-100"
+                                  }`}
                                 onClick={() => {
                                   setTitle(entry.title)
                                   setDescription(entry.description)
@@ -1146,9 +1188,8 @@ export default function CreatePostPage() {
                             {mediaItems.map((item, index) => (
                               <div
                                 key={index}
-                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${
-                                  index === currentSlideIndex ? "border-black" : "border-transparent"
-                                }`}
+                                className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden cursor-pointer border-2 ${index === currentSlideIndex ? "border-black" : "border-transparent"
+                                  }`}
                                 onClick={() => setCurrentSlideIndex(index)}
                               >
                                 {item.type === "image" ? (
@@ -1179,9 +1220,9 @@ export default function CreatePostPage() {
                               {isAnonymous
                                 ? "AN"
                                 : username
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .join("") || "U"}
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("") || "U"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -1210,7 +1251,7 @@ export default function CreatePostPage() {
                       <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
                         <p className="text-sm text-gray-700 flex items-center gap-2">
                           <CalendarIcon className="h-4 w-4" />
-                          Scheduled for {format(scheduleDate, "PPP")} at {scheduleTime}
+                          Scheduled for {format(scheduleDate)} at {scheduleTime}
                         </p>
                       </div>
                     )}
@@ -1241,7 +1282,7 @@ export default function CreatePostPage() {
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto bg-transparent"
-                      onClick={() => router("/dashboard")}
+                      onClick={() => router("/")}
                     >
                       Cancel
                     </Button>
@@ -1271,9 +1312,9 @@ export default function CreatePostPage() {
                                 {isAnonymous
                                   ? "AN"
                                   : username
-                                      ?.split(" ")
-                                      .map((n) => n[0])
-                                      .join("") || "U"}
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("") || "U"}
                               </AvatarFallback>
                             </Avatar>
                             <p className="text-sm">{isAnonymous ? "Anonymous" : username || "User"}</p>
@@ -1332,3 +1373,4 @@ export default function CreatePostPage() {
     </DashboardLayout>
   )
 }
+

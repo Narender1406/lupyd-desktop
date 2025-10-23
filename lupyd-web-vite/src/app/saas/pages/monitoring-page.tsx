@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StatusIndicator } from "@/components/ui/status-indicator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { DashboardLayout } from "../layout/dashboard-layoutsaas"
 
 const serverMetrics = [
   {
@@ -63,6 +64,7 @@ const alerts = [
 
 export function MonitoringPage() {
   return (
+    <DashboardLayout>
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Monitoring</h2>
@@ -163,5 +165,6 @@ export function MonitoringPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   )
 }
