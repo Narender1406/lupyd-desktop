@@ -1,20 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
-import {  isValidUsername } from "lupyd-js";
+import { ConflictStatusError, isValidUsername, NotAuthorizedError, ServerInternalError } from "lupyd-js";
 import { useEffect, useState } from "react";
-import { useNavigate,  useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
 import { AnimatedCard } from "@/components/animated-card";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { useApiService } from "@/context/apiService";
 
 
 export default function AssignUsernamePage() {
 
   const auth = useAuth()
+  const { api } = useApiService()
   const [username, setUsername] = useState("")
+
+  const [usernameBeingAssigned, setUsernameBeingAssigned] = useState(false)
 
   const [bottomText, setBottomText] = useState("")
 
@@ -29,7 +33,12 @@ export default function AssignUsernamePage() {
 
   const onSubmit = () => {
 
+    if (usernameBeingAssigned) {
+      return
+    }
+
     if (!auth.user) {
+      auth.login()
       setBottomText("Signin Attempt Failed")
       return
     }
@@ -42,13 +51,26 @@ export default function AssignUsernamePage() {
 
 
     setBottomText("Username is being assigned...");
-    auth.assignUsername(username).then(() => {
+
+    setUsernameBeingAssigned(true)
+    api.assignUsername(username).then(async () => {
+      await auth.getToken(true)
       navigateToNext()
     }).catch((err) => {
       console.error(err)
-      toast({title: "Username may have already exist"})
-      setBottomText("Username may have already exist")
-    })
+      if (err instanceof ConflictStatusError) {
+        toast({ title: "Username may have already exist" })
+        setBottomText("Username may have already exist")
+      } else if (err instanceof ServerInternalError) {
+        toast({ title: "Something went wrong" })
+        setBottomText("Something went wrong, try again later")
+      } else if (err instanceof NotAuthorizedError) {
+        toast({ title: "You are not authorized to do this operation" })
+        setBottomText("Try again later")
+      } else {
+        toast({ title: "Something went wrong" })
+      }
+    }).finally(() => setUsernameBeingAssigned(false))
   }
 
   const [params, _setParams] = useSearchParams()
@@ -59,28 +81,26 @@ export default function AssignUsernamePage() {
   useEffect(() => {
     if (auth.username) {
       navigateToNext()
+      return
     }
-
   }, [auth])
 
 
-  useEffect(() => {
-    const code = params.get("code")
-    if (code) {
-      setBottomText("")
-      console.log(`Handling redirected callback`)
-      auth.handleRedirectCallback().then(state => {
-        if ("targetPath" in state && typeof state["targetPath"] == "string") {
-          setTargetPath(state["targetPath"])
-        }
+  // useEffect(() => {
+  //   const code = params.get("code")
+  //   if (code) {
+  //     setBottomText("")
+  //     console.log(`Handling redirected callback ${params}`)
+  //     // auth.handleRedirectCallback().then(state => {
+  //     //   if ("targetPath" in state && typeof state["targetPath"] == "string") {
+  //     //     setTargetPath(state["targetPath"])
+  //     //   }
+  //     // }).catch(console.error)
+  //   } else {
+  //     console.log(`No redirection code`)
+  //   }
 
-
-      }).catch(console.error)
-    } else {
-      console.log(`No redirection code`)
-    }
-
-  }, [])
+  // }, [])
 
 
   return (
