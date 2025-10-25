@@ -18,6 +18,7 @@ import {
   BellOff,
   Accessibility,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -275,7 +276,12 @@ export default function SettingsPage() {
                     <CardDescription>Irreversible actions for your account</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-
+                   {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                      <div>
+                        <h3 className="font-medium">Deactivate Account</h3>
+                        <p className="text-sm text-muted-foreground">Temporarily disable your account</p>
+                      </div>
+                    </div>*/}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Delete Account</h3>
@@ -283,13 +289,11 @@ export default function SettingsPage() {
                       </div>
                            <Button
                             onClick={() => {
-                              
                           if (window.confirm("Are you sure you want to delete your account permanently?")) {
                            deleteAccount();
                         }
                         }}
-                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0"
->
+                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0">
                           Delete
                       </Button>
 
@@ -315,24 +319,7 @@ export default function SettingsPage() {
                     <CardDescription>Manage your account security settings</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Password</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="currentPassword">Current password</Label>
-                          <Input id="currentPassword" type="password" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="newPassword">New password</Label>
-                          <Input id="newPassword" type="password" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm new password</Label>
-                          <Input id="confirmPassword" type="password"
-                            value={confirmPassword} onChange={(e) => setConfirmPassword(e.currentTarget.value)} />
-                        </div>
-                      </div>
-                    </div>
+                    
 
                     <Separator />
 
@@ -393,68 +380,8 @@ export default function SettingsPage() {
                     <CardDescription>Manage your connected social accounts and services</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
-                            f
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Facebook</h3>
-                            <p className="text-sm text-muted-foreground">Connected as John Doe</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Disconnect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-pink-500 flex items-center justify-center text-white mr-3">
-                            i
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Instagram</h3>
-                            <p className="text-sm text-muted-foreground">Not connected</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Connect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-400 flex items-center justify-center text-white mr-3">
-                            t
-                          </div>
-                          <div>
-                            <h3 className="font-medium">Twitter</h3>
-                            <p className="text-sm text-muted-foreground">Connected as @johndoe</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Disconnect
-                        </Button>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 p-3 rounded-md bg-gray-50">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-700 flex items-center justify-center text-white mr-3">
-                            l
-                          </div>
-                          <div>
-                            <h3 className="font-medium">LinkedIn</h3>
-                            <p className="text-sm text-muted-foreground">Not connected</p>
-                          </div>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          Connect
-                        </Button>
-                      </div>
-                    </div>
-
+                    
+                      
                     <Separator />
 
                     <div className="space-y-4">
@@ -514,16 +441,7 @@ function PrivacySection() {
               </div>
               <Switch id="publicProfile" defaultChecked />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="flex items-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  <Label htmlFor="activityVisibility">Activity Visibility</Label>
-                </div>
-                <p className="text-sm text-muted-foreground">Show your online status to others</p>
-              </div>
-              <Switch id="activityVisibility" defaultChecked />
-            </div>
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center">
@@ -586,6 +504,7 @@ function PrivacySection() {
 }
 
 function PreferencesSection() {
+  const { theme, setTheme } = useTheme()
   return (
     <AnimatedCard>
       <Card className="border-none shadow-sm">
@@ -598,15 +517,15 @@ function PreferencesSection() {
             <h3 className="font-medium">Appearance</h3>
             <div className="space-y-2">
               <Label>Theme</Label>
-              <RadioGroup defaultValue="system">
+              <RadioGroup
+                value={theme ?? "system"} // ✅ fallback for undefined
+                // onValueChange={(value) => setTheme(value)}
+              >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="dark" id="dark" />
-                  <Label htmlFor="dark">Dark</Label>
-                </div>
+                
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="system" id="system" />
                   <Label htmlFor="system">System default</Label>

@@ -38,10 +38,7 @@ export function CreatePost() {
                 <FileText className="h-4 w-4 mr-2" />
                 Document
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
-                <Smile className="h-4 w-4 mr-2" />
-                Feeling
-              </Button>
+             
             </div>
           </div>
         </div>
