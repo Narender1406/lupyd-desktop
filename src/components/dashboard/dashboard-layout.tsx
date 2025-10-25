@@ -96,7 +96,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           router.push("/signin")
         }
       } else {
-        auth.login().then(() => router.push("/signin"))
+        auth.login()
       }
     }
   }

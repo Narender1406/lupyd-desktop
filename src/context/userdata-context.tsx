@@ -1,7 +1,7 @@
 "use client"
 
 import { UserRelationsState } from "lupyd-js"
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, type ReactNode, useContext, useEffect, useState, useCallback } from "react"
 import { useAuth } from "./auth-context"
 
 
@@ -22,11 +22,22 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
   const auth = useAuth()
 
+  const apiUrl = process.env.NEXT_PUBLIC_JS_ENV_API_URL
+  if (!apiUrl) {
+    throw Error(`NEXT_PUBLIC_JS_ENV_API_URL env var not set`)
+  }
+
+  const getToken = useCallback(async () => {
+      const token = await auth.getToken()
+      if (!token)
+        throw Error("user not authenticated")
+      return token
+    }, [auth])
 
   useEffect(() => {
     setRelationState(new UserRelationsState((follows, blocked) => {
       setState({ follows, blocked })
-    }))
+    }, apiUrl, getToken))
   }, [])
 
 

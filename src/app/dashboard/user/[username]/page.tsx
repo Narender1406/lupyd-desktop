@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera,  MoreHorizontal, UserPlus } from "lucide-react"
+import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
 import { ProfileSettings } from "@/components/dashboard/profile-settings"
-import { CDN_STORAGE, FetchType, getPosts, getUser, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
+import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
+import { useApiService } from "@/context/apiService"
 
 export default function ProfilePage() {
   const router = useNavigate()
@@ -56,17 +57,19 @@ export default function ProfilePage() {
     if (!user) return undefined
     return PostProtos.PostBody.decode(user.bio)
   }, [user])
+  const { api } = useApiService()
+
 
 
   useEffect(() => {
     const username = getUsername()
     if (!username) return
 
-    getUser(username).then((user) => {
+    api.getUser(username).then((user) => {
       setUser(user || null)
     }).catch(console.error)
 
-    getPosts({
+    api.getPosts({
       fetchType: FetchType.Users,
       fetchTypeFields: [username]
     }).then((posts) => {

@@ -32,8 +32,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { CDN_STORAGE, getAuthHandler, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
+import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
+import { useApiService } from "@/context/apiService"
 
 
 
@@ -51,6 +52,11 @@ export default function SettingsPage() {
 
 
   const auth = useAuth()
+  const { api } = useApiService()
+  const getUser = api.getUser
+  const updateUser = api.updateUser
+  const updateUserProfilePicture = api.updateUserProfilePicture
+
 
   useEffect(() => {
     if (auth.username) {
@@ -111,11 +117,11 @@ export default function SettingsPage() {
     } else {
       settings = settings & ~16;
     }
- 
+
 
     const info = UserProtos.UpdateUserInfo.create({
       bio: isBioChanged ? PostProtos.PostBody.create({ plainText: bio }) : undefined,
-      settings: settings 
+      settings: settings
     })
 
 
@@ -129,8 +135,9 @@ export default function SettingsPage() {
   }
 
 
-  function deleteAccount(): void {
-    getAuthHandler()!.deleteAccount()
+  async function deleteAccount() {
+    await api.deleteUser();
+    await auth.logout();
   }
 
   // function updatePassword(): void {
@@ -148,7 +155,7 @@ export default function SettingsPage() {
   // }
 
   // const user = {
- //   name: "John Doe",
+  //   name: "John Doe",
   //   username: "johndoe",
   //   avatar: "/placeholder.svg?height=40&width=40",
   // }
@@ -251,15 +258,15 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                    <Label htmlFor="allowChats" className="text-base font-medium text-gray-700">
-                    Allow Chats
-                   </Label>
-                   <Switch
-                   id="allowChats"
-                   checked={allowChats}
-                   onCheckedChange={setAllowChats}
-                   />
-                  </div>
+                      <Label htmlFor="allowChats" className="text-base font-medium text-gray-700">
+                        Allow Chats
+                      </Label>
+                      <Switch
+                        id="allowChats"
+                        checked={allowChats}
+                        onCheckedChange={setAllowChats}
+                      />
+                    </div>
 
                     <Separator />
                     <div className="flex justify-end">

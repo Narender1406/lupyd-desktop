@@ -6,9 +6,10 @@ import { useNavigate } from "react-router-dom"
 import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2  } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getNotifications, type NotificationProtos } from "lupyd-js"
+import {  type NotificationProtos } from "lupyd-js"
 import { NotificationItem } from "@/app/dashboard/notification/notifications-page"
 import { useAuth } from "@/context/auth-context"
+import { useApiService } from "@/context/apiService"
 
 // Mock notifications data
 // const mockNotifications = [
@@ -76,10 +77,11 @@ export function NotificationsDropdown() {
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const auth = useAuth()
+  const {api }= useApiService()
 
   useEffect(() => {
     if (auth.username) {
-      getNotifications().then(result => setNotifications(result.notifications));
+      api.getNotifications().then(result => setNotifications(result.notifications));
     }
   }, [auth])
 
