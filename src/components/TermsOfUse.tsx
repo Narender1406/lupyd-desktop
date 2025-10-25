@@ -268,12 +268,12 @@ export default function TermsOfUse() {
               <h2 className="text-3xl font-bold mb-4 text-black">Dispute Resolution</h2>
               <p className="text-gray-700 leading-relaxed mb-4">
                 Any dispute arising from or relating to these Terms or your use of Lupyd shall be governed by and
-                construed in accordance with the laws of the State of California, without regard to its conflict of law
+                construed in accordance with the laws of the Indian Judiciary, without regard to its conflict of law
                 principles.
               </p>
               <p className="text-gray-700 leading-relaxed mb-4">
                 You and Lupyd agree to submit to the exclusive jurisdiction of the state and federal courts located in
-                San Francisco, California, and waive any objection to venue or inconvenient forum.
+                New Delhi, India, and waive any objection to venue or inconvenient forum.
               </p>
               <p className="text-gray-700 leading-relaxed">
                 Before initiating legal proceedings, you agree to attempt to resolve any dispute through good-faith
@@ -292,7 +292,7 @@ export default function TermsOfUse() {
                 <h3 className="font-bold text-lg mb-3 text-black">Lupyd Legal Team</h3>
                 <p className="text-gray-700 mb-4">
                   <strong>Email:</strong>{" "}
-                  <a href="mailto:legal@lupyd.com" className="text-black underline hover:no-underline">
+                  <a href="mailto:support@lupyd.com" className="text-black underline hover:no-underline">
                     support@lupyd.com
                   </a>
                 </p>

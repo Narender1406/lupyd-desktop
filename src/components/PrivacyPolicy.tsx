@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
@@ -73,11 +73,10 @@ export default function PrivacyPolicy() {
                     setActiveSection(section.id);
                     document.getElementById(section.id)?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
-                    activeSection === section.id
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${activeSection === section.id
                       ? "bg-white text-black font-semibold"
                       : "text-gray-400 hover:bg-gray-800"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span>{section.title}</span>
@@ -211,13 +210,15 @@ export default function PrivacyPolicy() {
               <h2 className="text-3xl font-bold mb-4">Contact Us</h2>
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
                 <p className="font-semibold">Lupyd Privacy Team</p>
-                <p>Email:tenesripranav@gmail.com</p>
+
+                <a href="mailto:privacy@lupyd.com" className="text-white no-underline hover:no-underline">
+                  privacy@lupyd.com
+                </a>
+
                 <p className="mt-2 font-semibold">Mailing Address</p>
                 <p>
-                  Lupyd <br/>
-                  <br/>
-                  khanapuram khammam<br/>
-            
+                  Lupyd <br />
+                  Khanapuram, Khammam<br />
                 </p>
                 <p className="mt-2 font-semibold">Response Time</p>
                 <p>We aim to respond to all privacy inquiries within 30 days.</p>
@@ -226,11 +227,11 @@ export default function PrivacyPolicy() {
 
             <section className="border-t border-gray-700 pt-8 mt-12 text-gray-400 text-sm">
               <p>
-                This Privacy Policy may be updated from time to 
+                This Privacy Policy may be updated from time to
                 time. We will notify you of any material changes by posting
-                 the new Privacy Policy on this page and updating the "Last updated"
-                 date. Your continued use of the Service following the posting of
-                 revised Privacy Policy means that you accept and agree to the changes.
+                the new Privacy Policy on this page and updating the "Last updated"
+                date. Your continued use of the Service following the posting of
+                revised Privacy Policy means that you accept and agree to the changes.
               </p>
             </section>
           </main>
