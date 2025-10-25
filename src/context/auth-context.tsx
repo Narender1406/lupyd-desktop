@@ -3,13 +3,7 @@
 // import { AuthHandler, fbElement, initFbElement } from "lupyd-js"
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 
-import { Auth0Handler, getAuthHandler, type DecodedToken } from "lupyd-js"
-import { Navigate } from "react-router-dom"
-import { App } from "@capacitor/app"
-import { Browser } from "@capacitor/browser"
-import { Auth0Provider, useAuth0, User } from "@auth0/auth0-react"
 import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react"
-
 import { type DecodedToken, getPayloadFromAccessToken } from "lupyd-js"
 
 
