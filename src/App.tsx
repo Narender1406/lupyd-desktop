@@ -1,8 +1,5 @@
 import './App.css'
-
 import { lazy, Suspense } from 'react'
-
-
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { OverviewPage } from './app/saas/pages/overview-page';
 import GroupChannelsPage from './app/dashboard/groups/[id]/channels/page';
@@ -69,8 +66,22 @@ import GroupChannelsPage from './app/dashboard/groups/[id]/channels/page';
 
 
 
-const FireflyProvider = lazy(() => import("./context/firefly-context"));
 
+
+
+
+
+
+
+// import TermsOfUse from './components/TermsOfUse';
+// import PrivacyPolicy from "./components/PrivacyPolicy";
+
+
+const TermsOfUse  = lazy(() => import('./components/TermsOfUse'));
+const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
+
+
+const FireflyProvider = lazy(() => import("./context/firefly-context"));
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
@@ -86,8 +97,6 @@ const CheckoutPage = lazy(() => import('./app/dashboard/subscription/checkout/pa
 const NotificationsPage = lazy(() => import('./app/dashboard/notification/notifications-page'));
 const AssignUsernamePage = lazy(() => import('./app/assignUsername'));
 const DashboardPage = lazy(() => import('./app/dashboard/page'));
-
-
 const CommunityPage  = lazy(() => import('./app/(landing)/community/page'));
 const CreatorToolsPage  = lazy(() => import('./app/(landing)/creator-tools/page'));
 const ExperiencePage  = lazy(() => import('./app/(landing)/experience/page'));
@@ -115,12 +124,12 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<LoadingPage/>}>
       <Routes>
-        <Route path="about/" element={<LandingPage />} />
-        <Route path="about/community" element={<CommunityPage />} />
-        <Route path="about/features" element={<FeaturesPage />} />
-        <Route path="about/experience" element={<ExperiencePage />} />
-        <Route path="about/creator-tools" element={<CreatorToolsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/about/" element={<LandingPage />} />
+        <Route path="/about/community" element={<CommunityPage />} />
+        <Route path="/about/features" element={<FeaturesPage />} />
+        <Route path="/about/experience" element={<ExperiencePage />} />
+        <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
+        <Route path="/about/privacy" element={<PrivacyPage />} />
         <Route path="/signin" element={<AssignUsernamePage />} />
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
@@ -145,13 +154,13 @@ function App() {
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/user/:username" element={<ProfilePage />} />
         <Route element={<FireflyProvider />}>
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:username" element={<UserMessagePage />} />
-        </Route>
+        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
         <Route path="/notification" element={<NotificationsPage />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
-         {/*
-
+        {/*
         <Route path="/business" element={<OverviewPage />} />
         <Route path="/business" element={<OverviewPage />} />
         <Route path="/business/clients-page" element={<ClientsPage />} />
@@ -161,11 +170,10 @@ function App() {
         <Route path="/business/api-key-page" element={<ApiKeyPage />} />
         <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
         <Route path="/business/add-service-page" element={<AddServicePage />} />
+        */}
+        </Routes>
 
-*/}
-      </Routes>
-
-</Suspense>    
+      </Suspense>    
     </BrowserRouter>)
 }
 
