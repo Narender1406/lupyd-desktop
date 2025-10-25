@@ -2,7 +2,7 @@
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { useState, useRef, useEffect } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,26 +16,26 @@ import { UserAvatar } from "../user-avatar"
 import LazyLoad from "react-lazyload"
 import { toast } from "@/hooks/use-toast"
 import {
-  createPost,
   dateToRelativeString,
-  deletePost,
   FetchType,
-  getPosts,
   type GetPostsData,
   getTimestampFromUlid,
   type PickedFileUrl,
   PostProtos,
-  putVote,
-  reportPost,
   ulidStringify,
 } from "lupyd-js"
 import type { Extension, HtmlExtension } from "micromark-util-types"
+import { useApiService } from "@/context/apiService"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
 type PostBody = PostProtos.PostBody
 
 export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) => void }) {
+
+  const { api } = useApiService()
+
+
   const post = props.post
   const [showComments, setShowComments] = useState(false)
   const [commentText, setCommentText] = useState("")
@@ -55,7 +55,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
         fetchTypeFields: ulidStringify(post.id),
       }
 
-      const posts = await getPosts(details)
+      const posts = await api.getPosts(details)
       setComments(posts)
     }
     setShowComments(!showComments)
@@ -73,7 +73,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
 
     toast({ title: "Commenting..." })
     // TODO: have better way to show progress
-    createPost(details)
+    api.createPost(details)
       .then((comment) => {
         if (comment) {
           setComments((comments) => [comment, ...comments])
@@ -103,7 +103,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
       val = PostProtos.BoolValue.create({ val: true })
     }
 
-    await putVote(PostProtos.Vote.create({ id: post.id, val }))
+    await api.putVote(PostProtos.Vote.create({ id: post.id, val }))
   }
 
   const handleDislike = async () => {
@@ -123,7 +123,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
       val = PostProtos.BoolValue.create({ val: false })
     }
 
-    await putVote(PostProtos.Vote.create({ id: post.id, val }))
+    await api.putVote(PostProtos.Vote.create({ id: post.id, val }))
   }
 
   const postUrl = `${window.origin}/post/${ulidStringify(post.id)}`
@@ -131,14 +131,14 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const report = async () => {
-    await reportPost(post.id, "")
+    await api.reportPost(post.id, "")
     setIsDropdownOpen(false)
     toast({ title: "Post has been reported" })
-    
+
   }
 
   const deleteThisPost = async () => {
-    await deletePost(post.id)
+    await api.deletePost(post.id)
     toast({ title: "Post has been deleted" })
     if (props.onDelete) {
       props.onDelete(post.id)
@@ -181,11 +181,11 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
                 report();
                 alert("Successfully reported!");
               }}>
-              <div className="flex items-center cursor-pointer">
-                <Flag className="mr-2 h-4 w-4" />
-                <span>Report</span>
-              </div>
-            </DropdownMenuItem>
+                <div className="flex items-center cursor-pointer">
+                  <Flag className="mr-2 h-4 w-4" />
+                  <span>Report</span>
+                </div>
+              </DropdownMenuItem>
 
               {auth.username === post.by && (
                 <DropdownMenuItem onClick={deleteThisPost}>
@@ -241,7 +241,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
         {showComments && (
           <div className="mt-4 pt-4 border-t">
             <div className="flex items-center space-x-2 mb-4">
-              <UserAvatar username={auth.username ?? ""}/>
+              <UserAvatar username={auth.username ?? ""} />
               <Input
                 placeholder="Write a comment..."
                 className="flex-1"
@@ -395,11 +395,11 @@ async function buildHtmlElementFromMarkdown(
       return
     }
 
-    
+
     i.loading = "lazy"
     try {
       i.decoding = "async"
-    } catch {}
+    } catch { }
     i.classList.add("w-full", "h-full", "object-contain")
     const mediaWindow = div(
       {
@@ -423,7 +423,7 @@ async function buildHtmlElementFromMarkdown(
         title,
       })
       videoEl.setAttribute("data-src", src)
-      ;(videoEl as any).className = "w-full h-full object-contain bg-black/90"
+        ; (videoEl as any).className = "w-full h-full object-contain bg-black/90"
       const vWrap = div(
         {
           class:

@@ -39,7 +39,6 @@ import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringi
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 
-
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
 export default function UserMessagePage() {

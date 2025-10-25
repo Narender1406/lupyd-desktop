@@ -3,7 +3,6 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/auth-context"
 import { UserDataProvider } from "@/context/userdata-context"
-import { SnackbarProvider } from "@/components/snackbar"
 import { DialogProvider } from "@/context/dialog-context"
 import { UserImageProvider } from "@/context/user-image-context"
 
@@ -26,7 +25,6 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <DialogProvider>
-            <SnackbarProvider>
               <AuthProvider>
                 <UserImageProvider>
                   <UserDataProvider>
@@ -36,7 +34,6 @@ export default function RootLayout({
                   </UserDataProvider>
                 </UserImageProvider>
               </AuthProvider>
-            </SnackbarProvider>
           </DialogProvider>
         </ThemeProvider>
       </body>

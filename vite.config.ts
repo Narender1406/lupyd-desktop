@@ -1,11 +1,15 @@
-import react from "@vitejs/plugin-react";
+// import react from "@vitejs/plugin-react";
+import preact from "@preact/preset-vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
+import rollupPluginLicense from "rollup-plugin-license";
+import { terser } from "rollup-plugin-terser";
 
 // https://vite.dev/config/
 
 const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
-  return {
+  const proxy = {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
@@ -22,16 +26,29 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
       rewrite: (path) => path.replace(/^\/cdn/, ""),
     },
   };
+
+  console.log(proxy);
+
+  return proxy;
 };
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "NEXT_PUBLIC_");
+  console.log(env);
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
   return {
-    base: "./",
-    plugins: [react()],
+    plugins: [
+      preact(),
+      rollupPluginLicense({
+        thirdParty: {
+          includePrivate: true,
+          output: "dist/third-party-licenses.txt",
+        },
+      }),
+      visualizer(),
+    ],
 
     define: Object.fromEntries(
       Object.entries(env).map(([key, val]) => [
@@ -42,6 +59,30 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+
+        react: "preact/compat",
+        "react-dom": "preact/compat",
+      },
+    },
+
+    build: {
+      rollupOptions: {
+        treeshake: "smallest",
+        output: {
+          inlineDynamicImports: false,
+          manualChunks: (id: string) => {
+            if (id.includes("lucide")) {
+              return "lucide";
+            }
+          },
+        },
+        plugins: [
+          terser({
+            output: {
+              comments: false,
+            },
+          }),
+        ],
       },
     },
 
@@ -50,13 +91,5 @@ export default defineConfig(({ mode }) => {
       proxy: buildProxy(emulatorAddr),
       host: "0.0.0.0",
     },
-
-    // build: {
-    //   minify: false,
-    //   sourcemap: false,
-    //   rollupOptions: {
-    //     treeshake: false,
-    //   },
-    // },
   };
 });

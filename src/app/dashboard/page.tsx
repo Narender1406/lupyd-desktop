@@ -9,21 +9,23 @@ import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trendin
 import { CreatePost } from "@/components/dashboard/create-post"
 import { PostFeed } from "@/components/dashboard/post-feed"
 import { useEffect, useState } from "react"
-import { FetchType, getPosts, getTrendingHashtags, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
+import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
 import { Loader2, TrendingUp } from "lucide-react"
 import InfiniteScroll from "react-infinite-scroll-component"
 import { PostCard } from "@/components/dashboard/post-card"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
+import { useApiService } from "@/context/apiService"
 
 
 export default function DashboardPage() {
   const [suggestedUsers, setSuggestedUsers] = useState<UserProtos.User[]>([])
   const [trendingHashtags, setTrendingHashtags] = useState<PostProtos.PostHashtag[]>([])
 
+  const { api } = useApiService()
 
   useEffect(() => {
-    getTrendingHashtags().then((result) => {
+    api.getTrendingHashtags().then((result) => {
       setTrendingHashtags(result.hashtags)
     }).catch(console.error)
   }, [])
@@ -77,7 +79,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                   <Button variant="ghost" size="sm" className="w-full mt-2">
-                    View all 
+                    View all
                   </Button>
                 </CardContent>
               </Card>
@@ -163,6 +165,9 @@ export function FollowingFeed() {
   const userData = useUserData()
   let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
 
+
+  const { api } = useApiService()
+
   const fetchItems = async () => {
     if (userData.follows.length == 0) return;
     const details: GetPostsData = {
@@ -171,7 +176,7 @@ export function FollowingFeed() {
       allowedPostTypes: Number(store.get("allowedPostTypes") ?? "1"),
       start: minimumPostId ? ulidStringify(minimumPostId) : undefined
     }
-    const posts = await getPosts(details)
+    const posts = await api.getPosts(details)
     if (posts.length === 0) { setHasMore(false); return }
 
     let minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)

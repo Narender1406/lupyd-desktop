@@ -1,19 +1,17 @@
 "use client"
-import { AnimatedCard } from "@/components/animated-card"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserData } from "@/context/userdata-context"
-import { Compass, Filter, Hash, MessageSquare, Search, ThumbsUp, TrendingUp, Users } from "lucide-react"
-import { CDN_STORAGE, FetchType, getPosts, getUsers, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
+import { Filter, Search, TrendingUp, Users } from "lucide-react"
+import { FetchType, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
-import React, { useEffect, useMemo, useState } from "react"
+import React, {  useEffect, useMemo, useState } from "react"
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/context/auth-context"
+import { useApiService } from "@/context/apiService"
 
 // Mock data for trending topics
 // const trendingTopics = [
@@ -98,6 +96,8 @@ export default function DiscoverPage() {
   const [users, setUsers] = useState<Array<UserProtos.User>>([])
 
 
+  const { api } = useApiService()
+
 
   const search = async (query: string) => {
 
@@ -113,7 +113,7 @@ export default function DiscoverPage() {
     // posts
     {
       if (query.length > 3) {
-        const postsFuture = getPosts({
+        const postsFuture = api.getPosts({
           fetchType: FetchType.Search,
           fetchTypeFields: query,
         }).then((results) => {
@@ -129,7 +129,7 @@ export default function DiscoverPage() {
     }
 
     {
-      const usersFuture = getUsers(query).then((results) => {
+      const usersFuture = api.getUsers(query).then((results) => {
         setUsers(results)
         for (const user of results) {
           console.log(user)
@@ -176,7 +176,7 @@ export default function DiscoverPage() {
     const hashtag = searchParams.get("hashtag")
     if (hashtag) {
       const offset = Number(searchParams.get("offset")) || 0
-      getPosts({ fetchType: FetchType.Hashtag, fetchTypeFields: hashtag, offset }).then((posts) => {
+      api.getPosts({ fetchType: FetchType.Hashtag, fetchTypeFields: hashtag, offset }).then((posts) => {
         setPosts(posts)
       })
       return

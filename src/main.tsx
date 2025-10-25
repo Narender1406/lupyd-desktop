@@ -19,6 +19,8 @@ CapacitorApp.addListener('backButton', ({ canGoBack }) => {
     CapacitorApp.exitApp();
   }
 });
+import { ApiServiceProvider } from "@/context/apiService"
+
 
 createRoot(document.getElementById('root')!).render(
 
@@ -26,13 +28,15 @@ createRoot(document.getElementById('root')!).render(
     <DialogProvider>
       <LupydAuth0Provider>
         <AuthProvider>
-          <UserImageProvider>
-            <UserDataProvider>
-              <div className="flex min-h-screen flex-col">
-                <App />
-              </div>
-            </UserDataProvider>
-          </UserImageProvider>
+          <ApiServiceProvider>
+            <UserImageProvider>
+              <UserDataProvider>
+                <div className="flex min-h-screen flex-col">
+                  <App />
+                </div>
+              </UserDataProvider>
+            </UserImageProvider>
+          </ApiServiceProvider>
         </AuthProvider>
       </LupydAuth0Provider>
     </DialogProvider>

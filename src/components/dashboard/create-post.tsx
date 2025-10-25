@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context"
 import { UserAvatar } from "../user-avatar"
 import { useNavigate } from "react-router-dom"
 import { CapacitorHttp } from "@capacitor/core"
+
 export function CreatePost() {
   const { username } = useAuth()
   const router = useNavigate()
@@ -53,6 +54,7 @@ export function CreatePost() {
                 <Smile className="h-4 w-4 mr-2" />
                 Feeling
               </Button>
+             
             </div>
           </div>
         </div>
