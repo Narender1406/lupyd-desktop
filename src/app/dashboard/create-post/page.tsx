@@ -43,15 +43,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast"
 import {
   CDN_STORAGE,
-  createPost,
-  createPostWithFiles,
   type PickedFileUrl,
   PostProtos,
   sanitizeFilename,
   ulidStringify,
-  Utils,
 } from "lupyd-js"
 import { Progress } from "@/components/ui/progress"
+import { useApiService } from "@/context/apiService"
 
 
 const format = (date: Date) =>
@@ -344,6 +342,7 @@ export default function CreatePostPage() {
 
   // Handle form submission
   const auth = useAuth()
+  const {api} = useApiService()
   const [uploadingPost, setUploadingPost] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0.0)
   const handleSubmit = async (e: React.FormEvent) => {
@@ -400,7 +399,7 @@ export default function CreatePostPage() {
 
         // fake interpolate for better user experience
         setUploadProgress(0.4)
-        const post = await createPost(details)
+        const post = await api.createPost(details)
         if (post) {
           console.log(`Post Uploaded successfully ${ulidStringify(post.id)}`)
         } else {
@@ -450,7 +449,7 @@ export default function CreatePostPage() {
           fields,
           files,
         })
-        const post = await createPostWithFiles(
+        const post = await api.createPostWithFiles(
           details,
           mediaItems.map((e) => e.previewUrl),
           (total, sent) => {

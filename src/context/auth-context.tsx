@@ -14,7 +14,7 @@ type AuthContextType = {
   logout: () => Promise<void>
   login: () => Promise<void>,
   getToken: (forceReload?: boolean) => Promise<string | undefined>,
-  handleRedirectCallback: () => Promise<any>,
+  // handleRedirectCallback: () => Promise<any>,
 }
 
 
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUsername(user?.uname ?? null)
     }
 
-    console.log({ authStatus: { user, username, token } })
+    console.log({ authStatus: { user, username } })
 
 
     if (typeof window !== "undefined") {
@@ -88,8 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   }
 
+  const returnToUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_SIGNOUT_RETURN_TO ?? window.location.origin
+
   const logout = useCallback(async () => {
-    await auth0.logout()
+    await auth0.logout({ logoutParams: { returnTo: returnToUrl } })
     onUpdateUser(null)
   }, [auth0])
   // const login = () => getAuthHandler()!.login({ targetPath: window.location.toString().slice(window.location.origin.length) })
@@ -113,13 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth0])
 
   // const handleRedirectCallback = () => getAuthHandler()!.handleRedirectCallback()
-  const handleRedirectCallback = useCallback(async (url?: string) => {
-    console.log(`handling handle redirect callback with ${url}, at full path: ${window.location.href}`)
-    const _result = await auth0.handleRedirectCallback(url)
-    console.log({ _result })
-    const token = await getToken()
-    onUpdateUser(token ?? null)
-  }, [auth0])
+  // const handleRedirectCallback = useCallback(async (url?: string) => {
+  //   const _result = await auth0.handleRedirectCallback(url)
+  //   console.log({ _result })
+  //   const token = await getToken()
+  //   onUpdateUser(token ?? null)
+  // }, [auth0])
 
 
 
@@ -130,7 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (auth0.isLoading) return
       const token = await getToken()
-      console.log({token})
       onUpdateUser(token ?? null)
     })()
   }, [auth0])
@@ -145,13 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (<div />);
   }
 
-
-  const deleteAccount = async () => {
-    throw Error("UNIMPLEMENTED")
-  }
-
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken }}>{children}</AuthContext.Provider>
   )
 }
 
@@ -179,7 +174,9 @@ export function LupydAuth0Provider({ children }: { children: ReactNode }) {
     throw new Error("Missing AUDIENCE env var")
   }
 
-  const redirectUrl = `${window.location.origin}/signin`
+
+
+  const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
 
 
   // const redirectUrl = `com.example.app://lupyd-dev.eu.auth0.com/capacitor/com.example.app/callback`;
