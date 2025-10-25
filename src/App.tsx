@@ -2,6 +2,67 @@ import './App.css'
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { OverviewPage } from './app/saas/pages/overview-page';
+import GroupChannelsPage from './app/dashboard/groups/[id]/channels/page';
+// import { OverviewPage } from './app/saas/pages/overview-page';
+// import CommunityPage from './app/(landing)/community/page'
+// import CreatorToolsPage from './app/(landing)/creator-tools/page'
+// import ExperiencePage from './app/(landing)/experience/page'
+// import FeaturesPage from './app/(landing)/features/page'
+// import LandingPage from './app/(landing)/page'
+// import PrivacyPage from './app/(landing)/privacy/page'
+
+// import ActivityPage from './app/dashboard/activity/page'
+// import AnalyticsPage from './app/dashboard/analytics/page'
+// import ConnectionsPage from './app/dashboard/connections/page'
+// import CreatePostPage from './app/dashboard/create-post/page'
+// import DiscoverPage from './app/dashboard/discover/page'
+
+// import MessagesPage from './app/dashboard/messages/page'
+// import DashboardPage from './app/dashboard/page'
+
+// import PostPage from './app/dashboard/post/[postId]/page'
+// import SavedPostsPage from './app/dashboard/saved-posts/page'
+// import SettingsPage from './app/dashboard/settings/page'
+// import ProfilePage from './app/dashboard/user/[username]/page'
+// import SubscriptionPage from './app/dashboard/subscription/page'
+// import CheckoutPage from './app/dashboard/subscription/checkout/page'
+// import NotificationsPage from './app/dashboard/notification/notifications-page'
+// import AssignUsernamePage from './app/assignUsername'
+
+// import { ClientsPage } from './app/saas/pages/clients-page'
+// import { ServicesPage } from './app/saas/pages/services-page'
+// import { AddClientPage } from './app/saas/pages/add-client-page'
+// import { EditClientPage } from './app/saas/pages/editclient'
+// import { ApiKeyPage } from './app/saas/pages/api-key-page'
+// import { ClientDetailsPage } from './app/saas/pages/clientdetails'
+// import { AddServicePage } from './app/saas/pages/add-service-page'
+
+// import { OverviewPage } from './app/saas/pages/overview-page'
+// import { AnalyticssaasPage } from './app/saas/pages/analytics-saas-page'
+// import { MonitoringPage } from './app/saas/pages/monitoring-page'
+// import { BillingPage } from './app/saas/pages/billing-page'
+// import { SupportPage } from './app/saas/pages/support-page'
+// import GroupsPage from './app/dashboard/groupchat/groupchat'
+// import CreateGroupPage from './app/dashboard/groupchat/creategroup/creategroupchat'
+// import GroupSettingsPage from './app/dashboard/groupchat/groupchatsettings/groupchatsettings'
+// import GroupInfoPage from './app/dashboard/groupchat/groupinfopage/groupinfo'
+// import UserMessagePage from './app/dashboard/messages/[username]/page'
+// import { FireflyProvider } from './context/firefly-context'
+
+
+
+
+// const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
+// const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
+// const AddClientPage = lazy(() => import('./app/saas/pages/add-client-page').then(m => ({ default: m.AddClientPage })));
+// const EditClientPage = lazy(() => import('./app/saas/pages/editclient').then(m => ({ default: m.EditClientPage })));
+// const ApiKeyPage = lazy(() => import('./app/saas/pages/api-key-page').then(m => ({ default: m.ApiKeyPage })));
+// const ClientDetailsPage = lazy(() => import('./app/saas/pages/clientdetails').then(m => ({ default: m.ClientDetailsPage })));
+// const AddServicePage = lazy(() => import('./app/saas/pages/add-service-page').then(m => ({ default: m.AddServicePage })));
+// const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(m => ({ default: m.OverviewPage })));
+// const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').then(m => ({ default: m.MonitoringPage })));
+// const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
+// const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
 
 
 
@@ -42,10 +103,13 @@ const ExperiencePage  = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage  = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage  = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage  = lazy(() => import('./app/(landing)/privacy/page'));
-const GroupsPage  = lazy(() => import('./app/dashboard/groupchat/groupchat'))
-const CreateGroupPage  = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
-const GroupSettingsPage  = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
-const GroupInfoPage  = lazy(() => import('./app/dashboard/groupchat/groupinfopage/groupinfo'))
+
+
+
+const GroupsPage  = lazy(() => import('./app/dashboard/groups/page'))
+const CreateGroupPage  = lazy(() => import('./app/dashboard/groups/create/page'))
+const GroupSettingsPage  = lazy(() => import('./app/dashboard/groups/[id]/settings/page'))
+const GroupInfoPage  = lazy(() => import('./app/dashboard/groups/[id]/info/page'))
 const UserMessagePage  = lazy(() => import('./app/dashboard/messages/[username]/page'))
 
 
@@ -79,10 +143,11 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/activity" element={<ActivityPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/groupchat" element={<GroupsPage />} />
-        <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
-        <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
-        <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/create" element={<CreateGroupPage />} />
+        <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
+        <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
+        <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/subscription/checkout" element={<CheckoutPage />} />
         <Route path="/discover" element={<DiscoverPage />} />
