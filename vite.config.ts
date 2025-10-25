@@ -50,5 +50,13 @@ export default defineConfig(({ mode }) => {
       proxy: buildProxy(emulatorAddr),
       host: "0.0.0.0",
     },
+
+    // build: {
+    //   minify: false,
+    //   sourcemap: false,
+    //   rollupOptions: {
+    //     treeshake: false,
+    //   },
+    // },
   };
 });

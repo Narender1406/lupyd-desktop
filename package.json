@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.8.0",
     "@auth0/auth0-spa-js": "^2.3.0",
     "@capacitor/android": "^7.4.3",
     "@capacitor/app": "^7.1.0",
@@ -59,7 +60,7 @@
     "framer-motion": "^12.23.12",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.540.0",
-    "lupyd-js": "https://github.com/lupyd/lupyd-js",
+    "lupyd-js": "github:lupyd/lupyd-js",
     "micromark": "^4.0.2",
     "micromark-extension-gfm-strikethrough": "^2.1.0",
     "micromark-extension-gfm-table": "^2.1.1",
