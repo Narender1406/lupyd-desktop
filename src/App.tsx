@@ -1,6 +1,11 @@
 import './App.css'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+
+import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
+import { useAuth0 } from '@auth0/auth0-react';
+
 
 
 
@@ -75,6 +80,32 @@ function LoadingPage() {
 
 
 function App() {
+
+
+  const { handleRedirectCallback } = useAuth0();
+
+  useEffect(() => {
+
+    const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
+
+    CapApp.addListener("appUrlOpen", async ({ url }) => {
+      console.log(`RECEIVED A DEEPLINK ${url}`)
+      if (url.startsWith(redirectUrl)) {
+        if (
+          url.includes("state") &&
+          (url.includes("code") || url.includes("error"))
+        ) {
+          await handleRedirectCallback(url);
+        }
+
+        await Browser.close();
+      }
+    });
+  }, [handleRedirectCallback]);
+
+
+
+
   return (
     <BrowserRouter>
       <Suspense fallback={<LoadingPage />}>

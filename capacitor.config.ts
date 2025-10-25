@@ -1,18 +1,27 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: 'com.Lupyd.app',
-  appName: 'lupyd-web',
-  webDir: 'dist',
-  plugins:{App:{
-    urlSchemes: ["lupyd"],
-    deeplinks: [
-      {
-        Scheme: "Lupyd",
-        host: "callback"
-      }
-    ]
-  }}
+  appId: "com.Lupyd.app",
+  appName: "lupyd-web",
+  webDir: "dist",
+  plugins: {
+    App: {
+      urlSchemes: ["lupyd"],
+      deeplinks: [
+        {
+          Scheme: "Lupyd",
+          host: "callback",
+        },
+      ],
+    },
+  },
+  server: {
+    androidScheme: "http",
+    cleartext: true,
+  },
+  android: {
+    allowMixedContent: true,
+  },
 };
 
 export default config;

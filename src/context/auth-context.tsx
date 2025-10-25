@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react"
 import { type DecodedToken, getPayloadFromAccessToken } from "lupyd-js"
+import { Browser } from "@capacitor/browser"
 
 
 type AuthContextType = {
@@ -98,7 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const login = useCallback(() => {
-    return auth0.loginWithRedirect()
+    return auth0.loginWithRedirect({
+      openUrl(url) {
+        return Browser.open({ url, windowName: "_self" })
+      },
+    })
   }, [auth0])
 
   const getToken = useCallback(async (refresh?: boolean) => {

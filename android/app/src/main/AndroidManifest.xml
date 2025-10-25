@@ -22,12 +22,11 @@
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <!-- Change lupyd and host/path as needed -->
-                <data android:scheme="lupyd" android:host="lupyd" />
+                <data android:scheme="lupyd" />
             </intent-filter>
         </activity>
 
