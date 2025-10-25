@@ -3128,7 +3128,7 @@ lucide-react@^0.540.0:
 
 "lupyd-js@https://github.com/lupyd/lupyd-js":
   version "1.0.2"
-  resolved "https://github.com/lupyd/lupyd-js#b6e7c5ef71db21d92b8c25ea8a78db86f3e5c069"
+  resolved "https://github.com/lupyd/lupyd-js#6ab1b4bb9554711c09d4908c3f555fad4ee3d9b6"
   dependencies:
     "@auth0/auth0-spa-js" "^2.2.0"
     base-x "^5.0.1"

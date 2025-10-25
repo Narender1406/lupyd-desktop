@@ -34,6 +34,7 @@ import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
 import { CDN_STORAGE, getAuthHandler, getUser, PostProtos, updateUser, updateUserProfilePicture, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 
 
 
@@ -183,24 +184,20 @@ export default function SettingsPage() {
                 >
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger
-                  value="security"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="connections"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Connections
-                </TabsTrigger>
+                
                 <TabsTrigger
                   value="preferences"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
                 >
                   Preferences
                 </TabsTrigger>
+                <TabsTrigger
+                  value="about"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
+                >
+                  About
+                </TabsTrigger>
+                
               </TabsList>
             </div>
           </div>
@@ -311,107 +308,24 @@ export default function SettingsPage() {
               <NotificationsSection />
             </TabsContent>
 
-            <TabsContent value="security" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Account Security</CardTitle>
-                    <CardDescription>Manage your account security settings</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Shield className="h-4 w-4 mr-2" />
-                            Two-Factor Authentication
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <Switch id="twoFactor" />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Smartphone className="h-4 w-4 mr-2" />
-                            Login Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify new logins from unrecognized devices</p>
-                        </div>
-                        <Switch id="loginVerification" defaultChecked />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Mail className="h-4 w-4 mr-2" />
-                            Email Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify your email address</p>
-                        </div>
-                        <Button disabled>
-                          Verified
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
-                        Save Security Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
-            <TabsContent value="connections" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Connected Accounts</CardTitle>
-                    <CardDescription>Manage your connected social accounts and services</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    
-                      
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Apps and Websites</h3>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                        <div>
-                          <p className="font-medium">Manage Third-Party Access</p>
-                          <p className="text-sm text-muted-foreground">
-                            Review apps and websites with access to your account
-                          </p>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          View Apps
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
-                        Save Connection Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
+            
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
+            <TabsContent value="about"   className="mt-0 flex flex-col items-start space-y-4 
+                 bg-white text-black dark:bg-black dark:text-white 
+                 p-6 rounded-lg">
+              <Link to="/privacy"  className="inline-block px-5 py-2 rounded-md 
+                   bg-black text-white hover:bg-gray-800 
+                   dark:bg-white dark:text-black dark:hover:bg-gray-200 
+                   transition text-sm font-medium">Privacy policy</Link>
+              
+              <Link to="/terms-of-use"  className="inline-block px-5 py-2 rounded-md 
+                   bg-black text-white hover:bg-gray-800 
+                   dark:bg-white dark:text-black dark:hover:bg-gray-200 
+                   transition text-sm font-medium">Terms Of Use</Link>
+            </TabsContent>
+            
           </div>
         </Tabs>
       </div>
