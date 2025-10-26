@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context"
 import { UserAvatar } from "../user-avatar"
 import { useNavigate } from "react-router-dom"
 import { CapacitorHttp } from "@capacitor/core"
+  // import { LocalNotifications } from "@capacitor/local-notifications"
 
 export function CreatePost() {
   const { username } = useAuth()
@@ -19,12 +20,24 @@ export function CreatePost() {
   }
   
 
-  async function dosomething() 
-   {
-    await CapacitorHttp.get({url :"http://192.168.1.4:8080"})
-    console.log("doing-------smthng")
+  // async function dosomething() 
+  //  {
+  //   await CapacitorHttp.get({url :"http://192.168.1.4:8080"})
+  //   console.log("doing-------smthng")
     
-  }
+  // }
+  // function showNotification() {
+  //   LocalNotifications.schedule({
+  //     notifications: [
+  //       {
+  //         title: "Hello!",
+  //         body: "This is a test notification.",
+  //         id: 1,
+  //         schedule: { at: new Date(Date.now() + 1000) }, // 1 second later
+  //       },
+  //     ],
+  //   });
+  // }
 
   return (
     <Card className="border-none shadow-sm">
@@ -38,10 +51,10 @@ export function CreatePost() {
                 <ImageIcon className="h-4 w-4 mr-2" />
                 Photo
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={dosomething}>
+              {/* <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={showNotification}>
                 <ImageIcon className="h-4 w-4 mr-2" />
                 developer
-              </Button>
+              </Button> */}
               <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
                 <Video className="h-4 w-4 mr-2" />
                 Video
