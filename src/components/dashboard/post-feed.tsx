@@ -1,20 +1,25 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import InfiniteScroll from "react-infinite-scroll-component"
 import { PostCard } from "@/components/dashboard/post-card"
 import { Loader2 } from "lucide-react"
 
-import { areListsEqual, FetchType, getPosts, type GetPostsData, ulidFromString, ulidStringify, Utils } from "lupyd-js"
+import { FetchType, type GetPostsData, ulidFromString, ulidStringify } from "lupyd-js"
 
 // Import the post data type from post-card.tsx
 import { PostProtos } from "lupyd-js"
 import store from "store2"
 import { useUserData } from "@/context/userdata-context"
 import { useAuth } from "@/context/auth-context"
+import { useApiService } from "@/context/apiService"
 
 
 export function PostFeed() {
+
+  const { api } = useApiService()
+
+
   const [items, setItems] = useState<PostProtos.FullPost[]>([])
   const [hasMore, setHasMore] = useState(true)
   let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
@@ -34,7 +39,7 @@ export function PostFeed() {
 
     console.log({ details })
 
-    const posts = await getPosts(details)
+    const posts = await api.getPosts(details)
     if (posts.length === 0) { setHasMore(false); return }
 
 
@@ -61,7 +66,7 @@ export function PostFeed() {
     const follows = userData.follows
     if (follows.length == 0) return
 
-    const usersPosts = await getPosts({ fetchType: FetchType.Users, fetchTypeFields: follows })
+    const usersPosts = await api.getPosts({ fetchType: FetchType.Users, fetchTypeFields: follows })
     setItems((prev) => {
       const prevIds = new Set(prev.map(e => ulidStringify(e.id)))
       const newItems = [...prev]

@@ -5,13 +5,13 @@ import type React from "react"
 import { Bell, Heart, MessageCircle, UserPlus, MoreHorizontal, ArrowLeft, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { dateToRelativeString, getNotifications, getTimestampFromUlid, ulidStringify, type NotificationProtos } from "lupyd-js"
+import { dateToRelativeString,  getTimestampFromUlid, ulidStringify, type NotificationProtos } from "lupyd-js"
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/context/auth-context"
+import { useApiService } from "@/context/apiService"
 
 
 function NotificationIcon({ type }: { type: NotificationProtos.NotificationType }) {
@@ -144,10 +144,11 @@ export default function NotificationsPage() {
   }
 
   const auth = useAuth()
+  const {api} = useApiService()
 
   useEffect(() => {
     if (auth.username) {
-      getNotifications().then(result => setNotifications(result.notifications))
+      api.getNotifications().then(result => setNotifications(result.notifications))
     }
   }, [auth])
 

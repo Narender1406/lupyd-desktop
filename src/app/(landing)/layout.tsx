@@ -1,17 +1,13 @@
 "use client"
-import { useAuth } from "@/context/auth-context"
 import type React from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 
 export default function LandingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const navigate = useNavigate()
-  const auth = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -80,32 +76,7 @@ export default function LandingLayout({
               Log In
             </Link>
             */}
-            {auth.isAuthenticated ? (
-              <div></div>
-            ) : (
-              <Button
-                onClick={() => {
-                  if (auth.username) {
-                    navigate("/")
-                  } else {
-                    if (auth.user && !auth.username) {
-                      navigate("/signin")
-                    } else {
-                      auth.login().then(() => navigate("/signin"))
-                      // getAuthHandler()?.login().then(() => {
-                      //   navigate("/signin")
-                      // }).catch(err => {
-                      //   console.error(err)
-                      //   snackbar("Something went wrong")
-                      // })
-                    }
-                  }
-                }}
-                className="hidden md:inline-flex h-9 items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-gray-800"
-              >
-                Sign In
-              </Button>
-            )}
+            
           </div>
         </div>
 

@@ -50,14 +50,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/create-post", label: "Create Post", icon: PlusSquare },
     { path: "/messages", label: "Messages", icon: MessageSquare },
     { path: "/discover", label: "Discover", icon: Compass },
-    
+    { path: "/activity", label: "Activity", icon: Activity },
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
-    
+    { path: "/analytics", label: "Analytics", icon: BarChart },
     { path: "/subscription", label: "Subscriptions", icon: Crown },
-    { path: "/groupchat", label: "Groups", icon: MessageCircle },
-    { path: "/subscription", label: "Business", icon: BriefcaseBusinessIcon },
+    { path: "/groups", label: "Groups", icon: MessageCircle },
+    { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
+  const dedupedNavItems = navItems.filter((item, idx, arr) => arr.findIndex((x) => x.path === item.path) === idx)
 
   // Handle client-side hydration
   useEffect(() => {
@@ -95,7 +96,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           router.push("/signin")
         }
       } else {
-        auth.login().then(() => router.push("/signin"))
+        auth.login()
       }
     }
   }
@@ -110,12 +111,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
+          {dedupedNavItems.map((item, index) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
             return (
               <Link
-                key={item.path}
+                key={`${item.path}-${index}`}
                 to={item.path}
                 className={`flex items-center px-3 py-2 rounded-md ${isActive ? "bg-gray-100" : "hover:bg-gray-100"}`}
               >
@@ -226,12 +227,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               {/* Scrollable content */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 <nav className="flex flex-col p-4 space-y-2">
-                  {navItems.map((item) => {
+                  {dedupedNavItems.map((item, index) => {
                     const Icon = item.icon
                     const isActive = location.pathname === item.path
                     return (
                       <Link
-                        key={item.path}
+                        key={`${item.path}-${index}`}
                         to={item.path}
                         className={`flex items-center px-3 py-2 rounded-md ${
                           isActive ? "bg-gray-100" : "hover:bg-gray-100"
