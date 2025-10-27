@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-import { FireflyClient, protos as FireflyProtos } from "firefly-client-js"
+import { FireflyWsClient, protos as FireflyProtos, libsignal, newJsSessionStore, newJsIdentityStore } from "firefly-client-js"
 
 import { useAuth } from '@/context/auth-context';
 import { useEffect, useMemo, useState } from 'react';
@@ -38,6 +38,7 @@ import { useFirefly } from "@/context/firefly-context";
 import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringify } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
+import { UserMessageStore, type Message as DMessage } from "@/context/message-store";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -47,78 +48,92 @@ export default function UserMessagePage() {
   const auth = useAuth()
   const navigate = useNavigate();
 
-  const [messages, setMessages] = useState<FireflyProtos.UserMessage[]>([])
+  const [messages, setMessages] = useState<DMessage[]>([])
 
   const firefly = useFirefly()
 
   const [chatInitiated, setChatInitiated] = useState(false)
 
-  function mergeSorted(a: FireflyProtos.UserMessage[], b: FireflyProtos.UserMessage[]): FireflyProtos.UserMessage[] {
-    const result: FireflyProtos.UserMessage[] = [];
-    let i = 0, j = 0;
 
-    while (i < a.length && j < b.length) {
-      // if (compare(a[i], b[j]) <= 0) {}
+  const localStore = new UserMessageStore();
 
-      if (getTimestampFromUlid(a[i].id) < getTimestampFromUlid(b[j].id)) {
-        result.push(a[i++]);
-      } else {
-        result.push(b[j++]);
-      }
-    }
+  const receiverAddress = new libsignal.ProtocolAddress(receiver ?? "", 1)
 
-    while (i < a.length) result.push(a[i++]);
-    while (j < b.length) result.push(b[j++]);
+  useEffect(() => () => receiverAddress.free(), []);
+  useEffect(() => () => localStore.close(), []);
 
-    return result;
-  }
+  // function mergeSorted(a: FireflyProtos.UserMessage[], b: FireflyProtos.UserMessage[]): FireflyProtos.UserMessage[] {
+  //   const result: FireflyProtos.UserMessage[] = [];
+  //   let i = 0, j = 0;
 
-  const addMessage = (prev: FireflyProtos.UserMessage[], msg: FireflyProtos.UserMessage) => {
+  //   while (i < a.length && j < b.length) {
+  //     // if (compare(a[i], b[j]) <= 0) {}
 
-    if (prev.length > 0) {
-      if (getTimestampFromUlid(prev[prev.length - 1].id) < getTimestampFromUlid(msg.id)) {
-        return [...prev, msg]
-      } else {
-        let i = 0;
-        for (; i < prev.length; i++) {
-          if (getTimestampFromUlid(prev[i].id) > getTimestampFromUlid(msg.id)) {
-            break
-          }
-          if (prev[i].id == msg.id) {
-            return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
-          }
-        }
-        return [...prev.slice(0, i), msg, ...prev.slice(i)]
-      }
-    } else {
-      return [msg]
-    }
-  }
+  //     if (getTimestampFromUlid(a[i].id) < getTimestampFromUlid(b[j].id)) {
+  //       result.push(a[i++]);
+  //     } else {
+  //       result.push(b[j++]);
+  //     }
+  //   }
+
+  //   while (i < a.length) result.push(a[i++]);
+  //   while (j < b.length) result.push(b[j++]);
+
+  //   return result;
+  // }
+
+  // const addMessage = (prev: FireflyProtos.UserMessage[], msg: FireflyProtos.UserMessage) => {
+
+  //   if (prev.length > 0) {
+  //     if (getTimestampFromUlid(prev[prev.length - 1].id) < getTimestampFromUlid(msg.id)) {
+  //       return [...prev, msg]
+  //     } else {
+  //       let i = 0;
+  //       for (; i < prev.length; i++) {
+  //         if (getTimestampFromUlid(prev[i].id) > getTimestampFromUlid(msg.id)) {
+  //           break
+  //         }
+  //         if (prev[i].id == msg.id) {
+  //           return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
+  //         }
+  //       }
+  //       return [...prev.slice(0, i), msg, ...prev.slice(i)]
+  //     }
+  //   } else {
+  //     return [msg]
+  //   }
+  // }
 
   const getOlderMessages = async () => {
     const other = receiver
+    const lastTs = messages.length != 0 ? BigInt(Date.now() * 1000) : messages[0].timestamp
+    const count = 50
 
-    const response = await firefly.client.sendRequest(FireflyProtos.Request.create({
-      getUserMessages: FireflyProtos.GetUserMessages.create({
-        from: other,
-        count: 100,
-        before: messages.length != 0 ? messages[0].id : undefined
+    const results = await Promise.all([
+      localStore.getLastMessages(other!, auth.username!, count, lastTs),
+      localStore.getLastMessages(auth.username!, other!, count, lastTs)
+    ])
+
+    setMessages((prev) => [...results.flat().sort((a, b) => Number(a.timestamp - b.timestamp)), ...prev])
+  }
+
+  const [currentConvoId, setCurrentConvoId] = useState(0n);
+
+
+  async function initiateConversation() {
+    if (!receiver) {
+      return
+    }
+    firefly.getConversation(receiver).then((convo) => {
+      setCurrentConvoId(convo.id)
+      setChatInitiated(true)
+    }).catch((err) => {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive"
       })
-    }))
-
-    if (!response.userMessages) {
-      setEndOfOlderMessages(false)
-      throw new Error(`Can't get messages ${JSON.stringify(response.error)}`)
-    }
-
-
-    if (response.userMessages!.messages.length == 0) {
-      setEndOfOlderMessages(false)
-    } else {
-      setMessages(prev =>
-        mergeSorted(prev, response.userMessages!.messages)
-      )
-    }
+    })
   }
 
   useEffect(() => {
@@ -127,25 +142,25 @@ export default function UserMessagePage() {
     }
 
 
-    const callback = (_: FireflyClient, msg: FireflyProtos.ServerMessage) => {
+    const callback = async (_: FireflyWsClient, msg: FireflyProtos.ServerMessage) => {
       if (msg.userMessage) {
         const shouldHandle = msg.userMessage.from == receiver || msg.userMessage.to == receiver
         if (shouldHandle) {
-          setMessages(prev => addMessage(prev, msg.userMessage!))
+          const text = await firefly.decrypt(msg.userMessage.text, msg.userMessage.type, receiver!)
+          const message = {
+            content: text,
+            timestamp: msg.userMessage.id,
+            from: msg.userMessage.from,
+            to: msg.userMessage.to,
+            conversationId: msg.userMessage.conversationId
+          }
+          await localStore.storeMessage(message)
+          setMessages(prev => [...prev, message])
         }
       }
     }
 
-    firefly.client.createUserChat(receiver).then((chatId) => {
-      console.log(`Chat ID: ${chatId}`)
-      setChatInitiated(true)
 
-      getOlderMessages()
-    }).catch(err => {
-      console.error(err)
-      toast({ title: `User may not allow chat requests`})
-      setChatInitiated(false)
-    })
 
     firefly.addEventListener(callback)
 
@@ -155,14 +170,14 @@ export default function UserMessagePage() {
 
 
   const [messageText, setMessageText] = useState("")
-  const [replyingTo, setReplyingTo] = useState<FireflyProtos.UserMessage | null>(null)
+  const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
 
   const [endOfOlderMessages, setEndOfOlderMessages] = useState(false)
-  function handleReaction(id: Uint8Array, emoji: string): void {
+  function handleReaction(id: bigint, emoji: string): void {
     throw new Error('Function not implemented.');
   }
 
-  function handleReply(message: FireflyProtos.UserMessage): void {
+  function handleReply(message: DMessage): void {
     setReplyingTo(message)
   }
 
@@ -190,10 +205,23 @@ export default function UserMessagePage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
 
-    firefly.client.sendUserMessage(FireflyProtos.UserMessage.create({
-      text: msg,
-      to: receiver,
-    }))
+    const payload = FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create({
+      plainText: new TextEncoder().encode(msg)
+    })).finish();
+    const { cipherText, cipherType } = await firefly.encrypt(payload, receiver!)
+
+
+    const message = await firefly.service.postUserMessage(currentConvoId, cipherText, cipherType)
+
+    const dmessage = {
+      content: payload,
+      timestamp: message.id,
+      from: auth.username!,
+      to: receiver!,
+      conversationId: message.conversationId
+    }
+
+    setMessages(prev => [...prev, dmessage])
 
     setMessageText("")
     setReplyingTo(null)
@@ -267,7 +295,7 @@ export default function UserMessagePage() {
 
               return (
                 <div
-                  key={ulidStringify(message.id)}
+                  key={message.timestamp}
                   className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
                 >
                   <div
@@ -295,12 +323,12 @@ export default function UserMessagePage() {
                           } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
                       >
                         <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
-                          {message.text}
+                          <MessageBody inner={message.content}></MessageBody>
                         </p>
                         <p
                           className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
                         >
-                          {dateToRelativeString(new Date(getTimestampFromUlid(message.id)))}
+                          {dateToRelativeString(new Date(Number(message.timestamp / 1000n)))}
                         </p>
 
                         {/* Message actions - Fixed position for better visibility */}
@@ -324,7 +352,7 @@ export default function UserMessagePage() {
                                   <button
                                     key={emoji}
                                     className="text-lg hover:bg-gray-100 p-1 rounded"
-                                    onClick={() => handleReaction(message.id, emoji)}
+                                    onClick={() => handleReaction(message.timestamp, emoji)}
                                   >
                                     {emoji}
                                   </button>
@@ -410,7 +438,7 @@ export default function UserMessagePage() {
                   <p className="text-xs font-medium">
                     Replying to {replyingTo.from === sender ? "yourself" : sender}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{replyingTo.text}</p>
+                  <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.content}></MessageBody></p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>
@@ -483,3 +511,13 @@ export default function UserMessagePage() {
 
 }
 
+
+
+function MessageBody(props: { inner: Uint8Array }) {
+  const message = FireflyProtos.UserMessageInner.decode(props.inner);
+  if (message.plainText) {
+    return <div>{message.plainText}</div>
+  } else {
+    return <div>Received a Call Message</div>
+  }
+}
