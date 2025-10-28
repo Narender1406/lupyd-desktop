@@ -39,6 +39,7 @@ import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringi
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { UserMessageStore, type Message as DMessage } from "@/context/message-store";
+import type { UserMessage } from "node_modules/firefly-client-js/dist/protos/message";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -52,57 +53,52 @@ export default function UserMessagePage() {
 
   const firefly = useFirefly()
 
-  const [chatInitiated, setChatInitiated] = useState(false)
-
 
   const localStore = new UserMessageStore();
 
-  const receiverAddress = new libsignal.ProtocolAddress(receiver ?? "", 1)
-
-  useEffect(() => () => receiverAddress.free(), []);
   useEffect(() => () => localStore.close(), []);
 
-  // function mergeSorted(a: FireflyProtos.UserMessage[], b: FireflyProtos.UserMessage[]): FireflyProtos.UserMessage[] {
-  //   const result: FireflyProtos.UserMessage[] = [];
-  //   let i = 0, j = 0;
+  function mergeSorted(a: DMessage[], b: DMessage[]): DMessage[] {
+    const result: DMessage[] = [];
+    let i = 0, j = 0;
 
-  //   while (i < a.length && j < b.length) {
-  //     // if (compare(a[i], b[j]) <= 0) {}
+    while (i < a.length && j < b.length) {
+      // if (compare(a[i], b[j]) <= 0) {}
 
-  //     if (getTimestampFromUlid(a[i].id) < getTimestampFromUlid(b[j].id)) {
-  //       result.push(a[i++]);
-  //     } else {
-  //       result.push(b[j++]);
-  //     }
-  //   }
+      if (a[i].timestamp < b[j].timestamp) {
+        result.push(a[i++]);
+      } else {
+        result.push(b[j++]);
+      }
+    }
 
-  //   while (i < a.length) result.push(a[i++]);
-  //   while (j < b.length) result.push(b[j++]);
+    while (i < a.length) result.push(a[i++]);
+    while (j < b.length) result.push(b[j++]);
 
-  //   return result;
-  // }
+    return result;
+  }
 
-  // const addMessage = (prev: FireflyProtos.UserMessage[], msg: FireflyProtos.UserMessage) => {
+  function addMessage(prev: DMessage[], msg: DMessage) {
 
-  //   if (prev.length > 0) {
-  //     if (getTimestampFromUlid(prev[prev.length - 1].id) < getTimestampFromUlid(msg.id)) {
-  //       return [...prev, msg]
-  //     } else {
-  //       let i = 0;
-  //       for (; i < prev.length; i++) {
-  //         if (getTimestampFromUlid(prev[i].id) > getTimestampFromUlid(msg.id)) {
-  //           break
-  //         }
-  //         if (prev[i].id == msg.id) {
-  //           return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
-  //         }
-  //       }
-  //       return [...prev.slice(0, i), msg, ...prev.slice(i)]
-  //     }
-  //   } else {
-  //     return [msg]
-  //   }
-  // }
+    if (prev.length > 0) {
+      if (prev[prev.length - 1].timestamp < msg.timestamp) {
+        return [...prev, msg]
+      } else {
+        let i = 0;
+        for (; i < prev.length; i++) {
+          if (prev[i].timestamp > msg.timestamp) {
+            break
+          }
+          if (prev[i].timestamp == msg.timestamp) {
+            return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
+          }
+        }
+        return [...prev.slice(0, i), msg, ...prev.slice(i)]
+      }
+    } else {
+      return [msg]
+    }
+  }
 
   const getOlderMessages = async () => {
     const other = receiver
@@ -114,27 +110,49 @@ export default function UserMessagePage() {
       localStore.getLastMessages(auth.username!, other!, count, lastTs)
     ])
 
-    setMessages((prev) => [...results.flat().sort((a, b) => Number(a.timestamp - b.timestamp)), ...prev])
+    setMessages((prev) => mergeSorted(prev, results.flat()))
   }
 
   const [currentConvoId, setCurrentConvoId] = useState(0n);
 
-
-  async function initiateConversation() {
-    if (!receiver) {
-      return
-    }
-    firefly.getConversation(receiver).then((convo) => {
-      setCurrentConvoId(convo.id)
-      setChatInitiated(true)
-    }).catch((err) => {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive"
-      })
+  async function getOnlineMessages() {
+    if (currentConvoId == 0n) return
+    const result = await firefly.service.getUserMessages({
+      conversationId: Number(currentConvoId), startAfter:
+        messages.length == 0 ? 0n : messages[messages.length - 1].timestamp,
+      limit: 40
     })
+
+    const dmessages: DMessage[] = []
+    for (const msg of result.messages) {
+      if (msg.from == sender) {
+        continue;
+      }
+      try {
+        const content = await firefly.decrypt(msg.text, msg.type, msg.to)
+        dmessages.push({
+          content,
+          timestamp: msg.id,
+          from: msg.from,
+          to: msg.to,
+          conversationId: msg.conversationId
+        })
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    setMessages(prev => mergeSorted(prev, dmessages))
   }
+
+
+
+  useEffect(() => {
+    if (sender && receiver) {
+
+    }
+  }, [auth])
+
 
   useEffect(() => {
     if (!sender || !receiver) {
@@ -142,25 +160,12 @@ export default function UserMessagePage() {
     }
 
 
-    const callback = async (_: FireflyWsClient, msg: FireflyProtos.ServerMessage) => {
-      if (msg.userMessage) {
-        const shouldHandle = msg.userMessage.from == receiver || msg.userMessage.to == receiver
-        if (shouldHandle) {
-          const text = await firefly.decrypt(msg.userMessage.text, msg.userMessage.type, receiver!)
-          const message = {
-            content: text,
-            timestamp: msg.userMessage.id,
-            from: msg.userMessage.from,
-            to: msg.userMessage.to,
-            conversationId: msg.userMessage.conversationId
-          }
-          await localStore.storeMessage(message)
-          setMessages(prev => [...prev, message])
-        }
+    const callback = async (_: FireflyWsClient, msg: DMessage) => {
+      if (!(msg.from == receiver || msg.to == receiver)) {
+        return
       }
+      setMessages(prev => addMessage(prev, msg))
     }
-
-
 
     firefly.addEventListener(callback)
 
@@ -201,34 +206,24 @@ export default function UserMessagePage() {
     throw new Error('Function not implemented.');
   }
 
+
+  async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
+
+    const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
+
+
+
+  }
+
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
 
-    const payload = FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create({
+    await sendMessage(FireflyProtos.UserMessageInner.create({
       plainText: new TextEncoder().encode(msg)
-    })).finish();
-    const { cipherText, cipherType } = await firefly.encrypt(payload, receiver!)
-
-
-    const message = await firefly.service.postUserMessage(currentConvoId, cipherText, cipherType)
-
-    const dmessage = {
-      content: payload,
-      timestamp: message.id,
-      from: auth.username!,
-      to: receiver!,
-      conversationId: message.conversationId
-    }
-
-    setMessages(prev => [...prev, dmessage])
-
+    }))
     setMessageText("")
     setReplyingTo(null)
-  }
-
-  if (!chatInitiated) {
-    return <div><Loader /></div>
   }
 
   return (
@@ -518,6 +513,8 @@ function MessageBody(props: { inner: Uint8Array }) {
   if (message.plainText) {
     return <div>{message.plainText}</div>
   } else {
+    // handleCallMessage(message.callMessage)
+
     return <div>Received a Call Message</div>
   }
 }

@@ -1,12 +1,14 @@
 "use client"
 
-import { FireflyWsClient, protos as FireflyProtos, FireflyService, newJsSessionStore, newJsPreKeyStore, newJsSignedPreKeyStore, newJsKyberPreKeyStore, newJsIdentityStore, libsignal, newJsSessionStoreExposed, newJsPreKeyStoreExposed, newJsSignedPreKeyStoreExposed, newJsKyberPreKeyStoreExposed, newJsIdentityStoreExposed } from "firefly-client-js"
-import { createContext, type ReactNode, useContext, useRef, useEffect, useState, useMemo } from "react"
+import { FireflyWsClient, protos as FireflyProtos, FireflyService, libsignal, newJsSessionStoreExposed, newJsPreKeyStoreExposed, newJsSignedPreKeyStoreExposed, newJsKyberPreKeyStoreExposed, newJsIdentityStoreExposed, HttpError } from "firefly-client-js"
+import { createContext, useContext, useRef, useEffect, useState, useMemo } from "react"
 
 import { useAuth } from "./auth-context"
 import { Outlet } from "react-router-dom";
-import { Loader } from "lucide-react";
-type MessageCallbackType = (client: FireflyWsClient, message: FireflyProtos.ServerMessage) => void;
+import { Loader, User } from "lucide-react";
+import { UserMessageStore, type Message } from "./message-store";
+import store from "store2";
+type MessageCallbackType = (client: FireflyWsClient, message: Message) => void;
 
 type FireflyContextType = {
   client: FireflyWsClient,
@@ -19,8 +21,9 @@ type FireflyContextType = {
 
   encrypt: (payload: Uint8Array, other: string) => Promise<{ cipherText: Uint8Array, cipherType: number }>,
   decrypt: (cipherText: Uint8Array, cipherType: number, from: string) => Promise<Uint8Array>,
-  processPreKeyBundle: (other: string, bundle: FireflyProtos.PreKeyBundle) => Promise<void>
-  getConversation: (other: string) => Promise<FireflyProtos.Conversation>
+  processPreKeyBundle: (other: string, bundle: FireflyProtos.PreKeyBundle) => Promise<void>,
+
+  encryptAndSend: (convoId: bigint, other: string, text: Uint8Array) => Promise<Message>
 }
 
 
@@ -30,6 +33,7 @@ const FireflyContext = createContext<FireflyContextType | undefined>(undefined)
 
 
 export default function FireflyProvider() {
+  const lastUserMessageTimestampStoreKey = "lastUserMessageTimestampInMicroseconds"
   const auth = useAuth()
 
 
@@ -58,16 +62,26 @@ export default function FireflyProvider() {
     identityStore.identityStore.free()
   }, [])
 
-  const buildClient = () =>
-    new FireflyWsClient(websocketUrl, async () => {
+  const buildClient = () => {
+    const c = new FireflyWsClient(websocketUrl, async () => {
       const token = await auth.getToken(); if (!token) {
         throw Error(`Not authenticated`)
       } else {
         return token
       }
-    }, onMessageCallback, () => {
-      console.error(`Retrying failed`)
     });
+
+    c.addEventListener("onMessage", (e) => {
+      const event = e as CustomEvent<FireflyProtos.ServerMessage>
+      onMessageCallback(event.detail)
+    })
+
+    c.addEventListener("onConnect", _ => {
+      syncUserMessages()
+    })
+
+    return c;
+  }
   const [client, _] = useState<FireflyWsClient>(buildClient())
   const service = useMemo(() => new FireflyService(apiUrl, async () => {
     if (!auth.username) throw Error(`Not authenticated`);
@@ -209,7 +223,9 @@ export default function FireflyProvider() {
 
     if (bundles.bundles.length - bundleIdsToDelete.length < 16) {
       const toFree: { free: () => void; }[] = []
-      const randInt = () => Math.floor(Math.random() * 9999)
+      const randInt = () =>
+        new DataView(crypto.getRandomValues(new Uint8Array(8)).buffer).getInt32(0, true)
+
       const registrationId = 1;
       const deviceId = 1;
 
@@ -311,6 +327,30 @@ export default function FireflyProvider() {
     }
   }
 
+
+  async function checkSelfConversations() {
+    const preKeys = await preKeyStore.store.getAll()
+    if (preKeys.length > 0) {
+      // first time user or revisitor
+      await service.recreateConversations()
+    }
+  }
+
+  async function syncUserMessages() {
+    const limit = 100
+    while (true) {
+      const lastSync = store.get(lastUserMessageTimestampStoreKey) as bigint | undefined ?? 0n
+      const messages = await service.syncUserMessages(lastSync, limit)
+      for (const message of messages.messages) {
+        await handleUserMessage(message)
+      }
+
+      if (messages.messages.length < limit) {
+        break
+      }
+    }
+  }
+
   async function getConversation(other: string) {
     return service.getConversation(other).then((conv) => {
       return conv;
@@ -327,19 +367,83 @@ export default function FireflyProvider() {
     })
   }
 
+  async function saveUserMessage(msg: Message) {
+    await messageStore.storeMessage(msg)
+    let value = store.get(lastUserMessageTimestampStoreKey) as bigint | undefined ?? 0n
+    store.set(lastUserMessageTimestampStoreKey, value > msg.timestamp ? value : msg.timestamp)
+
+    for (const cb of eventListeners.current) {
+      cb(client, msg)
+    }
+  }
+
+  async function encryptAndSend(convoId: bigint, other: string, text: Uint8Array) {
+    const cipher = await encrypt(text, other)
+    let timestamp = 0n
+    try {
+      const message = await service.postUserMessage(convoId, cipher.cipherText, cipher.cipherType)
+      timestamp = message.id
+    } catch (err) {
+      if (err instanceof HttpError) {
+        console.error(`Error sending message ${err.statusCode} ${err.message}`)
+        if (err.statusCode == 404) {
+          const convo = await service.getConversation(other, true)
+          convoId = convo.conversationId
+          await processPreKeyBundle(other, convo.bundle!)
+          const message = await service.postUserMessage(convoId, cipher.cipherText, cipher.cipherType)
+          timestamp = message.id
+        }
+      }
+    }
+    const message: Message = {
+      timestamp,
+      from: auth.username!,
+      to: other!,
+      conversationId: convoId,
+      content: text
+    }
+    await saveUserMessage(message)
+    return message
+  }
+
   const [isInitialized, setIsinitialized] = useState(false)
   async function initialize() {
     await libsignal.default()
 
-    checkSelfBundles()
+
+    await checkSelfConversations()
+    await checkSelfBundles()
+
     setIsinitialized(true)
   }
 
+  const messageStore = new UserMessageStore()
 
-  function onMessageCallback(message: FireflyProtos.ServerMessage) {
-    for (const listener of eventListeners.current) {
-      listener(client!, FireflyProtos.ServerMessage.create({ ...message }))
+  useEffect(() => () => messageStore.close(), [])
+
+
+  async function onMessageCallback(message: FireflyProtos.ServerMessage) {
+
+    if (message.userMessage) {
+      await handleUserMessage(message.userMessage)
     }
+  }
+
+  async function handleUserMessage(message: FireflyProtos.UserMessage) {
+    const decrypted = await decrypt(message.text, message.type, message.from)
+    const msg: Message = {
+      content: decrypted,
+      timestamp: message.id,
+      from: message.from,
+      to: message.to,
+      conversationId: message.conversationId
+    }
+
+    await saveUserMessage(msg)
+
+
+
+    return msg
   }
 
   const addEventListener = (cb: MessageCallbackType) => {
@@ -350,6 +454,7 @@ export default function FireflyProvider() {
   }
 
   if (!isInitialized) {
+    initialize()
     return <div><Loader /></div>
   }
 
@@ -361,7 +466,7 @@ export default function FireflyProvider() {
     encrypt, decrypt,
     service,
     processPreKeyBundle,
-    getConversation
+    encryptAndSend,
   }}> <Outlet /> </FireflyContext.Provider>
 }
 
