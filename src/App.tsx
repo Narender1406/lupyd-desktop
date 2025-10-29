@@ -4,7 +4,6 @@ import { lazy, Suspense } from 'react'
 
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { OverviewPage } from './app/saas/pages/overview-page';
 // import { OverviewPage } from './app/saas/pages/overview-page';
 // import CommunityPage from './app/(landing)/community/page'
 // import CreatorToolsPage from './app/(landing)/creator-tools/page'
@@ -54,17 +53,17 @@ import { OverviewPage } from './app/saas/pages/overview-page';
 
 
 
-// const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
-// const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
-// const AddClientPage = lazy(() => import('./app/saas/pages/add-client-page').then(m => ({ default: m.AddClientPage })));
-// const EditClientPage = lazy(() => import('./app/saas/pages/editclient').then(m => ({ default: m.EditClientPage })));
-// const ApiKeyPage = lazy(() => import('./app/saas/pages/api-key-page').then(m => ({ default: m.ApiKeyPage })));
-// const ClientDetailsPage = lazy(() => import('./app/saas/pages/clientdetails').then(m => ({ default: m.ClientDetailsPage })));
-// const AddServicePage = lazy(() => import('./app/saas/pages/add-service-page').then(m => ({ default: m.AddServicePage })));
-// const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(m => ({ default: m.OverviewPage })));
-// const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').then(m => ({ default: m.MonitoringPage })));
-// const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
-// const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
+const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
+const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
+const AddClientPage = lazy(() => import('./app/saas/pages/add-client-page').then(m => ({ default: m.AddClientPage })));
+const EditClientPage = lazy(() => import('./app/saas/pages/editclient').then(m => ({ default: m.EditClientPage })));
+const ApiKeyPage = lazy(() => import('./app/saas/pages/api-key-page').then(m => ({ default: m.ApiKeyPage })));
+const ClientDetailsPage = lazy(() => import('./app/saas/pages/clientdetails').then(m => ({ default: m.ClientDetailsPage })));
+const AddServicePage = lazy(() => import('./app/saas/pages/add-service-page').then(m => ({ default: m.AddServicePage })));
+const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(m => ({ default: m.OverviewPage })));
+const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').then(m => ({ default: m.MonitoringPage })));
+const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
+const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
 
 
 
@@ -87,20 +86,20 @@ const AssignUsernamePage = lazy(() => import('./app/assignUsername'));
 const DashboardPage = lazy(() => import('./app/dashboard/page'));
 
 
-const CommunityPage  = lazy(() => import('./app/(landing)/community/page'));
-const CreatorToolsPage  = lazy(() => import('./app/(landing)/creator-tools/page'));
-const ExperiencePage  = lazy(() => import('./app/(landing)/experience/page'));
-const FeaturesPage  = lazy(() => import('./app/(landing)/features/page'));
-const LandingPage  = lazy(() => import('./app/(landing)/page'));
-const PrivacyPage  = lazy(() => import('./app/(landing)/privacy/page'));
+const CommunityPage = lazy(() => import('./app/(landing)/community/page'));
+const CreatorToolsPage = lazy(() => import('./app/(landing)/creator-tools/page'));
+const ExperiencePage = lazy(() => import('./app/(landing)/experience/page'));
+const FeaturesPage = lazy(() => import('./app/(landing)/features/page'));
+const LandingPage = lazy(() => import('./app/(landing)/page'));
+const PrivacyPage = lazy(() => import('./app/(landing)/privacy/page'));
 
 
 
-const GroupsPage  = lazy(() => import('./app/dashboard/groupchat/groupchat'))
-const CreateGroupPage  = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
-const GroupSettingsPage  = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
-const GroupInfoPage  = lazy(() => import('./app/dashboard/groupchat/groupinfopage/groupinfo'))
-const UserMessagePage  = lazy(() => import('./app/dashboard/messages/[username]/page'))
+const GroupsPage = lazy(() => import('./app/dashboard/groupchat/groupchat'))
+const CreateGroupPage = lazy(() => import('./app/dashboard/groupchat/creategroup/creategroupchat'))
+const GroupSettingsPage = lazy(() => import('./app/dashboard/groupchat/groupchatsettings/groupchatsettings'))
+const GroupInfoPage = lazy(() => import('./app/dashboard/groupchat/groupinfopage/groupinfo'))
+const UserMessagePage = lazy(() => import('./app/dashboard/messages/[username]/page'))
 
 
 
@@ -112,58 +111,56 @@ function LoadingPage() {
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingPage/>}>
-      <Routes>
-        <Route path="about/" element={<LandingPage />} />
-        <Route path="about/community" element={<CommunityPage />} />
-        <Route path="about/features" element={<FeaturesPage />} />
-        <Route path="about/experience" element={<ExperiencePage />} />
-        <Route path="about/creator-tools" element={<CreatorToolsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/signin" element={<AssignUsernamePage />} />
-        {/*        <Route path="/signin" element={<SignupPage />} />
+      <Suspense fallback={<LoadingPage />}>
+        <Routes>
+          <Route path="about/" element={<LandingPage />} />
+          <Route path="about/community" element={<CommunityPage />} />
+          <Route path="about/features" element={<FeaturesPage />} />
+          <Route path="about/experience" element={<ExperiencePage />} />
+          <Route path="about/creator-tools" element={<CreatorToolsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/signin" element={<AssignUsernamePage />} />
+          {/*        <Route path="/signin" element={<SignupPage />} />
 */}
-        <Route path="/" element={<DashboardPage />} />
-        {/*        <Route path="/action" element={<ActionHandler />} />
+          <Route path="/" element={<DashboardPage />} />
+          {/*        <Route path="/action" element={<ActionHandler />} />
 */}
 
-        <Route path="/saved-posts" element={<SavedPostsPage />} />
-        <Route path="/create-post" element={<CreatePostPage />} />
-        <Route path="/connections" element={<ConnectionsPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/activity" element={<ActivityPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/groupchat" element={<GroupsPage />} />
-        <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
-        <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
-        <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
-        <Route path="/subscription" element={<SubscriptionPage />} />
-        <Route path="/subscription/checkout" element={<CheckoutPage />} />
-        <Route path="/discover" element={<DiscoverPage />} />
-        <Route path="/post/:postId" element={<PostPage />} />
-        <Route path="/user/:username" element={<ProfilePage />} />
-        <Route element={<FireflyProvider />}>
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:username" element={<UserMessagePage />} />
-        </Route>
-        <Route path="/notification" element={<NotificationsPage />} />
+          <Route path="/saved-posts" element={<SavedPostsPage />} />
+          <Route path="/create-post" element={<CreatePostPage />} />
+          <Route path="/connections" element={<ConnectionsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/groupchat" element={<GroupsPage />} />
+          <Route path="/groupchat/creategroupchat" element={<CreateGroupPage />} />
+          <Route path="/groupchat/groupchatsettings" element={<GroupSettingsPage />} />
+          <Route path="/groupchat/groupinfo" element={<GroupInfoPage />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
+          <Route path="/subscription/checkout" element={<CheckoutPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/post/:postId" element={<PostPage />} />
+          <Route path="/user/:username" element={<ProfilePage />} />
+          <Route element={<FireflyProvider />}>
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:username" element={<UserMessagePage />} />
+          </Route>
+          <Route path="/notification" element={<NotificationsPage />} />
 
-         {/*
 
-        <Route path="/business" element={<OverviewPage />} />
-        <Route path="/business" element={<OverviewPage />} />
-        <Route path="/business/clients-page" element={<ClientsPage />} />
-        <Route path="/business/services-page" element={<ServicesPage />} />
-        <Route path="/business/add-client-page" element={<AddClientPage />} />
-        <Route path="/business/edit-client-page" element={<EditClientPage />} />
-        <Route path="/business/api-key-page" element={<ApiKeyPage />} />
-        <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
-        <Route path="/business/add-service-page" element={<AddServicePage />} />
+          <Route path="/business" element={<OverviewPage />} />
+          <Route path="/business/clients-page" element={<ClientsPage />} />
+          <Route path="/business/services-page" element={<ServicesPage />} />
+          <Route path="/business/add-client-page" element={<AddClientPage />} />
+          <Route path="/business/edit-client-page" element={<EditClientPage />} />
+          <Route path="/business/api-key-page" element={<ApiKeyPage />} />
+          <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
+          <Route path="/business/add-service-page" element={<AddServicePage />} />
 
-*/}
-      </Routes>
 
-</Suspense>    
+        </Routes>
+
+      </Suspense>
     </BrowserRouter>)
 }
 

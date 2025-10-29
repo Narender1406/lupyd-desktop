@@ -1,16 +1,19 @@
 import { ApiService } from "lupyd-js"
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useEffect } from "react"
-import {useAuth} from "./auth-context"
+import { useAuth } from "./auth-context"
 
 type ApiServiceContextType = {
-  api: ApiService
+  api: ApiService,
+  apiUrl: string,
+  apiCdnUrl: string,
+  cdnUrl: string
 }
 
 
-const ApiServiceContext =createContext<ApiServiceContextType | undefined>(undefined)
+const ApiServiceContext = createContext<ApiServiceContextType | undefined>(undefined)
 
 
-export function ApiServiceProvider({children}: {children: ReactNode}) {
+export function ApiServiceProvider({ children }: { children: ReactNode }) {
 
   const auth = useAuth()
 
@@ -19,13 +22,17 @@ export function ApiServiceProvider({children}: {children: ReactNode}) {
   if (!apiUrl) {
     throw Error(`NEXT_PUBLIC_JS_ENV_API_URL env var not set`)
   }
-  
+
   const apiCdnUrl = process.env.NEXT_PUBLIC_JS_ENV_API_CDN_URL
 
   if (!apiCdnUrl) {
     throw Error(`NEXT_PUBLIC_JS_ENV_API_CDN_URL env var not set`)
   }
 
+  const cdnUrl = process.env.NEXT_PUBLIC_JS_ENV_CDN_URL
+  if (!cdnUrl) {
+    throw Error(`NEXT_PUBLIC_JS_ENV_API_CDN_URL env var not set`)
+  }
 
   const getToken = useCallback(async () => {
     const token = await auth.getToken()
@@ -34,19 +41,19 @@ export function ApiServiceProvider({children}: {children: ReactNode}) {
     }
     return token
   }, [auth])
-  
+
 
   const api = useMemo(() => new ApiService(apiUrl, apiCdnUrl, getToken), [getToken])
 
 
   useEffect(() => {
     console.log({ apiUrl, apiCdnUrl })
-    
+
   }, [])
 
 
-  return <ApiServiceContext.Provider value={{api}}>{children}</ApiServiceContext.Provider>
-  
+  return <ApiServiceContext.Provider value={{ api, apiCdnUrl, apiUrl, cdnUrl }}>{children}</ApiServiceContext.Provider>
+
 }
 
 

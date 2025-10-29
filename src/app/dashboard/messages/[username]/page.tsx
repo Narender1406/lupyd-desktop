@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-import { FireflyWsClient, protos as FireflyProtos, libsignal, newJsSessionStore, newJsIdentityStore } from "firefly-client-js"
+import { FireflyWsClient, protos as FireflyProtos } from "firefly-client-js"
 
 import { useAuth } from '@/context/auth-context';
 import { useEffect, useMemo, useState } from 'react';
@@ -39,7 +39,6 @@ import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringi
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { UserMessageStore, type Message as DMessage } from "@/context/message-store";
-import type { UserMessage } from "node_modules/firefly-client-js/dist/protos/message";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -53,30 +52,9 @@ export default function UserMessagePage() {
 
   const firefly = useFirefly()
 
-
   const localStore = new UserMessageStore();
 
   useEffect(() => () => localStore.close(), []);
-
-  function mergeSorted(a: DMessage[], b: DMessage[]): DMessage[] {
-    const result: DMessage[] = [];
-    let i = 0, j = 0;
-
-    while (i < a.length && j < b.length) {
-      // if (compare(a[i], b[j]) <= 0) {}
-
-      if (a[i].timestamp < b[j].timestamp) {
-        result.push(a[i++]);
-      } else {
-        result.push(b[j++]);
-      }
-    }
-
-    while (i < a.length) result.push(a[i++]);
-    while (j < b.length) result.push(b[j++]);
-
-    return result;
-  }
 
   function addMessage(prev: DMessage[], msg: DMessage) {
 
@@ -102,7 +80,7 @@ export default function UserMessagePage() {
 
   const getOlderMessages = async () => {
     const other = receiver
-    const lastTs = messages.length != 0 ? BigInt(Date.now() * 1000) : messages[0].timestamp
+    const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].timestamp
     const count = 50
 
     const results = await Promise.all([
@@ -110,48 +88,19 @@ export default function UserMessagePage() {
       localStore.getLastMessages(auth.username!, other!, count, lastTs)
     ])
 
-    setMessages((prev) => mergeSorted(prev, results.flat()))
-  }
+    setMessages((prev) => {
+      let newMessages = prev
 
-  const [currentConvoId, setCurrentConvoId] = useState(0n);
+      // not the most efficient way, but good enough
+      for (const msg of results.flat()) {
+        newMessages = addMessage(newMessages, msg)
+      }
 
-  async function getOnlineMessages() {
-    if (currentConvoId == 0n) return
-    const result = await firefly.service.getUserMessages({
-      conversationId: Number(currentConvoId), startAfter:
-        messages.length == 0 ? 0n : messages[messages.length - 1].timestamp,
-      limit: 40
+      return newMessages
     })
-
-    const dmessages: DMessage[] = []
-    for (const msg of result.messages) {
-      if (msg.from == sender) {
-        continue;
-      }
-      try {
-        const content = await firefly.decrypt(msg.text, msg.type, msg.to)
-        dmessages.push({
-          content,
-          timestamp: msg.id,
-          from: msg.from,
-          to: msg.to,
-          conversationId: msg.conversationId
-        })
-      } catch (err) {
-        console.error(err)
-      }
-    }
-
-    setMessages(prev => mergeSorted(prev, dmessages))
   }
 
-
-
-  useEffect(() => {
-    if (sender && receiver) {
-
-    }
-  }, [auth])
+  const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].conversationId, [messages]);
 
 
   useEffect(() => {
@@ -159,6 +108,8 @@ export default function UserMessagePage() {
       return
     }
 
+
+    getOlderMessages()
 
     const callback = async (_: FireflyWsClient, msg: DMessage) => {
       if (!(msg.from == receiver || msg.to == receiver)) {
@@ -178,7 +129,7 @@ export default function UserMessagePage() {
   const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
 
   const [endOfOlderMessages, setEndOfOlderMessages] = useState(false)
-  function handleReaction(id: bigint, emoji: string): void {
+  function handleReaction(msg: DMessage, emoji: string): void {
     throw new Error('Function not implemented.');
   }
 
@@ -210,20 +161,37 @@ export default function UserMessagePage() {
   async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
 
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
-
-
-
+    const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
   }
+
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
 
-    await sendMessage(FireflyProtos.UserMessageInner.create({
-      plainText: new TextEncoder().encode(msg)
-    }))
-    setMessageText("")
-    setReplyingTo(null)
+    if (sendingMessage) {
+      return;
+    }
+    setSendingMessage(true);
+    try {
+      await sendMessage(FireflyProtos.UserMessageInner.create({
+        plainText: new TextEncoder().encode(msg),
+        messagePayload: FireflyProtos.MessagePayload.create({})
+      }))
+      setMessageText("")
+      setReplyingTo(null)
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: "Error sending message",
+        description: "Please try again later",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingMessage(false)
+    }
+
   }
 
   return (
@@ -285,134 +253,9 @@ export default function UserMessagePage() {
             dataLength={messages.length}
             inverse={true}
           >
-            {messages.map((message) => {
-              const isMine = message.from === sender;
-
-              return (
-                <div
-                  key={message.timestamp}
-                  className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
-                >
-                  <div
-                    className={`flex items-end ${isMine ? "flex-row-reverse" : ""} space-x-2 ${isMine ? "space-x-reverse" : ""}`}
-                  >
-                    {!isMine && (
-                      <UserAvatar username={receiver || ""} />
-                    )}
-
-                    <div className="max-w-[75%] sm:max-w-[70%] w-auto">
-                      {/*message.replyTo && (
-                      <div
-                        className={`${message.sender === "me" ? "bg-gray-700" : "bg-gray-200"} rounded-t-lg px-2 sm:px-3 py-1 sm:py-2 text-[10px] sm:text-xs ${message.sender === "me" ? "text-gray-300" : "text-gray-600"} mb-1 border-l-2 ${message.sender === "me" ? "border-gray-500" : "border-gray-400"} overflow-hidden`}
-                      >
-                        <p className="font-medium">
-                          {message.replyTo.sender === "me" ? "You" : selectedConversationData?.user.name}
-                        </p>
-                        <p className="truncate">{message.replyTo.text}</p>
-                      </div>
-                    )*/}
-
-                      {/* Message content */}
-                      <div
-                        className={`${isMine ? "bg-black text-white" : "bg-gray-100"
-                          } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
-                      >
-                        <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
-                          <MessageBody inner={message.content}></MessageBody>
-                        </p>
-                        <p
-                          className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
-                        >
-                          {dateToRelativeString(new Date(Number(message.timestamp / 1000n)))}
-                        </p>
-
-                        {/* Message actions - Fixed position for better visibility */}
-                        <div
-                          className={`absolute ${isMine ? "left-0 translate-x-[-50%]" : "right-0 translate-x-[50%]"} top-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md flex items-center scale-75 md:scale-100 z-10`}
-                        >
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <Smile className="h-3 w-3" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-2"
-                              side={isMine ? "left" : "right"}
-                              align="center"
-                              sideOffset={5}
-                            >
-                              <div className="flex gap-1">
-                                {emojiOptions.map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    className="text-lg hover:bg-gray-100 p-1 rounded"
-                                    onClick={() => handleReaction(message.timestamp, emoji)}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleReply(message)}
-                          >
-                            <Reply className="h-3 w-3" />
-                          </Button>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <MoreHorizontal className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side={isMine ? "left" : "right"}>
-                              <DropdownMenuItem className="flex items-center">
-                                <Forward className="h-4 w-4 mr-2" />
-                                Forward
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="flex items-center">
-                                <Reply className="h-4 w-4 mr-2" />
-                                Reply
-                              </DropdownMenuItem>
-                              {isMine && (
-                                <DropdownMenuItem className="flex items-center text-red-600">
-                                  <X className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-
-                      {/* Reactions
-                    {message.reactions && message.reactions.length > 0 && (
-                      <div className={`flex mt-1 ${isMine ? "justify-end" : "justify-start"}`}>
-                        <div className="bg-white rounded-full shadow-sm px-1.5 py-0.5 text-xs sm:text-sm flex items-center">
-                          {message.reactions.map((emoji, index) => (
-                            <span key={index} className="mx-0.5">
-                              {emoji}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    */}
-                    </div>
-
-                    {isMine && (
-                      <UserAvatar username={sender} />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+            {messages.map((message) =>
+              <MessageElement key={message.timestamp.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} receiver={receiver!} />
+            )}
           </InfiniteScroll>
 
 
@@ -507,11 +350,141 @@ export default function UserMessagePage() {
 }
 
 
+export function MessageElement(props: { message: DMessage, sender: string, receiver: string, handleReply?: (message: DMessage) => void, handleReaction?: (message: DMessage, emoji: string) => void }) {
+  const { message, sender, receiver, handleReaction, handleReply } = props;
+  const isMine = message.from === sender;
 
-function MessageBody(props: { inner: Uint8Array }) {
+  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.timestamp / 1000))))
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRelativeTimestamp(dateToRelativeString(new Date(Number(message.timestamp / 1000))))
+    }, 1000)
+
+    return () => { clearInterval(interval) }
+  }, [])
+
+  return (
+    <div
+      key={message.timestamp}
+      className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
+    >
+      <div
+        className={`flex items-end ${isMine ? "flex-row-reverse" : ""} space-x-2 ${isMine ? "space-x-reverse" : ""}`}
+      >
+        {!isMine && (
+          <UserAvatar username={receiver || ""} />
+        )}
+
+        <div className="max-w-[75%] sm:max-w-[70%] w-auto">
+          {/* Message content */}
+          <div
+            className={`${isMine ? "bg-black text-white" : "bg-gray-100"
+              } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
+          >
+            <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
+              <MessageBody inner={message.content}></MessageBody>
+            </p>
+            <p
+              className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
+            >
+              {relativeTimestamp}
+            </p>
+
+            {/* Message actions - Fixed position for better visibility */}
+            <div
+              className={`absolute ${isMine ? "left-0 translate-x-[-50%]" : "right-0 translate-x-[50%]"} top-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md flex items-center scale-75 md:scale-100 z-10`}
+            >
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Smile className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-2"
+                  side={isMine ? "left" : "right"}
+                  align="center"
+                  sideOffset={5}
+                >
+                  <div className="flex gap-1">
+                    {emojiOptions.map((emoji) => (
+                      <button
+                        key={emoji}
+                        className="text-lg hover:bg-gray-100 p-1 rounded"
+                        onClick={handleReply ? () => handleReaction!(message, emoji) : undefined}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleReply ? () => handleReply!(message) : handleReply}
+              >
+                <Reply className="h-3 w-3" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side={isMine ? "left" : "right"}>
+                  <DropdownMenuItem className="flex items-center">
+                    <Forward className="h-4 w-4 mr-2" />
+                    Forward
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center">
+                    <Reply className="h-4 w-4 mr-2" />
+                    Reply
+                  </DropdownMenuItem>
+                  {isMine && (
+                    <DropdownMenuItem className="flex items-center text-red-600">
+                      <X className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Reactions
+                    {message.reactions && message.reactions.length > 0 && (
+                      <div className={`flex mt-1 ${isMine ? "justify-end" : "justify-start"}`}>
+                        <div className="bg-white rounded-full shadow-sm px-1.5 py-0.5 text-xs sm:text-sm flex items-center">
+                          {message.reactions.map((emoji, index) => (
+                            <span key={index} className="mx-0.5">
+                              {emoji}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    */}
+        </div>
+
+        {isMine && (
+          <UserAvatar username={sender} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+
+export function MessageBody(props: { inner: Uint8Array }) {
   const message = FireflyProtos.UserMessageInner.decode(props.inner);
   if (message.plainText) {
-    return <div>{message.plainText}</div>
+    const text = new TextDecoder().decode(message.plainText);
+    return <div>{text}</div>
   } else {
     // handleCallMessage(message.callMessage)
 

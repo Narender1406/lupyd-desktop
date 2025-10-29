@@ -5,9 +5,12 @@ import { createContext, useContext, useRef, useEffect, useState, useMemo } from 
 
 import { useAuth } from "./auth-context"
 import { Outlet } from "react-router-dom";
-import { Loader, User } from "lucide-react";
 import { UserMessageStore, type Message } from "./message-store";
 import store from "store2";
+
+import wasmUrl from "libsignal-protocol/libsignal_protocol_bg.wasm?url"
+
+
 type MessageCallbackType = (client: FireflyWsClient, message: Message) => void;
 
 type FireflyContextType = {
@@ -48,28 +51,56 @@ export default function FireflyProvider() {
     throw new Error(`Missing CHAT ENV VARS`)
   }
 
+  const [libsignalInitialized, setLibsignalInitialized] = useState(false)
+
+  useEffect(() => {
+    if (!libsignalInitialized) {
+      libsignal.default(wasmUrl).then(() => {
+        console.log("libsignal-wasm initiated")
+        setLibsignalInitialized(true)
+      })
+    }
+  }, [])
+
+  if (!libsignalInitialized) {
+    return <div></div>
+  }
+
+  if (!auth.username) {
+    return <div>User should complete authentication to see this page</div>
+  }
+
+
+  async function initialize() {
+    await checkSelfConversations()
+    await checkSelfBundles()
+  }
+
+
+
   const sessionStore = newJsSessionStoreExposed()
   const preKeyStore = newJsPreKeyStoreExposed()
   const signedPreKeyStore = newJsSignedPreKeyStoreExposed()
   const kyberPreKeyStore = newJsKyberPreKeyStoreExposed()
   const identityStore = newJsIdentityStoreExposed()
 
-  useEffect(() => () => {
-    sessionStore.sessionStore.free()
-    preKeyStore.preKeyStore.free()
-    signedPreKeyStore.signedPreKeyStore.free()
-    kyberPreKeyStore.kyberPreKeyStore.free()
-    identityStore.identityStore.free()
-  }, [])
+  // useEffect(() => () => {
+  //   sessionStore.sessionStore.free()c
+  //   preKeyStore.preKeyStore.free()
+  //   signedPreKeyStore.signedPreKeyStore.free()
+  //   kyberPreKeyStore.kyberPreKeyStore.free()
+  //   identityStore.identityStore.free()
+  // }, [])
 
   const buildClient = () => {
     const c = new FireflyWsClient(websocketUrl, async () => {
+      if (!auth.username) throw Error(`Not authenticated`);
       const token = await auth.getToken(); if (!token) {
         throw Error(`Not authenticated`)
       } else {
         return token
       }
-    });
+    }, Number.MAX_SAFE_INTEGER, 1000, 2000);
 
     c.addEventListener("onMessage", (e) => {
       const event = e as CustomEvent<FireflyProtos.ServerMessage>
@@ -98,6 +129,7 @@ export default function FireflyProvider() {
 
   useEffect(() => {
     if (auth.username) {
+      initialize()
       client!.initialize().then(() => console.log(`Firefly initialized`)).catch(console.error);
     }
 
@@ -155,11 +187,11 @@ export default function FireflyProvider() {
         }
       }
     } catch (err) {
-      toFree.forEach(e => e.free())
+      // toFree.forEach(e => e.free())
       throw err
     }
 
-    toFree.forEach(e => e.free())
+    // toFree.forEach(e => e.free())
     return deciphered
 
   }
@@ -193,14 +225,16 @@ export default function FireflyProvider() {
 
       toFree.push(preKeyBundle)
 
+      console.log(`Processing preKeyBundle `, bundle)
+
       await libsignal.processPreKeyBundle(preKeyBundle, addr, sessionStore.sessionStore, identityStore.identityStore, libsignal.UsePQRatchet.Yes, BigInt(Date.now()))
 
     } catch (err) {
-      toFree.forEach(e => e.free())
+      // toFree.forEach(e => e.free())
       throw err
     }
 
-    toFree.forEach(e => e.free())
+    // toFree.forEach(e => e.free())
 
   }
 
@@ -224,7 +258,7 @@ export default function FireflyProvider() {
     if (bundles.bundles.length - bundleIdsToDelete.length < 16) {
       const toFree: { free: () => void; }[] = []
       const randInt = () =>
-        new DataView(crypto.getRandomValues(new Uint8Array(8)).buffer).getInt32(0, true)
+        new DataView(crypto.getRandomValues(new Uint8Array(8)).buffer).getUint16(0, true)
 
       const registrationId = 1;
       const deviceId = 1;
@@ -319,19 +353,15 @@ export default function FireflyProvider() {
 
         await service.uploadPreKeyBundles(newBundles);
       } catch (err) {
-        toFree.forEach(e => e.free())
         throw err
       }
-
-      toFree.forEach(e => e.free())
     }
   }
 
 
   async function checkSelfConversations() {
     const preKeys = await preKeyStore.store.getAll()
-    if (preKeys.length > 0) {
-      // first time user or revisitor
+    if (preKeys.length == 0) {
       await service.recreateConversations()
     }
   }
@@ -351,21 +381,6 @@ export default function FireflyProvider() {
     }
   }
 
-  async function getConversation(other: string) {
-    return service.getConversation(other).then((conv) => {
-      return conv;
-    }).catch(async err => {
-      console.warn(`This error can be handled better`)
-      console.error(`No existing conversation ${err}, trying to initiate one`)
-      const conv = await service.createConversation(other);
-      await processPreKeyBundle(other, conv.bundle!);
-      return FireflyProtos.Conversation.create({
-        id: conv.conversationId,
-        other: conv.other,
-        startedBy: conv.startedBy,
-      });
-    })
-  }
 
   async function saveUserMessage(msg: Message) {
     await messageStore.storeMessage(msg)
@@ -378,44 +393,46 @@ export default function FireflyProvider() {
   }
 
   async function encryptAndSend(convoId: bigint, other: string, text: Uint8Array) {
+    if (convoId == 0n) {
+      const conv = await service.createConversation(other)
+      await processPreKeyBundle(other, conv.bundle!)
+      convoId = conv.conversationId
+    }
     const cipher = await encrypt(text, other)
-    let timestamp = 0n
+    let timestamp = 0
     try {
       const message = await service.postUserMessage(convoId, cipher.cipherText, cipher.cipherType)
-      timestamp = message.id
+      console.log({ message })
+      timestamp = Number(message.id)
     } catch (err) {
       if (err instanceof HttpError) {
         console.error(`Error sending message ${err.statusCode} ${err.message}`)
         if (err.statusCode == 404) {
-          const convo = await service.getConversation(other, true)
+          const convo = await service.createConversation(other)
           convoId = convo.conversationId
           await processPreKeyBundle(other, convo.bundle!)
           const message = await service.postUserMessage(convoId, cipher.cipherText, cipher.cipherType)
-          timestamp = message.id
+          console.log({ message })
+          timestamp = Number(message.id)
+        } else {
+          throw err
         }
+      } else {
+        throw err
       }
     }
     const message: Message = {
       timestamp,
       from: auth.username!,
       to: other!,
-      conversationId: convoId,
+      conversationId: Number(convoId),
       content: text
     }
     await saveUserMessage(message)
     return message
   }
 
-  const [isInitialized, setIsinitialized] = useState(false)
-  async function initialize() {
-    await libsignal.default()
 
-
-    await checkSelfConversations()
-    await checkSelfBundles()
-
-    setIsinitialized(true)
-  }
 
   const messageStore = new UserMessageStore()
 
@@ -433,15 +450,13 @@ export default function FireflyProvider() {
     const decrypted = await decrypt(message.text, message.type, message.from)
     const msg: Message = {
       content: decrypted,
-      timestamp: message.id,
+      timestamp: Number(message.id),
       from: message.from,
       to: message.to,
-      conversationId: message.conversationId
+      conversationId: Number(message.conversationId)
     }
 
     await saveUserMessage(msg)
-
-
 
     return msg
   }
@@ -453,10 +468,6 @@ export default function FireflyProvider() {
     eventListeners.current.delete(cb)
   }
 
-  if (!isInitialized) {
-    initialize()
-    return <div><Loader /></div>
-  }
 
   return <FireflyContext.Provider value={{
     client,
