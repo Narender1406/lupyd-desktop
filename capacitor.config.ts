@@ -14,6 +14,15 @@ const config: CapacitorConfig = {
         },
       ],
     },
+    PushNotifications: {
+      presentationOptions: [], // Empty array to prevent in-app display
+      smallIcon: "ic_launcher_foreground",
+      iconColor: "#000000",
+    },
+    LocalNotifications: {
+      smallIcon: "ic_launcher_foreground",
+      iconColor: "#000000",
+    },
   },
   server: {
     androidScheme: "http",

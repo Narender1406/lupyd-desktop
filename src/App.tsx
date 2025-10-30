@@ -5,6 +5,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { useAuth0 } from '@auth0/auth0-react';
+import { NotificationProvider } from './context/notification-context';
+
 
 
 
@@ -16,21 +18,7 @@ const EditClientPage = lazy(() => import('./app/saas/pages/editclient').then(m =
 const ApiKeyPage = lazy(() => import('./app/saas/pages/api-key-page').then(m => ({ default: m.ApiKeyPage })));
 const ClientDetailsPage = lazy(() => import('./app/saas/pages/clientdetails').then(m => ({ default: m.ClientDetailsPage })));
 const AddServicePage = lazy(() => import('./app/saas/pages/add-service-page').then(m => ({ default: m.AddServicePage })));
-const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').then(m => ({ default: m.MonitoringPage })));
-const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
-const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
 
-
-
-
-
-
-
-
-
-
-// import TermsOfUse from './components/TermsOfUse';
-// import PrivacyPolicy from "./components/PrivacyPolicy";
 
 const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(mod => { return { default: mod.OverviewPage } }));
 
@@ -60,8 +48,7 @@ const ExperiencePage = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage = lazy(() => import('./app/(landing)/privacy/page'));
-
-
+const NotificationTestPage = lazy(() => import('./app/dashboard/notification-test/page'));
 
 
 const GroupChannelsPage = lazy(() => import('./app/dashboard/groups/[id]/channels/page'));
@@ -107,56 +94,60 @@ function App() {
 
 
   return (
-    <BrowserRouter>
-      <Suspense fallback={<LoadingPage />}>
-        <Routes>
-          <Route path="/about/" element={<LandingPage />} />
-          <Route path="/about/community" element={<CommunityPage />} />
-          <Route path="/about/features" element={<FeaturesPage />} />
-          <Route path="/about/experience" element={<ExperiencePage />} />
-          <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
-          <Route path="/about/privacy" element={<PrivacyPage />} />
-          <Route path="/signin" element={<AssignUsernamePage />} />
-          {/*        <Route path="/signin" element={<SignupPage />} />
+    <NotificationProvider>
+      <BrowserRouter>
+        <Suspense fallback={<LoadingPage />}>
+          <Routes>
+            <Route path="/about/" element={<LandingPage />} />
+            <Route path="/about/community" element={<CommunityPage />} />
+            <Route path="/about/features" element={<FeaturesPage />} />
+            <Route path="/about/experience" element={<ExperiencePage />} />
+            <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
+            <Route path="/about/privacy" element={<PrivacyPage />} />
+            <Route path="/signin" element={<AssignUsernamePage />} />
+            {/*        <Route path="/signin" element={<SignupPage />} />
 */}
-          <Route path="/" element={<DashboardPage />} />
-          {/*        <Route path="/action" element={<ActionHandler />} />
+            <Route path="/" element={<DashboardPage />} />
+            {/*        <Route path="/action" element={<ActionHandler />} />
 */}
 
-          <Route path="/saved-posts" element={<SavedPostsPage />} />
-          <Route path="/create-post" element={<CreatePostPage />} />
-          <Route path="/connections" element={<ConnectionsPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/activity" element={<ActivityPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/groups" element={<GroupsPage />} />
-          <Route path="/groups/create" element={<CreateGroupPage />} />
-          <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
-          <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
-          <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
-          <Route path="/subscription" element={<SubscriptionPage />} />
-          <Route path="/subscription/checkout" element={<CheckoutPage />} />
-          <Route path="/discover" element={<DiscoverPage />} />
-          <Route path="/post/:postId" element={<PostPage />} />
-          <Route path="/user/:username" element={<ProfilePage />} />
-          <Route element={<FireflyProvider />}>
-            <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
-          <Route path="/notification" element={<NotificationsPage />} />
-          <Route path="/terms-of-use" element={<TermsOfUse />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/business" element={<OverviewPage />} />
-          <Route path="/business/clients-page" element={<ClientsPage />} />
-          <Route path="/business/services-page" element={<ServicesPage />} />
-          <Route path="/business/add-client-page" element={<AddClientPage />} />
-          <Route path="/business/edit-client-page" element={<EditClientPage />} />
-          <Route path="/business/api-key-page" element={<ApiKeyPage />} />
-          <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
-          <Route path="/business/add-service-page" element={<AddServicePage />} />
-        </Routes>
+            <Route path="/saved-posts" element={<SavedPostsPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
+            <Route path="/connections" element={<ConnectionsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/activity" element={<ActivityPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/groups" element={<GroupsPage />} />
+            <Route path="/groups/create" element={<CreateGroupPage />} />
+            <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
+            <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
+            <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/subscription/checkout" element={<CheckoutPage />} />
+            <Route path="/discover" element={<DiscoverPage />} />
+            <Route path="/post/:postId" element={<PostPage />} />
+            <Route path="/user/:username" element={<ProfilePage />} />
+            <Route path="/notification-test" element={<NotificationTestPage />} />
+            <Route element={<FireflyProvider />}>
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
+            <Route path="/notification" element={<NotificationsPage />} />
+            <Route path="/terms-of-use" element={<TermsOfUse />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/business" element={<OverviewPage />} />
+            <Route path="/business/clients-page" element={<ClientsPage />} />
+            <Route path="/business/services-page" element={<ServicesPage />} />
+            <Route path="/business/add-client-page" element={<AddClientPage />} />
+            <Route path="/business/edit-client-page" element={<EditClientPage />} />
+            <Route path="/business/api-key-page" element={<ApiKeyPage />} />
+            <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
+            <Route path="/business/add-service-page" element={<AddServicePage />} />
+          </Routes>
 
-      </Suspense>
-    </BrowserRouter>)
+        </Suspense>
+      </BrowserRouter>
+    </NotificationProvider>
+  )
 }
 
 export default App

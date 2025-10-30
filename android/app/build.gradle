@@ -1,8 +1,6 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
-
-
 
 android {
     namespace "com.lupyd.app"
@@ -26,6 +24,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    kotlinOptions {
+        jvmTarget = '21'
+    }
 }
 
 repositories {
@@ -45,6 +50,10 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
 
+    // Firebase dependencies
+    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
 
     implementation "androidx.security:security-crypto:1.1.0"
     implementation 'org.signal:libsignal-client:0.85.2'
@@ -57,16 +66,6 @@ dependencies {
 
     ext.kotlin_version = "2.2.21"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-
 }
 
 apply from: 'capacitor.build.gradle'
-
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}

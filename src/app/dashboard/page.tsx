@@ -16,10 +16,12 @@ import { PostCard } from "@/components/dashboard/post-card"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
 import { useApiService } from "@/context/apiService"
+import NotificationTestButton from "@/components/NotificationTestButton"
+import { toast } from "@/hooks/use-toast"
 
 
 export default function DashboardPage() {
-  const [suggestedUsers, setSuggestedUsers] = useState<UserProtos.User[]>([])
+  const [suggestedUsers] = useState<UserProtos.User[]>([])
   const [trendingHashtags, setTrendingHashtags] = useState<PostProtos.PostHashtag[]>([])
 
   const { api } = useApiService()
@@ -67,6 +69,9 @@ export default function DashboardPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              {/* Notification Test Button */}
+              <NotificationTestButton toast={toast} />
+
               {/* Suggested Connections */}
               <Card className="border-none shadow-sm">
                 <CardHeader className="p-4 pb-2">
@@ -163,7 +168,7 @@ export function FollowingFeed() {
   const [hasMore, setHasMore] = useState(true);
 
   const userData = useUserData()
-  let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
+  const [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
 
 
   const { api } = useApiService()
@@ -179,7 +184,7 @@ export function FollowingFeed() {
     const posts = await api.getPosts(details)
     if (posts.length === 0) { setHasMore(false); return }
 
-    let minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
+    const minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
     if (!minimumPostId || ulidStringify(minimumPostId) > minimumId) {
       setMinimumPostId(ulidFromString(minimumId))
     }
