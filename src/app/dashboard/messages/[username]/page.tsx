@@ -35,10 +35,10 @@ import {
   X,
 } from "lucide-react";
 import { useFirefly } from "@/context/firefly-context";
-import { dateToRelativeString, getTimestampFromUlid, ulidFromString, ulidStringify } from "lupyd-js";
+import { dateToRelativeString } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
-import { UserMessageStore, type Message as DMessage } from "@/context/message-store";
+import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -52,22 +52,18 @@ export default function UserMessagePage() {
 
   const firefly = useFirefly()
 
-  const localStore = new UserMessageStore();
-
-  useEffect(() => () => localStore.close(), []);
-
   function addMessage(prev: DMessage[], msg: DMessage) {
 
     if (prev.length > 0) {
-      if (prev[prev.length - 1].timestamp < msg.timestamp) {
+      if (prev[prev.length - 1].id < msg.id) {
         return [...prev, msg]
       } else {
         let i = 0;
         for (; i < prev.length; i++) {
-          if (prev[i].timestamp > msg.timestamp) {
+          if (prev[i].id > msg.id) {
             break
           }
-          if (prev[i].timestamp == msg.timestamp) {
+          if (prev[i].id == msg.id) {
             return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
           }
         }
@@ -79,13 +75,13 @@ export default function UserMessagePage() {
   }
 
   const getOlderMessages = async () => {
-    const other = receiver
-    const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].timestamp
-    const count = 50
+    const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].id
+    const count = 100
 
+    // TODO: this is not good
     const results = await Promise.all([
-      localStore.getLastMessages(other!, auth.username!, count, lastTs),
-      localStore.getLastMessages(auth.username!, other!, count, lastTs)
+      EncryptionPlugin.getLastMessages({from: sender!, to: receiver!, limit: count, before: lastTs}).then(e => e.result),
+      EncryptionPlugin.getLastMessages({from: receiver!, to: sender!, limit: count, before: lastTs}).then(e => e.result),
     ])
 
     setMessages((prev) => {
@@ -93,14 +89,14 @@ export default function UserMessagePage() {
 
       // not the most efficient way, but good enough
       for (const msg of results.flat()) {
-        newMessages = addMessage(newMessages, msg)
+        newMessages = addMessage(newMessages, bMessageToDMessage(msg))
       }
 
       return newMessages
     })
   }
 
-  const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].conversationId, [messages]);
+  const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].convoId, [messages]);
 
 
   useEffect(() => {
@@ -254,7 +250,7 @@ export default function UserMessagePage() {
             inverse={true}
           >
             {messages.map((message) =>
-              <MessageElement key={message.timestamp.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} receiver={receiver!} />
+              <MessageElement key={message.id.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} receiver={receiver!} />
             )}
           </InfiniteScroll>
 
@@ -276,7 +272,7 @@ export default function UserMessagePage() {
                   <p className="text-xs font-medium">
                     Replying to {replyingTo.from === sender ? "yourself" : sender}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.content}></MessageBody></p>
+                  <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.text}></MessageBody></p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>
@@ -354,11 +350,11 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
   const { message, sender, receiver, handleReaction, handleReply } = props;
   const isMine = message.from === sender;
 
-  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.timestamp / 1000))))
+  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id/ 1000))))
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setRelativeTimestamp(dateToRelativeString(new Date(Number(message.timestamp / 1000))))
+      setRelativeTimestamp(dateToRelativeString(new Date(Number(message.id / 1000))))
     }, 1000)
 
     return () => { clearInterval(interval) }
@@ -366,7 +362,7 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
 
   return (
     <div
-      key={message.timestamp}
+      key={message.id}
       className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
     >
       <div
@@ -383,7 +379,7 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
               } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
           >
             <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
-              <MessageBody inner={message.content}></MessageBody>
+              <MessageBody inner={message.text}></MessageBody>
             </p>
             <p
               className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}

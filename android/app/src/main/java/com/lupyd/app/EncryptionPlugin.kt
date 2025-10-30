@@ -15,7 +15,7 @@ import firefly.Message
 @CapacitorPlugin(name = "EncryptionPlugin")
 class EncryptionPlugin : Plugin() {
 
-    val db = Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
+    val db = getDatabase(context)
 
 
     fun dMessageToJsObj(msg: DMessage): JSObject {
@@ -25,25 +25,32 @@ class EncryptionPlugin : Plugin() {
             .put("from", msg.mfrom)
             .put("to", msg.mto)
             .put("id", msg.msgId)
-            .put("text", base64)
+            .put("textB64", base64)
 
         return obj
     }
 
-    fun sendUserMessage(msg: DMessage) {
+    fun saveUserMessage(msg: DMessage) {
+        db.messagesDao().put(dmsg)
         notifyListeners("onUserMessage", dMessageToJsObj((msg)))
     }
 
 
     @PluginMethod
     fun onUserMessage(call: PluginCall) {
-        val protoBytesBase64 = call.data.getString("proto")
-        val protoBytes = Base64.decode(protoBytesBase64, Base64.NO_WRAP)
-        val msg = Message.UserMessage.parseFrom(protoBytes)
-        val result = EncryptionWrapper( db)
-            .decrypt(msg.from, msg.text.toByteArray(), msg.type)
 
-        val dmsg = DMessage(msg.id, msg.conversationId, msg.from, msg.to, result)
+        val conversationId = call.data.getInteger("convoId")
+        val from = call.data.getString("from")
+        val to = call.data.getString("to")
+        val textB64 = call.data.getString("textB64")
+        val type = call.data.getInteger("type")
+        val text = Base64.decode(textB64, Base64.NO_WRAP)
+        val id = call.data.getInteger("id")
+        val result = EncryptionWrapper(db)
+            .decrypt(from, text, type)
+
+        val dmsg = DMessage(id, conversationId, from, to, result)
+        saveUserMessage(dmsg)
 
         call.resolve(dMessageToJsObj(dmsg))
     }
@@ -53,12 +60,15 @@ class EncryptionPlugin : Plugin() {
     suspend fun encryptAndSend(call: PluginCall) {
         val apiUrl = call.data.getString("apiUrl")!!
         val conversationId = call.data.getInteger("convoId")!!
-        val payloadB64 = call.data.getString("text")!!
+        val payloadB64 = call.data.getString("textB64")!!
         val to = call.data.getString("to")!!
         val token = call.data.getString("token")!!
         val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
-        val msg = EncryptionWrapper(db).encryptAndSend(apiUrl, to, conversationId.toLong(), payload, token)
-        call.resolve(dMessageToJsObj(msg))
+        val dmsg = EncryptionWrapper(db).encryptAndSend(apiUrl, to, conversationId.toLong(), payload, token)
+
+        saveUserMessage(dmsg)
+        
+        call.resolve(dMessageToJsObj(dmsg))
     }
 
     @PluginMethod

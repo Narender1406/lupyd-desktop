@@ -10,6 +10,7 @@ import { UserDataProvider } from "@/context/userdata-context"
 import { DialogProvider } from "@/context/dialog-context"
 import { UserImageProvider } from "@/context/user-image-context"
 import { App as CapacitorApp } from '@capacitor/app';
+import { ApiServiceProvider } from "@/context/apiService"
 
 // Handle Android back button
 CapacitorApp.addListener('backButton', ({ canGoBack }) => {
@@ -19,7 +20,8 @@ CapacitorApp.addListener('backButton', ({ canGoBack }) => {
     CapacitorApp.exitApp();
   }
 });
-import { ApiServiceProvider } from "@/context/apiService"
+
+
 
 
 createRoot(document.getElementById('root')!).render(

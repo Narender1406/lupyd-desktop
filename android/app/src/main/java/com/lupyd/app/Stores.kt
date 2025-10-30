@@ -152,6 +152,11 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 
+fun getDatabase(context: Context): AppDatabase {
+    val db = Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
+    return db
+}
+
 
 
 public class SqlPreKeyStore (val db: AppDatabase) : PreKeyStore {

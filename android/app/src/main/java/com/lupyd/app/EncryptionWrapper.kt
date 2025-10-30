@@ -107,7 +107,6 @@ class EncryptionWrapper(val db: AppDatabase) {
             val body = response.bodyAsBytes()
             val msg = Message.UserMessage.parseFrom(body)
             val dMsg = DMessage(msg.id, msg.conversationId, msg.from, msg.to, payload)
-            handleUserMessage(dMsg)
             return dMsg
         } else if (response.status == HttpStatusCode.NotFound) {
             val response = httpClient.post("${apiUrl}/user/conversation?other=${to}") {
@@ -132,7 +131,6 @@ class EncryptionWrapper(val db: AppDatabase) {
                         val body = response.bodyAsBytes()
                         val msg = Message.UserMessage.parseFrom(body)
                         val dMsg = DMessage(msg.id, msg.conversationId, msg.from, msg.to, payload)
-                        handleUserMessage(dMsg)
                         return dMsg
                     } else {
                         Log.e(
@@ -176,11 +174,5 @@ class EncryptionWrapper(val db: AppDatabase) {
         )
 
         session.process(preKeyBundle)
-    }
-
-    suspend fun handleUserMessage(msg: DMessage) {
-        db.messagesDao().put(msg)
-
-        //TODO : notify typescript side
     }
 }
