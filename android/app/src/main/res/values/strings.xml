@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">lupyd-web</string>
-    <string name="title_activity_main">lupyd-web</string>
+    <string name="app_name">Lupyd</string>
+    <string name="title_activity_main">Lupyd</string>
     <string name="package_name">com.lupyd.app</string>
     <string name="custom_url_scheme">com.lupyd.app</string>
 </resources>
