@@ -30,3 +30,101 @@ export const lazyLoadObserver = new IntersectionObserver(
   },
   { rootMargin: "50px" },
 );
+
+export function readableStreamToAsyncGen(stream: ReadableStream<Uint8Array>) {
+  const reader = stream.getReader();
+  return (async function* () {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  })();
+}
+
+export function asyncGenToReadableStream(gen: AsyncGenerator<Uint8Array>) {
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { value, done } = await gen.next();
+      if (done) controller.close();
+      else controller.enqueue(value);
+    },
+    cancel() { gen.return?.(undefined); }
+  });
+}
+
+
+
+export function encryptBlob(blob: Blob) {
+  const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+  const counter = crypto.getRandomValues(new Uint8Array(16));
+
+  const reader = asyncGenToReadableStream(encryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter));
+
+  const key = new Uint8Array(keyBytes.length + counter.length)
+  key.set(keyBytes, 0)
+  key.set(counter, keyBytes.length)
+
+  return { reader, key }
+}
+
+export function decryptBlob(blob: Blob, key: Uint8Array) {
+  const keyBytes = key.slice(0, 32)
+  const counter = key.slice(32)
+
+  const reader = asyncGenToReadableStream(decryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter));
+
+  return { reader }
+}
+
+export async function* encryptStream(stream: AsyncGenerator<Uint8Array>, keyBytes: Uint8Array, counter: Uint8Array) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes.buffer as ArrayBuffer,
+    { name: "AES-CTR" },
+    false,
+    ["encrypt"],
+  );
+
+  let counterValue = new BigUint64Array(counter.buffer, 8, 1)[0]; // lower 64 bits for counting
+  for await (const chunk of stream) {
+    const counterBlock = counter.slice(); // copy
+    new DataView(counterBlock.buffer).setBigUint64(8, counterValue, false); // update lower 64 bits
+    counterValue += BigInt(Math.ceil(chunk.byteLength / 16));
+
+    const encrypted = await crypto.subtle.encrypt(
+      { name: "AES-CTR", counter: counterBlock, length: 64 },
+      key,
+      new Uint8Array(chunk),
+    );
+    yield new Uint8Array(encrypted);
+  }
+}
+
+export async function* decryptStream(stream: AsyncGenerator<Uint8Array>, keyBytes: Uint8Array, counter: Uint8Array) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes.buffer as ArrayBuffer,
+    { name: "AES-CTR" },
+    false,
+    ["decrypt"],
+  );
+
+  let counterValue = new BigUint64Array(counter.buffer, 8, 1)[0]; // lower 64 bits for counting
+  for await (const chunk of stream) {
+    const counterBlock = counter.slice(); // copy
+    new DataView(counterBlock.buffer).setBigUint64(8, counterValue, false); // update lower 64 bits
+    counterValue += BigInt(Math.ceil(chunk.byteLength / 16));
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-CTR", counter: counterBlock, length: 64 },
+      key,
+      new Uint8Array(chunk),
+    );
+    yield new Uint8Array(decrypted);
+  }
+}
