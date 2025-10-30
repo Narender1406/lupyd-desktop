@@ -34,3 +34,12 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
+// Configure JVM toolchain for consistent compilation across subprojects
+subprojects {
+    // Configure Kotlin compilation to match Java version
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "21"
+        }
+    }
+}
