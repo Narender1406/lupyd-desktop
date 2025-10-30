@@ -1,4 +1,4 @@
-package com.Lupyd.app;
+package com.lupyd.app;
 
 import com.getcapacitor.BridgeActivity;
 

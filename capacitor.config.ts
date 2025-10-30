@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.Lupyd.app",
+  appId: "com.lupyd.app",
   appName: "lupyd-web",
   webDir: "dist",
   plugins: {
