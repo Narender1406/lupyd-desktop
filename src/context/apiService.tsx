@@ -29,9 +29,9 @@ export function ApiServiceProvider({ children }: { children: ReactNode }) {
     throw Error(`NEXT_PUBLIC_JS_ENV_API_CDN_URL env var not set`)
   }
 
-  const cdnUrl = process.env.NEXT_PUBLIC_JS_ENV_CDN_URL
+  const cdnUrl = process.env.NEXT_PUBLIC_JS_ENV_CDN_STORAGE
   if (!cdnUrl) {
-    throw Error(`NEXT_PUBLIC_JS_ENV_API_CDN_URL env var not set`)
+    throw Error(`NEXT_PUBLIC_JS_ENV_CDN_STORAGE env var not set`)
   }
 
   const getToken = useCallback(async () => {
