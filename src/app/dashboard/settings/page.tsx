@@ -388,9 +388,13 @@ function PrivacySection() {
                   <p className="text-sm text-muted-foreground">Review and unblock accounts</p>
                 </div>
               </div>
-              <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                View Blocked Accounts
-              </Button>
+              <Button
+            onClick={() => alert("No blocked accounts")}
+            className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto"
+            >
+           View Blocked Accounts
+            </Button>
+
             </div>
           </div>
 
