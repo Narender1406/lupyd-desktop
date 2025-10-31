@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1039055886197",
+    "project_id": "lupyd-n",
+    "storage_bucket": "lupyd-n.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039055886197:android:51f5dea753f74c3106a53c",
+        "android_client_info": {
+          "package_name": "com.lupyd.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl8UDzIGGJ10PIa2868cT4hMfVMawoOUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
