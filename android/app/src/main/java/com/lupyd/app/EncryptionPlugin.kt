@@ -30,14 +30,9 @@ class EncryptionPlugin : Plugin() {
         return obj
     }
 
-    fun saveUserMessage(msg: DMessage) {
-        db.messagesDao().put(dmsg)
-        notifyListeners("onUserMessage", dMessageToJsObj((msg)))
-    }
-
 
     @PluginMethod
-    fun onUserMessage(call: PluginCall) {
+    suspend fun onUserMessage(call: PluginCall) {
 
         val conversationId = call.data.getInteger("convoId")
         val from = call.data.getString("from")
@@ -46,28 +41,28 @@ class EncryptionPlugin : Plugin() {
         val type = call.data.getInteger("type")
         val text = Base64.decode(textB64, Base64.NO_WRAP)
         val id = call.data.getInteger("id")
-        val result = EncryptionWrapper(db)
-            .decrypt(from, text, type)
+        val result = EncryptionWrapper(db, this::sendUserMessage)
+            .onUserMessage(from!!, to!!, text, type!!, conversationId!!.toLong(), id!!.toLong())
 
-        val dmsg = DMessage(id, conversationId, from, to, result)
-        saveUserMessage(dmsg)
 
-        call.resolve(dMessageToJsObj(dmsg))
+        call.resolve(dMessageToJsObj(result))
     }
 
 
     @PluginMethod
     suspend fun encryptAndSend(call: PluginCall) {
-        val apiUrl = call.data.getString("apiUrl")!!
         val conversationId = call.data.getInteger("convoId")!!
         val payloadB64 = call.data.getString("textB64")!!
         val to = call.data.getString("to")!!
         val token = call.data.getString("token")!!
         val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
-        val dmsg = EncryptionWrapper(db).encryptAndSend(apiUrl, to, conversationId.toLong(), payload, token)
+        val dmsg = EncryptionWrapper(db, this::sendUserMessage).encryptAndSend(
+            to,
+            conversationId.toLong(),
+            payload,
+            token
+        )
 
-        saveUserMessage(dmsg)
-        
         call.resolve(dMessageToJsObj(dmsg))
     }
 
@@ -90,4 +85,42 @@ class EncryptionPlugin : Plugin() {
         val arr = JSArray.from(msgs.map { dMessageToJsObj(it) })
         call.resolve(JSObject().put("result", arr))
     }
+
+    @PluginMethod
+    suspend fun getLastMessagesInBetween(call: PluginCall) {
+        val from = call.getString("from")!!
+        val to = call.getString("to")!!
+        val limit = call.getInt("limit")!!
+        val before = call.getLong("before")!!
+
+        val msgs = db.messagesDao().getLastMessagesInBetween(from, to, before, limit)
+        val arr = JSArray.from(msgs.map { dMessageToJsObj(it) })
+        call.resolve(JSObject().put("result", arr))
+    }
+
+
+    @PluginMethod
+    suspend fun saveTokens(call: PluginCall) {
+        val refreshToken = call.getString("refreshToken")!!
+        val accessToken = call.getString("accessToken")!!
+
+        db.keyValueDao().put(KeyValueEntry("auth0RefreshToken", refreshToken))
+        db.keyValueDao().put(KeyValueEntry("auth0AccessToken", accessToken))
+
+        call.resolve()
+    }
+
+
+    @PluginMethod
+    suspend fun checkSetup(call: PluginCall) {
+        EncryptionWrapper(db).checkSetup()
+        call.resolve()
+    }
+
+
+    fun sendUserMessage(msg: DMessage) {
+        notifyListeners("onUserMessage", dMessageToJsObj(msg))
+    }
+
+
 }

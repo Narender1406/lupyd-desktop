@@ -24,6 +24,9 @@ interface DMessagesDao {
     @Query("SELECT * FROM user_messages WHERE mfrom = :from AND mto = :to AND msgId < :before ORDER BY msgId DESC LIMIT :limit")
     suspend fun getLastMessages(from: String, to: String, before: Long, limit: Int): List<DMessage>
 
+    @Query("SELECT * FROM user_messages WHERE (mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from) ORDER BY msgId DESC LIMIT :limit)")
+    suspend fun getLastMessagesInBetween(from: String, to: String, before: Long, limit: Int): List<DMessage>
+
     @Query("SELECT t1.*\n" +
             "FROM user_messages t1\n" +
             "WHERE t1.msgId = (\n" +

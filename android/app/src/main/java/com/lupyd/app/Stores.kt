@@ -1,6 +1,7 @@
 package com.lupyd.app
 
 
+import android.content.Context
 import org.signal.libsignal.protocol.SignalProtocolAddress
 
 
@@ -137,8 +138,27 @@ interface TrustedKeysDao {
     suspend fun get(name: String, deviceId: Int): ByteArray?
 }
 
+@Entity(tableName = "key_value_store")
+class KeyValueEntry(
+    @PrimaryKey val k: String,
+    val v: String
+)
+
+@Dao
+interface KeyValueDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(entry: KeyValueEntry)
+
+    @Query("SELECT v FROM key_value_store WHERE k = :key")
+    suspend fun get(key: String): String?
+
+    @Query("DELETE FROM key_value_store WHERE k = :key")
+    suspend fun delete(key: String)
+}
+
 @Database(entities = [
     DMessage::class,
+    KeyValueEntry::class,
     PreKeyEntry::class, SignedPreKeyEntry::class, KyberPreKeyEntry::class, SessionEntry::class, IdentityEntry::class, TrustedKeyEntry::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun preKeysDao(): PreKeysDao
@@ -147,7 +167,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun sessionsDao(): SessionsDao
     abstract fun identitiesDao(): IdentitiesDao
     abstract fun trustedKeysDao(): TrustedKeysDao
-
+    abstract fun keyValueDao(): KeyValueDao
     abstract fun messagesDao(): DMessagesDao
 }
 
@@ -412,4 +432,24 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
 //        super.markKyberPreKeyUsed(kyberPreKeyId, signedPreKeyId, baseKey)
     }
 
+}
+
+class SqlKeyValueStore(private val db: AppDatabase) {
+    fun put(key: String, value: String) {
+        runBlocking {
+            db.keyValueDao().put(KeyValueEntry(key, value))
+        }
+    }
+
+    fun get(key: String): String? {
+        return runBlocking {
+            db.keyValueDao().get(key)
+        }
+    }
+
+    fun delete(key: String) {
+        runBlocking {
+            db.keyValueDao().delete(key)
+        }
+    }
 }
