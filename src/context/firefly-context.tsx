@@ -23,10 +23,6 @@ type FireflyContextType = {
   initialize: () => Promise<void>,
   dispose: () => void,
 
-  // encrypt: (payload: Uint8Array, other: string) => Promise<{ cipherText: Uint8Array, cipherType: number }>,
-  // decrypt: (cipherText: Uint8Array, cipherType: number, from: string) => Promise<Uint8Array>,
-  // processPreKeyBundle: (other: string, bundle: FireflyProtos.PreKeyBundle) => Promise<void>,
-
   encryptAndSend: (convoId: bigint, other: string, text: Uint8Array) => Promise<DMessage>
 }
 
@@ -37,7 +33,6 @@ const FireflyContext = createContext<FireflyContextType | undefined>(undefined)
 
 
 export default function FireflyProvider() {
-  const lastUserMessageTimestampStoreKey = "lastUserMessageTimestampInMicroseconds"
   const auth = useAuth()
 
 
@@ -368,26 +363,26 @@ export default function FireflyProvider() {
   //   }
   // }
 
-  async function syncUserMessages() {
-    const limit = 100
-    while (true) {
-      const lastSync = store.get(lastUserMessageTimestampStoreKey) as bigint | undefined ?? 0n
-      const messages = await service.syncUserMessages(lastSync, limit)
-      for (const message of messages.messages) {
-        await handleUserMessage(message)
-      }
+  // async function syncUserMessages() {
+  //   const limit = 100
+  //   while (true) {
+  //     const lastSync = store.get(lastUserMessageTimestampStoreKey) as bigint | undefined ?? 0n
+  //     const messages = await service.syncUserMessages(lastSync, limit)
+  //     for (const message of messages.messages) {
+  //       await handleUserMessage(message)
+  //     }
 
-      if (messages.messages.length < limit) {
-        break
-      }
-    }
-  }
+  //     if (messages.messages.length < limit) {
+  //       break
+  //     }
+  //   }
+  // }
 
   async function encryptAndSend(convoId: bigint, other: string, text: Uint8Array) {
 
     const token = await service.getAuthToken()
     const msg = await EncryptionPlugin.encryptAndSend({
-      apiUrl: apiUrl!, convoId: Number(convoId), textB64: toBase64(text), to: other, token,
+      convoId: Number(convoId), textB64: toBase64(text), to: other, token,
     })
 
     return bMessageToDMessage(msg)

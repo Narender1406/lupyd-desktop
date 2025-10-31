@@ -39,6 +39,8 @@ import { dateToRelativeString } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin";
+import { useApiService } from "@/context/apiService";
+import { encryptBlob } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -49,6 +51,8 @@ export default function UserMessagePage() {
   const navigate = useNavigate();
 
   const [messages, setMessages] = useState<DMessage[]>([])
+
+  const [files, setFiles] = useState<File[]>([])
 
   const firefly = useFirefly()
 
@@ -79,16 +83,14 @@ export default function UserMessagePage() {
     const count = 100
 
     // TODO: this is not good
-    const results = await Promise.all([
-      EncryptionPlugin.getLastMessages({from: sender!, to: receiver!, limit: count, before: lastTs}).then(e => e.result),
-      EncryptionPlugin.getLastMessages({from: receiver!, to: sender!, limit: count, before: lastTs}).then(e => e.result),
-    ])
+
+    const { result } = await EncryptionPlugin.getLastMessagesInBetween({ from: receiver!, to: sender!, limit: count, before: lastTs })
 
     setMessages((prev) => {
       let newMessages = prev
 
       // not the most efficient way, but good enough
-      for (const msg of results.flat()) {
+      for (const msg of result) {
         newMessages = addMessage(newMessages, bMessageToDMessage(msg))
       }
 
@@ -162,6 +164,8 @@ export default function UserMessagePage() {
 
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  const { api, cdnUrl } = useApiService()
+
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
@@ -171,12 +175,31 @@ export default function UserMessagePage() {
     }
     setSendingMessage(true);
     try {
-      await sendMessage(FireflyProtos.UserMessageInner.create({
-        plainText: new TextEncoder().encode(msg),
-        messagePayload: FireflyProtos.MessagePayload.create({})
-      }))
+
+      const encryptedFiles = FireflyProtos.EncryptedFiles.create()
+      for (const file of files) {
+        const { reader, key } = encryptBlob(file)
+        const objectKey = await api.uploadFile(file.name, file.type, reader)
+
+        encryptedFiles.files.push(FireflyProtos.EncryptedFile.create({
+          url: `${cdnUrl}/${objectKey}`,
+          secretKey: key,
+          secretKeyType: 1
+        }))
+      }
+
+
+      const userMessage =
+        FireflyProtos.UserMessageInner.create({
+          messagePayload: FireflyProtos.MessagePayload.create({
+            text: msg,
+            files: encryptedFiles,
+          })
+        })
+      await sendMessage(userMessage)
       setMessageText("")
       setReplyingTo(null)
+      setFiles([])
     } catch (err) {
       console.error(err)
       toast({
@@ -350,7 +373,7 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
   const { message, sender, receiver, handleReaction, handleReply } = props;
   const isMine = message.from === sender;
 
-  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id/ 1000))))
+  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
 
   useEffect(() => {
     const interval = setInterval(() => {

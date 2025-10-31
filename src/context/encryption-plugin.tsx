@@ -31,7 +31,6 @@ export interface EncryptionPluginType {
     id: number,
   }): Promise<BMessage>,
   encryptAndSend(options: {
-    apiUrl: string,
     convoId: number,
     textB64: string,
     to: string,
@@ -47,6 +46,21 @@ export interface EncryptionPluginType {
   }): Promise<{ result: BMessage[] }>
 
   getLastMessagesFromAllConversations(): Promise<{ result: BMessage[] }>
+  getLastMessagesInBetween(
+    options: {
+      from: string,
+      to: string,
+      limit: number,
+      before: number
+    }
+  ): Promise<{ result: BMessage[] }>
+
+  checkSetup(): Promise<void>,
+
+  saveTokens(options: {
+    accessToken: string,
+    refreshToken: string,
+  }): Promise<void>
 }
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
