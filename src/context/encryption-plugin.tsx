@@ -11,6 +11,18 @@ export interface BMessage {
 }
 
 
+export function isBMessage(obj: any): obj is BMessage {
+  return (
+    obj &&
+    typeof obj.id === "number" &&
+    typeof obj.convoId === "number" &&
+    typeof obj.from === "string" &&
+    typeof obj.to === "string" &&
+    typeof obj.textB64 === "string"
+  );
+}
+
+
 export type DMessage = Omit<BMessage, "textB64"> & { text: Uint8Array }
 
 export function bMessageToDMessage(msg: BMessage): DMessage {
@@ -61,6 +73,11 @@ export interface EncryptionPluginType {
     accessToken: string,
     refreshToken: string,
   }): Promise<void>
+
+
+  syncUserMessages(): Promise<void>
+
+  
 }
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")

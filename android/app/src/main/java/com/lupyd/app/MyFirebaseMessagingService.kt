@@ -16,6 +16,10 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    val db = getDatabase(this)
+    val encryptionWrapper = EncryptionWrapper(db, this::handleDecryptedMessage)
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
 
 
@@ -30,9 +34,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val data = remoteMessage.data
 
         if (data["ty"] == "umsg") {
-            val wrapper = EncryptionWrapper(db, this::handleDecryptedMessage)
             GlobalScope.launch {
-                wrapper.syncUserMessages()
+                encryptionWrapper.syncUserMessages()
             }
         } else {
             super.onMessageReceived(remoteMessage)
@@ -213,11 +216,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private fun sendRegistrationToServer(token: String?) {
         // Implement this method to send token to your app server
         Log.d(TAG, "Sending token to server: " + token)
-        val db = getDatabase(this)
+
+        val cb = this::handleDecryptedMessage
         if (null != token) {
             GlobalScope.launch {
                 db.keyValueDao().put(KeyValueEntry("fcmToken", token))
-                EncryptionWrapper(db).sendFcmTokenToServer()
+                encryptionWrapper.sendFcmTokenToServer()
             }
         }
     }

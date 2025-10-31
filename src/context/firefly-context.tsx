@@ -8,8 +8,9 @@ import { Outlet } from "react-router-dom";
 import store from "store2";
 
 import wasmUrl from "libsignal-protocol/libsignal_protocol_bg.wasm?url"
-import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "./encryption-plugin";
+import { bMessageToDMessage, EncryptionPlugin, isBMessage, type DMessage } from "./encryption-plugin";
 import { toBase64 } from "@/lib/utils";
+import { Capacitor } from "@capacitor/core";
 
 
 type MessageCallbackType = (client: fireflyClientJs.FireflyWsClient, message: DMessage) => void;
@@ -47,20 +48,28 @@ export default function FireflyProvider() {
     throw new Error(`Missing CHAT ENV VARS`)
   }
 
-  const [libsignalInitialized, setLibsignalInitialized] = useState(false)
+
+
 
   useEffect(() => {
-    if (!libsignalInitialized) {
-      fireflyClientJs.libsignal.default(wasmUrl).then(() => {
-        console.log("libsignal-wasm initiated")
-        setLibsignalInitialized(true)
-      })
-    }
+
+    const listener = Capacitor.addListener!("EncryptionPlugin", "onUserMessage", (data, err) => {
+      if (err) {
+        throw err
+      }
+
+
+      if (isBMessage(data)) {
+        const dmsg = bMessageToDMessage(data)
+        eventListeners.current.forEach(e => e(client, dmsg))
+      }
+
+    })
+
+    return () => { listener.remove() }
+
   }, [])
 
-  if (!libsignalInitialized) {
-    return <div></div>
-  }
 
   if (!auth.username) {
     return <div>User should complete authentication to see this page</div>
@@ -68,8 +77,8 @@ export default function FireflyProvider() {
 
 
   // async function initialize() {
-    // await checkSelfConversations()
-    // await checkSelfBundles()
+  // await checkSelfConversations()
+  // await checkSelfBundles()
   // }
 
 
@@ -104,7 +113,7 @@ export default function FireflyProvider() {
     })
 
     c.addEventListener("onConnect", _ => {
-      syncUserMessages()
+      EncryptionPlugin.syncUserMessages()
     })
 
     return c;
@@ -127,6 +136,8 @@ export default function FireflyProvider() {
     if (auth.username) {
       // initialize()
       client!.initialize().then(() => console.log(`Firefly initialized`)).catch(console.error);
+
+      EncryptionPlugin.checkSetup()
     }
 
   }, [auth])
@@ -149,7 +160,7 @@ export default function FireflyProvider() {
   // }
 
   // async function decrypt(cipherText: Uint8Array, cipherType: number, from: string) {
-    
+
   //   const addr = new libsignal.ProtocolAddress(from, 1)
 
   //   const toFree: { free: () => void; }[] = [addr]
@@ -407,11 +418,11 @@ export default function FireflyProvider() {
     const dmsg = bMessageToDMessage(msg)
 
     eventListeners.current.forEach(e => e(client, dmsg))
-   
+
 
     return dmsg
   }
- 
+
 
   const addEventListener = (cb: MessageCallbackType) => {
     eventListeners.current.add(cb)

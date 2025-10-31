@@ -17,6 +17,8 @@ class EncryptionPlugin : Plugin() {
 
     val db = getDatabase(context)
 
+    val encryptionWrapper = EncryptionWrapper(db, this::sendUserMessage)
+
 
     fun dMessageToJsObj(msg: DMessage): JSObject {
         val base64 = Base64.encodeToString(msg.text, Base64.NO_WRAP)
@@ -41,11 +43,16 @@ class EncryptionPlugin : Plugin() {
         val type = call.data.getInteger("type")
         val text = Base64.decode(textB64, Base64.NO_WRAP)
         val id = call.data.getInteger("id")
-        val result = EncryptionWrapper(db, this::sendUserMessage)
+        val result = encryptionWrapper
             .onUserMessage(from!!, to!!, text, type!!, conversationId!!.toLong(), id!!.toLong())
 
+        if (result != null) {
+            call.resolve(dMessageToJsObj(result))
+        } else {
+            call.reject("Something went wrong")
+        }
 
-        call.resolve(dMessageToJsObj(result))
+
     }
 
 
@@ -56,7 +63,7 @@ class EncryptionPlugin : Plugin() {
         val to = call.data.getString("to")!!
         val token = call.data.getString("token")!!
         val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
-        val dmsg = EncryptionWrapper(db, this::sendUserMessage).encryptAndSend(
+        val dmsg =encryptionWrapper.encryptAndSend(
             to,
             conversationId.toLong(),
             payload,
@@ -113,7 +120,13 @@ class EncryptionPlugin : Plugin() {
 
     @PluginMethod
     suspend fun checkSetup(call: PluginCall) {
-        EncryptionWrapper(db).checkSetup()
+        encryptionWrapper.checkSetup()
+        call.resolve()
+    }
+
+    @PluginMethod
+    suspend fun syncUserMessages(call: PluginCall) {
+        encryptionWrapper.syncUserMessages()
         call.resolve()
     }
 
@@ -121,6 +134,5 @@ class EncryptionPlugin : Plugin() {
     fun sendUserMessage(msg: DMessage) {
         notifyListeners("onUserMessage", dMessageToJsObj(msg))
     }
-
 
 }

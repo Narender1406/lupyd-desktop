@@ -50,12 +50,17 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         messageType: Int,
         conversationId: Long,
         msgId: Long
-    ): DMessage {
-        val decrypted = decrypt(from, text, messageType)
-        val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
-        handleMessage(dmsg)
+    ): DMessage? {
+        try {
+            val decrypted = decrypt(from, text, messageType)
+            val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
+            handleMessage(dmsg)
 
-        return dmsg
+            return dmsg
+        } catch (e: Exception) {
+            Log.e(tag, e.toString())
+        }
+        return null
     }
 
 
