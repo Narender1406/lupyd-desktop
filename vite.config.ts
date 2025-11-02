@@ -78,7 +78,6 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         treeshake: true,
         output: {
-          sourcemap: "inline",
           inlineDynamicImports: false,
           manualChunks: (id: string) => {
             if (id.includes("lucide")) {

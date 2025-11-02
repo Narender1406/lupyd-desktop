@@ -27,21 +27,25 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     throw Error(`NEXT_PUBLIC_JS_ENV_API_URL env var not set`)
   }
 
-  const getToken = useCallback(async () => {
-    if (!auth.username) {
-      throw Error("user not authenticated")
-    }
-    const token = await auth.getToken()
-    if (!token)
-      throw Error("user not authenticated")
-    return token
-  }, [auth])
-
   useEffect(() => {
-    setRelationState(new UserRelationsState((follows, blocked) => {
-      setState({ follows, blocked })
-    }, apiUrl, getToken))
-  }, [getToken])
+    if (auth.username != null) {
+
+      const getToken = async () => {
+        if (!auth.username) {
+          throw Error("user not authenticated")
+        }
+        const token = await auth.getToken()
+        if (!token)
+          throw Error("user not authenticated")
+        return token
+      }
+
+
+      setRelationState(new UserRelationsState((follows, blocked) => {
+        setState({ follows, blocked })
+      }, apiUrl, getToken))
+    }
+  }, [auth])
 
 
   useEffect(() => {

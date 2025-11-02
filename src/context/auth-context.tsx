@@ -7,6 +7,7 @@ import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react
 import { type DecodedToken, getPayloadFromAccessToken } from "lupyd-js"
 import { Browser } from "@capacitor/browser"
 import { EncryptionPlugin } from "./encryption-plugin"
+import { useNavigate } from "react-router-dom"
 
 
 type AuthContextType = {
@@ -16,7 +17,7 @@ type AuthContextType = {
   logout: () => Promise<void>
   login: () => Promise<void>,
   getToken: (forceReload?: boolean) => Promise<string | undefined>,
-  // handleRedirectCallback: () => Promise<any>,
+  handleRedirectCallback: (url: string | undefined) => Promise<any>,
 }
 
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
 
   const auth0 = useAuth0()
+  const navigate = useNavigate()
 
 
   // Default to logged in for development
@@ -103,10 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth0])
 
   const getToken = useCallback(async (refresh?: boolean) => {
-    if (auth0.isLoading) return
+    if (auth0.isLoading) {
+      console.log(`Auth0 is still loading`)
+      return undefined
+    }
 
     if (auth0.isAuthenticated) {
-      const result = await auth0.getAccessTokenSilently({ detailedResponse: true, cacheMode: refresh ? "off": "on" })
+      const result = await auth0.getAccessTokenSilently({ detailedResponse: true, cacheMode: refresh ? "off" : "on" })
 
       const accessToken = result.access_token;
 
@@ -116,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.warn(`Unable to get refresh token`, JSON.stringify(result))
       }
-      
+
       if (refresh) {
         onUpdateUser(accessToken)
       }
@@ -126,12 +131,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth0])
 
   // const handleRedirectCallback = () => getAuthHandler()!.handleRedirectCallback()
-  // const handleRedirectCallback = useCallback(async (url?: string) => {
-  //   const _result = await auth0.handleRedirectCallback(url)
-  //   console.log({ _result })
-  //   const token = await getToken()
-  //   onUpdateUser(token ?? null)
-  // }, [auth0])
+  const handleRedirectCallback = useCallback(async (url?: string) => {
+    console.log(`Handling redirect callback ${url}`)
+    const result = await auth0.handleRedirectCallback(url)
+    console.log(`Redirect handled `, result)
+    navigate("/signin")
+    
+    // const token = await getToken()
+    // onUpdateUser(token ?? null)
+
+    // console.log({ token })
+
+    // if (token) {
+    //   const payload = getPayloadFromAccessToken(token!)
+    //   console.log({ payload })
+    //   if (!payload.uname) {
+    //     console.log(`Navigating to signin for username assignment`)
+    //   } else {
+    //     console.log(`user has username`)
+    //   }
+    // }
+  }, [auth0])
 
 
 
@@ -157,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
   )
 }
 

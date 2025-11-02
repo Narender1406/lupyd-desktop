@@ -121,13 +121,52 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         return response
     }
 
+
+    suspend fun createConversation(other: String, token: String): Message.ConversationStart {
+        val response =
+            httpClient.post("${Constants.FIREFLY_API_URL}/user/conversation?other=${other}") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
+
+        if (response.status.isSuccess()) {
+            return Message.ConversationStart.parseFrom(response.bodyAsBytes())
+        }
+
+        throw Exception("Unable to create conversation ${response.status} ${response.bodyAsText()}")
+    }
+
+
     suspend fun encryptAndSend(
         to: String,
-        conversationId: Long,
+        convoId: Long,
         payload: ByteArray,
         token: String,
     ): DMessage {
-        val cipherText = encrypt(to, payload)
+
+        var conversationId = convoId
+        if (conversationId == 0L) {
+            val convo = createConversation(to, token)
+            processPreKeyBundle(convo.bundle!!, to)
+
+            conversationId = convo.conversationId
+        }
+
+        var cipherText: CiphertextMessage?
+
+        try {
+            cipherText = encrypt(to, payload)
+        } catch (e: Exception) {
+            Log.i(tag, "Failed to encrypt ${e}, trying to recreate conversation")
+            val convo = createConversation(to, token)
+            processPreKeyBundle(convo.bundle!!, to)
+
+            conversationId = convo.conversationId
+
+            cipherText = encrypt(to, payload)
+        }
+
         val response =
             sendMessage(conversationId, cipherText.serialize(), cipherText.type, token)
 
@@ -138,52 +177,46 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             handleMessage(dMsg)
             return dMsg
         } else if (response.status == HttpStatusCode.NotFound) {
-            val response = httpClient.post("${Constants.FIREFLY_API_URL}/user/conversation?other=${to}") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-            }
+            val convo = createConversation(to, token)
+            processPreKeyBundle(convo.bundle!!, to)
+            conversationId = convo.conversationId
+            cipherText = encrypt(to, payload)
+
+
+            val response = sendMessage(
+                conversationId,
+                cipherText.serialize(),
+                cipherText.type,
+                token
+            )
 
             if (response.status.isSuccess()) {
-                val conversationStart = Message.ConversationStart.parseFrom(response.bodyAsBytes())
-                if (!conversationStart.bundle.equals(Message.PreKeyBundle.getDefaultInstance())) {
-                    processPreKeyBundle(conversationStart.bundle, to)
-                    val cipherText = encrypt(to, payload)
-                    val response = sendMessage(
-                        conversationStart.conversationId,
-                        cipherText.serialize(),
-                        cipherText.type,
-                        token
-                    )
+                val body = response.bodyAsBytes()
+                val msg = Message.UserMessage.parseFrom(body)
+                val dMsg = DMessage(msg.id, msg.conversationId, msg.from, msg.to, payload)
 
-                    if (response.status.isSuccess()) {
-                        val body = response.bodyAsBytes()
-                        val msg = Message.UserMessage.parseFrom(body)
-                        val dMsg = DMessage(msg.id, msg.conversationId, msg.from, msg.to, payload)
+                handleMessage(dMsg)
 
-                        handleMessage(dMsg)
-
-                        return dMsg
-                    } else {
-                        Log.e(
-                            tag,
-                            "unexpected from server: ${response.status} ${response.bodyAsText()}"
-                        )
-                    }
-                } else {
-                    Log.e(
-                        tag,
-                        "received no pre key bundle"
-                    )
-                }
+                return dMsg
+            } else {
+                Log.e(
+                    tag,
+                    "unexpected from server: ${response.status} ${response.bodyAsText()}"
+                )
             }
-        } else {
-            Log.e(tag, "unexpected from server: ${response.status} ${response.bodyAsText()}")
+
+
         }
         throw Exception("Unable to encrypt and send message")
     }
 
     fun processPreKeyBundle(bundle: Message.PreKeyBundle, owner: String) {
+
+        if (bundle.equals(Message.PreKeyBundle.getDefaultInstance())) {
+            throw Exception("PreKeyBundle is null")
+        }
+
+
         val session = SessionBuilder(
             sessionStore, preKeyStore, signedPreKeyStore,
             identityStore,
@@ -214,7 +247,10 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             Log.i(tag, "old access token ${oldAccessToken}")
             val token = SignedJWT.parse(oldAccessToken)
 
-            Log.i(tag, "Parsed Signed Token ${token.header.toJSONObject()} ${token.payload.toJSONObject()} ${token.signature}")
+            Log.i(
+                tag,
+                "Parsed Signed Token ${token.header.toJSONObject()} ${token.payload.toJSONObject()} ${token.signature}"
+            )
 
             val payload = token.payload.toJSONObject()
 
@@ -261,7 +297,6 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
             val accessToken = obj.get("access_token") as String
             val refreshToken = obj.get("refresh_token") as String?
-
 
 
             val payload = SignedJWT.parse(accessToken).payload.toJSONObject()
@@ -378,7 +413,6 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         if (!response.status.isSuccess()) {
             throw Exception("Unable to get my key bundles ${response.status} ${response.bodyAsText()}")
         }
-
 
 
         val bundlesToDelete = ArrayList<Int>()
@@ -552,7 +586,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         sendFcmTokenToServer(token)
 
         val identity = db.identitiesDao().get()
-        
+
 
         if (identity == null) {
             // first time registering user

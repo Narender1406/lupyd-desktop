@@ -28,16 +28,16 @@ const configureStatusBar = async () => {
   //   if (Capacitor.isNativePlatform()) {
   //     // Import StatusBar plugin dynamically
   //     const { StatusBar, Style } = await import('@capacitor/status-bar');
-      
+
   //     // Set status bar style to light content (white text/icons)
   //     await StatusBar.setStyle({ style: Style.Light });
-      
+
   //     // Set status bar background color to match app theme
   //     await StatusBar.setBackgroundColor({ color: '#000000' }); // Black background
-      
+
   //     // Show status bar (in case it was hidden)
   //     await StatusBar.show();
-      
+
   //     console.log('Status bar configured successfully');
   //   }
   // } catch (error) {
@@ -49,25 +49,31 @@ const configureStatusBar = async () => {
 configureStatusBar();
 
 import { ApiServiceProvider } from "@/context/apiService"
+import { NotificationProvider } from './context/notification-context.tsx'
+import { BrowserRouter } from 'react-router-dom'
 
 
 createRoot(document.getElementById('root')!).render(
 
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
     <DialogProvider>
-      <LupydAuth0Provider>
-        <AuthProvider>
-          <ApiServiceProvider>
-            <UserImageProvider>
-              <UserDataProvider>
-                <div className="flex min-h-screen flex-col">
-                  <App />
-                </div>
-              </UserDataProvider>
-            </UserImageProvider>
-          </ApiServiceProvider>
-        </AuthProvider>
-      </LupydAuth0Provider>
+      <NotificationProvider>
+        <LupydAuth0Provider>
+          <BrowserRouter>
+            <AuthProvider>
+              <ApiServiceProvider>
+                <UserImageProvider>
+                  <UserDataProvider>
+                    <div className="flex min-h-screen flex-col">
+                      <App />
+                    </div>
+                  </UserDataProvider>
+                </UserImageProvider>
+              </ApiServiceProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </LupydAuth0Provider>
+      </NotificationProvider>
     </DialogProvider>
   </ThemeProvider>
 

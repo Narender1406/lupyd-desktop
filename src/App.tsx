@@ -1,11 +1,12 @@
 import './App.css'
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import {  Route, Routes } from 'react-router-dom'
 
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { useAuth0 } from '@auth0/auth0-react';
 import { NotificationProvider } from './context/notification-context';
+import { useAuth } from './context/auth-context';
 
 
 
@@ -68,8 +69,8 @@ function LoadingPage() {
 
 function App() {
 
-
   const { handleRedirectCallback } = useAuth0();
+  const auth = useAuth();
 
   useEffect(() => {
 
@@ -79,10 +80,9 @@ function App() {
       console.log(`RECEIVED A DEEPLINK ${url}`)
       if (url.startsWith(redirectUrl)) {
         if (
-          url.includes("state") &&
           (url.includes("code") || url.includes("error"))
         ) {
-          await handleRedirectCallback(url);
+          await auth.handleRedirectCallback(url)
         }
 
         await Browser.close();
@@ -94,8 +94,6 @@ function App() {
 
 
   return (
-    <NotificationProvider>
-      <BrowserRouter>
         <Suspense fallback={<LoadingPage />}>
           <Routes>
             <Route path="/about/" element={<LandingPage />} />
@@ -143,10 +141,7 @@ function App() {
             <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
             <Route path="/business/add-service-page" element={<AddServicePage />} />
           </Routes>
-
         </Suspense>
-      </BrowserRouter>
-    </NotificationProvider>
   )
 }
 

@@ -46,7 +46,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "=== PUSH NOTIFICATION RECEIVED ===")
         Log.d(TAG, "Received message from: " + remoteMessage.getFrom())
         Log.d(TAG, "Message contains notification: " + (remoteMessage.getNotification() != null))
-        Log.d(TAG, "Message contains data: " + (remoteMessage.getData().size > 0))
+        Log.d(TAG, "Message contains data: " + (remoteMessage.data.toString()))
+
 
         val data = remoteMessage.data
 
