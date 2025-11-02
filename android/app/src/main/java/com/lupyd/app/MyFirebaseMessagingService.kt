@@ -5,40 +5,62 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
-import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import firefly.Message
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+    lateinit var db: AppDatabase
+    lateinit var encryptionWrapper: EncryptionWrapper
 
-    val db = getDatabase(this)
-    val encryptionWrapper = EncryptionWrapper(db, this::handleDecryptedMessage)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    override fun onCreate() {
+        super.onCreate()
+
+        db = getDatabase(this)
+        encryptionWrapper = EncryptionWrapper(db, this::handleDecryptedMessage)
+
+
+
+    }
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
+
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-
+        super.onMessageReceived(remoteMessage)
 
         Log.d(TAG, "=== PUSH NOTIFICATION RECEIVED ===")
         Log.d(TAG, "Received message from: " + remoteMessage.getFrom())
         Log.d(TAG, "Message contains notification: " + (remoteMessage.getNotification() != null))
         Log.d(TAG, "Message contains data: " + (remoteMessage.getData().size > 0))
 
-
-        val db = getDatabase(this)
-
         val data = remoteMessage.data
 
         if (data["ty"] == "umsg") {
-            GlobalScope.launch {
-                encryptionWrapper.syncUserMessages()
+            scope.launch {
+                try {
+                    encryptionWrapper.syncUserMessages()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to Sync Messages ${e}")
+                }
+
             }
         } else {
-            super.onMessageReceived(remoteMessage)
+            handleNotification(remoteMessage)
         }
 
 //        // Handle notification payload (when app is in foreground)
@@ -85,6 +107,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 //        Log.d(TAG, "=== PUSH NOTIFICATION PROCESSED ===")
     }
 
+    private fun handleNotification(remoteMessage: RemoteMessage) {
+        val notification = remoteMessage.notification
+        if (null == notification) {
+            return
+        }
+
+        val title = notification.title
+        val body = notification.body
+
+        showLocalNotification(title ?: "Received a Notification", body)
+    }
+
     fun handleDecryptedMessage(msg: DMessage) {
 
         val inner = Message.UserMessageInner.parseFrom(msg.text)
@@ -101,7 +135,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         showLocalNotification(msg.mfrom, body)
     }
 
-    fun onNewToken(token: String?) {
+    override fun onNewToken(token: String) {
         sendRegistrationToServer(token)
     }
 
@@ -213,17 +247,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             return icon
         }
 
-    private fun sendRegistrationToServer(token: String?) {
+    private fun sendRegistrationToServer(token: String) {
         // Implement this method to send token to your app server
         Log.d(TAG, "Sending token to server: " + token)
 
-        val cb = this::handleDecryptedMessage
-        if (null != token) {
-            GlobalScope.launch {
+
+
+        scope.launch {
+            try {
                 db.keyValueDao().put(KeyValueEntry("fcmToken", token))
                 encryptionWrapper.sendFcmTokenToServer()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send fcm token to server ${e}")
             }
         }
+        
     }
 
     companion object {

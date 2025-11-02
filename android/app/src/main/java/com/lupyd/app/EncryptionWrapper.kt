@@ -211,7 +211,12 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
     suspend fun getAccessToken(): String {
         val oldAccessToken = db.keyValueDao().get("auth0AccessToken")
         if (oldAccessToken != null) {
-            val payload = SignedJWT.parse(oldAccessToken).payload.toJSONObject()
+            Log.i(tag, "old access token ${oldAccessToken}")
+            val token = SignedJWT.parse(oldAccessToken)
+
+            Log.i(tag, "Parsed Signed Token ${token.header.toJSONObject()} ${token.payload.toJSONObject()} ${token.signature}")
+
+            val payload = token.payload.toJSONObject()
 
             val expiry = (payload.get("exp") as Number).toLong()
             val username = payload.get("uname") as String?
@@ -222,11 +227,13 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
             val now = System.currentTimeMillis() / 1000
             if (expiry < now) {
+                Log.i(tag, "Getting new token, because old one expired ${expiry} ${now}")
                 return getNewAccessToken()
             } else {
                 return oldAccessToken
             }
         } else {
+            Log.i(tag, "Getting new access token, because there is no old one");
             return getNewAccessToken()
         }
     }
@@ -244,13 +251,18 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             headers {
                 append(HttpHeaders.ContentType, "application/json")
             }
-            body
+            setBody(body.toString())
         }
         if (response.status.isSuccess()) {
             val body = response.bodyAsText()
+
+            Log.i(tag, "Received Auth0 Response ${body}")
             val obj = JSONObject(body)
 
             val accessToken = obj.get("access_token") as String
+            val refreshToken = obj.get("refresh_token") as String?
+
+
 
             val payload = SignedJWT.parse(accessToken).payload.toJSONObject()
             val username = payload.get("uname") as String?
@@ -260,10 +272,13 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             }
 
             db.keyValueDao().put(KeyValueEntry("auth0AccessToken", accessToken))
+            if (refreshToken != null) {
+                db.keyValueDao().put(KeyValueEntry("auth0RefreshToken", refreshToken))
+            }
 
             return accessToken
         } else {
-            throw Exception("Unable to refresh token")
+            throw Exception("Unable to refresh token  ${response.status} ${response.bodyAsText()}")
         }
     }
 
@@ -340,6 +355,8 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
 
     suspend fun recreateConversations(token: String) {
+
+        Log.i(tag, "recreating conversations");
         val response = httpClient.patch("${Constants.FIREFLY_API_URL}/user/conversations") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${token}")
@@ -362,15 +379,20 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             throw Exception("Unable to get my key bundles ${response.status} ${response.bodyAsText()}")
         }
 
+
+
         val bundlesToDelete = ArrayList<Int>()
 
         val bundles = Message.PreKeyBundles.parseFrom(response.bodyAsBytes()).bundlesList
+
+        Log.i(tag, "Received my pre key bundles length: ${bundles.size}")
         for (bundle in bundles) {
             if (null == db.preKeysDao().get(bundle.preKeyId)) {
                 bundlesToDelete.add(bundle.preKeyId)
             }
         }
 
+        Log.i(tag, "Bundles to delete ${bundlesToDelete.joinToString()}")
         if (bundlesToDelete.isNotEmpty()) {
             response = httpClient.delete("${Constants.FIREFLY_API_URL}/user/preKeyBundles") {
                 parameter("id", bundlesToDelete.joinToString("%2C"))
@@ -386,8 +408,9 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         val maxBundlesToKeep = 32
         val bundlesRemained = bundles.size - bundlesToDelete.size
 
-        val bundlesToUpload = Math.min(0, maxBundlesToKeep - bundlesRemained)
-        if (bundlesToUpload == 0) {
+
+        val bundlesToUpload = maxBundlesToKeep - bundlesRemained
+        if (bundlesToUpload <= 0) {
             return
         }
 
@@ -400,6 +423,8 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             preKeyBundles.addBundles(proto)
         }
 
+        Log.i(tag, "Uploading new pre key bundles")
+
         response = httpClient.post("${Constants.FIREFLY_API_URL}/user/preKeyBundles") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${token}")
@@ -408,7 +433,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
                     "application/x-protobuf; proto=firefly.PreKeyBundles"
                 )
             }
-            body = preKeyBundles.build().toByteArray()
+            setBody(preKeyBundles.build().toByteArray())
         }
 
         if (!response.status.isSuccess()) {
@@ -512,7 +537,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${token}")
             }
-            body = fcmToken
+            setBody(fcmToken)
         }
         if (!response.status.isSuccess()) {
             throw Exception("Unable to upload fcm token ${response.status} ${response.bodyAsText()}")
@@ -520,16 +545,22 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
     }
 
     suspend fun checkSetup() {
-        val identity = db.identitiesDao().get()
-        val token = getAccessToken()
 
-        checkKeys(token)
+        Log.i(tag, "checking setup")
+
+        val token = getAccessToken()
         sendFcmTokenToServer(token)
+
+        val identity = db.identitiesDao().get()
+        
 
         if (identity == null) {
             // first time registering user
             recreateConversations(token)
         }
+
+        checkKeys(token)
+
     }
 }
 

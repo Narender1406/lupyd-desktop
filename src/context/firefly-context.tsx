@@ -5,9 +5,7 @@ import { createContext, useContext, useRef, useEffect, useState, useMemo } from 
 
 import { useAuth } from "./auth-context"
 import { Outlet } from "react-router-dom";
-import store from "store2";
 
-import wasmUrl from "libsignal-protocol/libsignal_protocol_bg.wasm?url"
 import { bMessageToDMessage, EncryptionPlugin, isBMessage, type DMessage } from "./encryption-plugin";
 import { toBase64 } from "@/lib/utils";
 import { Capacitor } from "@capacitor/core";
@@ -137,7 +135,6 @@ export default function FireflyProvider() {
       // initialize()
       client!.initialize().then(() => console.log(`Firefly initialized`)).catch(console.error);
 
-      EncryptionPlugin.checkSetup()
     }
 
   }, [auth])

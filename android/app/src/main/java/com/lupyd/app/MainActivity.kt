@@ -1,11 +1,18 @@
 package com.lupyd.app
 
 import android.os.Bundle
+import android.util.Log
 import com.getcapacitor.BridgeActivity
 
 class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+
+        System.setProperty("kotlinx.coroutines.debug", "on")
+
         registerPlugin(EncryptionPlugin::class.java)
+
+        Log.i("lupyd-cap", "Encryption Plugin registered")
+
+        super.onCreate(savedInstanceState)
     }
 }

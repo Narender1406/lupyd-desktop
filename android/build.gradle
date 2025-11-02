@@ -21,7 +21,14 @@ buildscript {
     }
 }
 
+plugins {
+    id 'com.google.devtools.ksp' version '2.2.21-2.0.4' apply false
+}
+
+
 apply from: "variables.gradle"
+
+
 
 allprojects {
     repositories {
@@ -43,3 +50,4 @@ subprojects {
         }
     }
 }
+

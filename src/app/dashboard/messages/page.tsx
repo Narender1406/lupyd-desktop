@@ -1,7 +1,7 @@
 "use client"
 
 
-import { useState, useRef, useEffect } from "react"
+import react from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AnimatedCard } from "@/components/animated-card"
@@ -9,10 +9,10 @@ import { useAuth } from "@/context/auth-context"
 import { useFirefly } from "@/context/firefly-context"
 import { CDN_STORAGE, dateToRelativeString, getTimestampFromUlid } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { protos as FireflyProtos } from "firefly-client-js"
+import { protos as FireflyProtos, FireflyWsClient } from "firefly-client-js"
 import { UserAvatar } from "@/components/user-avatar"
-import { UserMessageStore, type Message as DMessage } from "@/context/message-store"
 import { MessageBody } from "./[username]/page"
+import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin"
 
 
 
@@ -71,12 +71,12 @@ export default function MessagesPage() {
   // }
 
 
-  const [lastConversations, setLastConversations] = useState<DMessage[]>([])
+  const [lastConversations, setLastConversations] = react.useState<DMessage[]>([])
 
   const auth = useAuth()
 
 
-  const onMessageCallback = (_: any, message: DMessage) => {
+  const onMessageCallback = (_: FireflyWsClient, message: DMessage) => {
     setLastConversations(lastMessages => {
       const newLastMessages: DMessage[] = []
       const newOther = message!.from == auth.username ? message!.to : message!.from
@@ -101,7 +101,7 @@ export default function MessagesPage() {
 
 
 
-  useEffect(() => {
+  react.useEffect(() => {
     firefly.addEventListener(onMessageCallback);
 
     return () => {
@@ -109,30 +109,30 @@ export default function MessagesPage() {
     }
   }, [])
 
-  const store = new UserMessageStore()
 
-  useEffect(() => () => store.close(), [])
 
-  useEffect(() => {
+  react.useEffect(() => {
     if (!auth.username) return
 
-    store.getLastMessagesFromAllConversations().then((messages) => {
+    EncryptionPlugin.getLastMessagesFromAllConversations().then((result) => {
+      const messages = result.result
 
       const newMessages: DMessage[] = []
 
       const set = new Set<string>()
 
-      for (const message of messages.sort((a, b) => Number(b.timestamp - a.timestamp))) {
+      for (const message of messages.sort((a, b) => Number(b.id - a.id))) {
         const other = message.from == auth.username ? message.to : message.from
 
         if (set.has(other)) { continue }
         set.add(other)
 
-        newMessages.push(message)
+        newMessages.push(bMessageToDMessage(message))
       }
 
       setLastConversations(newMessages)
-    }).catch(console.error)
+    })
+
 
   }, [auth])
 
@@ -170,7 +170,7 @@ export default function MessagesPage() {
             const username = auth.username == conversation.from ? conversation.to : conversation.from
             const unread = false
 
-            const lastTs = new Date(Number(conversation.timestamp / 1000))
+            const lastTs = new Date(Number(conversation.id / 1000))
 
 
             return (
@@ -196,7 +196,7 @@ export default function MessagesPage() {
                         <p
                           className={`text-sm truncate ${unread ? "text-black font-medium" : "text-muted-foreground"}`}
                         >
-                          <MessageBody inner={conversation.content}></MessageBody>
+                          <MessageBody inner={conversation.text}></MessageBody>
                         </p>
                       </div>
                     </div>

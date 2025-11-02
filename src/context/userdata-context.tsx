@@ -28,17 +28,20 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   }
 
   const getToken = useCallback(async () => {
-      const token = await auth.getToken()
-      if (!token)
-        throw Error("user not authenticated")
-      return token
-    }, [auth])
+    if (!auth.username) {
+      throw Error("user not authenticated")
+    }
+    const token = await auth.getToken()
+    if (!token)
+      throw Error("user not authenticated")
+    return token
+  }, [auth])
 
   useEffect(() => {
     setRelationState(new UserRelationsState((follows, blocked) => {
       setState({ follows, blocked })
     }, apiUrl, getToken))
-  }, [])
+  }, [getToken])
 
 
   useEffect(() => {
