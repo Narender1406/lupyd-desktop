@@ -159,7 +159,12 @@ interface KeyValueDao {
 @Database(entities = [
     DMessage::class,
     KeyValueEntry::class,
-    PreKeyEntry::class, SignedPreKeyEntry::class, KyberPreKeyEntry::class, SessionEntry::class, IdentityEntry::class, TrustedKeyEntry::class], version = 1)
+    PreKeyEntry::class,
+    SignedPreKeyEntry::class,
+    KyberPreKeyEntry::class,
+    SessionEntry::class,
+    IdentityEntry::class,
+    TrustedKeyEntry::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun preKeysDao(): PreKeysDao
     abstract fun signedPreKeysDao(): SignedPreKeysDao

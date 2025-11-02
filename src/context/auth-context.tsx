@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react"
 import { type DecodedToken, getPayloadFromAccessToken } from "lupyd-js"
 import { Browser } from "@capacitor/browser"
+import { EncryptionPlugin } from "./encryption-plugin"
 
 
 type AuthContextType = {
@@ -78,15 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = getPayloadFromAccessToken(token!)
       setUser(user)
       setUsername(user?.uname ?? null)
+      if (user.uname) {
+        EncryptionPlugin.checkSetup()
+      }
     }
-
-    console.log({ authStatus: { user, username } })
-
-
-    if (typeof window !== "undefined") {
-      Object.assign(window, { "auth0Token": `${token}` })
-    }
-
   }
 
   const returnToUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_SIGNOUT_RETURN_TO ?? window.location.origin
@@ -110,11 +106,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (auth0.isLoading) return
 
     if (auth0.isAuthenticated) {
-      const token = await auth0.getAccessTokenSilently({ cacheMode: refresh ? 'off' : 'on' });
-      if (refresh) {
-        onUpdateUser(token)
+      const result = await auth0.getAccessTokenSilently({ detailedResponse: true, cacheMode: refresh ? "off": "on" })
+
+      const accessToken = result.access_token;
+
+      if ("refresh_token" in result && typeof result["refresh_token"] === "string") {
+        const refreshToken = result.refresh_token;
+        EncryptionPlugin.saveTokens({ accessToken, refreshToken })
+      } else {
+        console.warn(`Unable to get refresh token`, JSON.stringify(result))
       }
-      return token;
+      
+      if (refresh) {
+        onUpdateUser(accessToken)
+      }
+      return accessToken;
     }
     return undefined;
   }, [auth0])

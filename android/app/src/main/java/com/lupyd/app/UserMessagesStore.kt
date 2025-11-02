@@ -5,7 +5,7 @@ import androidx.room.*
 
 @Entity(tableName = "user_messages",
     primaryKeys = ["conversationId", "msgId"],
-    indices = [Index(value=["from", "to", "msgId"])]
+    indices = [Index(value=["mfrom", "mto", "msgId"])]
     )
 class DMessage(
     val msgId: Long,
@@ -24,15 +24,9 @@ interface DMessagesDao {
     @Query("SELECT * FROM user_messages WHERE mfrom = :from AND mto = :to AND msgId < :before ORDER BY msgId DESC LIMIT :limit")
     suspend fun getLastMessages(from: String, to: String, before: Long, limit: Int): List<DMessage>
 
-    @Query("SELECT * FROM user_messages WHERE (mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from) ORDER BY msgId DESC LIMIT :limit)")
+    @Query("SELECT * FROM user_messages WHERE ((mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from) AND msgId < :before) ORDER BY msgId DESC LIMIT :limit")
     suspend fun getLastMessagesInBetween(from: String, to: String, before: Long, limit: Int): List<DMessage>
 
-    @Query("SELECT t1.*\n" +
-            "FROM user_messages t1\n" +
-            "WHERE t1.msgId = (\n" +
-            "  SELECT MAX(t2.msgId)\n" +
-            "  FROM user_messages t2\n" +
-            "  WHERE t2.mfrom = t1.mfrom AND t2.mto = t1.mto\n" +
-            ");\n ")
+    @Query("select t1.* from user_messages t1 where t1.msgId = ( select max(t2.msgId) from user_messages t2 where t2.mfrom = t1.mfrom and t2.mto = t1.mto )")
     suspend fun getLastMessagesFromAllConversations(): List<DMessage>
 }

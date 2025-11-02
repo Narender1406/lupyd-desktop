@@ -4,10 +4,10 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-import { terser } from "rollup-plugin-terser";
-import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
-
+import sourcemaps from "rollup-plugin-sourcemaps";
+// import { terser } from "rollup-plugin-terser";
+// import wasm from "vite-plugin-wasm";
+// import topLevelAwait from "vite-plugin-top-level-await";
 // https://vite.dev/config/
 
 const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       preact(),
-      wasm(),
-      topLevelAwait(),
+      // wasm(),
+      // topLevelAwait(),
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,
@@ -69,11 +69,16 @@ export default defineConfig(({ mode }) => {
         "react-dom": "preact/compat",
       },
     },
+    mode: "development",
 
     build: {
+      minify: true,
+      sourcemap: "inline",
+
       rollupOptions: {
-        treeshake: "smallest",
+        treeshake: true,
         output: {
+          sourcemap: "inline",
           inlineDynamicImports: false,
           manualChunks: (id: string) => {
             if (id.includes("lucide")) {
@@ -81,16 +86,17 @@ export default defineConfig(({ mode }) => {
             }
           },
         },
-        plugins: [
-          terser({
-            output: {
-              comments: false,
-            },
-          }),
-        ],
+        plugins: [sourcemaps()],
+        // plugins: [
+        //   terser({
+        //     output: {
+        //       comments: false,
+        //     },
+        //   }),
+        // ],
       },
     },
-    assetsInclude: ['**/*.wasm'],
+    assetsInclude: ["**/*.wasm"],
 
     server: {
       port: 8080,
@@ -98,8 +104,8 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
 
       mimeTypes: {
-        'application/wasm': ['wasm']
-      }
+        "application/wasm": ["wasm"],
+      },
     },
   };
 });

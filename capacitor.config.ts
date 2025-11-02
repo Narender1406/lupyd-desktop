@@ -23,6 +23,8 @@ const config: CapacitorConfig = {
       smallIcon: "ic_launcher_foreground",
       iconColor: "#000000",
     },
+
+    EncryptionPlugin: {},
   },
   server: {
     androidScheme: "http",
