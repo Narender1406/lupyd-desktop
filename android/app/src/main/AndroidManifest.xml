@@ -79,6 +79,10 @@
         <receiver
             android:name=".MarkAsReadReceiver"
             android:exported="false" />
+            
+        <receiver
+            android:name=".QuickReplyReceiver"
+            android:exported="false" />
 
         <!-- Notification Channels -->
         <meta-data

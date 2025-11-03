@@ -1,5 +1,6 @@
 package com.lupyd.app
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -7,10 +8,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
+import androidx.core.content.ContextCompat
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -59,9 +63,15 @@ class NativeNotificationPlugin : Plugin() {
             val activity = activity
             if (activity != null) {
                 Log.d(TAG, "Requesting POST_NOTIFICATIONS permission")
-                // Note: In a real app, you'd want to check if already granted first
-                // For now, we'll just log that we should request it
-                Log.w(TAG, "⚠️ App should request POST_NOTIFICATIONS permission")
+                // Request permission
+                if (ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS) 
+                    != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(
+                        activity,
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        1001
+                    )
+                }
             }
         }
         
@@ -472,7 +482,7 @@ class ReplyReceiverNative : BroadcastReceiver() {
                 Log.e("lupyd-ReplyReceiver", "Error adding reply to history", e)
             }
             
-            // Update notification to show reply
+            // Update notification to show reply but keep it visible with reply action
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
             // Get updated messages
@@ -505,7 +515,49 @@ class ReplyReceiverNative : BroadcastReceiver() {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
             
-            // Build updated notification
+            // Create reply action (keep it available)
+            val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val replyPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 1, replyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val remoteInput = RemoteInput.Builder(NativeNotificationPlugin.KEY_TEXT_REPLY)
+                .setLabel("Reply to $sender")
+                .build()
+            
+            val replyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_send,
+                "Reply",
+                replyPendingIntent
+            )
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Add quick reply suggestions
+            val quickReplies = arrayOf("Okay", "Thanks", "On my way", "Later")
+            val quickReplyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val quickReplyPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 4, quickReplyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val quickReplyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_revert,
+                "Quick Reply",
+                quickReplyPendingIntent
+            )
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Build updated notification with reply action still available
             val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
                 .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
                 .setColor(0xFF000000.toInt())
@@ -515,6 +567,8 @@ class ReplyReceiverNative : BroadcastReceiver() {
                 .setContentIntent(contentPendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setStyle(inboxStyle)
+                .addAction(replyAction) // Keep reply action
+                .addAction(quickReplyAction) // Add quick reply action
                 .setGroup(NativeNotificationPlugin.GROUP_KEY_MESSAGES)
                 .setOnlyAlertOnce(true) // Don't alert again
             
@@ -578,5 +632,128 @@ class MarkAsReadReceiver : BroadcastReceiver() {
             .setTimeoutAfter(2000) // Auto dismiss after 2 seconds
         
         notificationManager.notify(-sender.hashCode(), builder.build())
+    }
+}
+
+class QuickReplyReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if (context == null || intent == null) return
+        
+        val sender = intent.getStringExtra("sender") ?: return
+        val remoteInput = RemoteInput.getResultsFromIntent(intent)
+        val replyText = remoteInput?.getCharSequence(NativeNotificationPlugin.KEY_TEXT_REPLY)
+        
+        if (replyText != null) {
+            Log.d("lupyd-QuickReply", "Quick reply received for $sender: $replyText")
+            
+            // Add reply to message history using shared preferences directly
+            val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
+            try {
+                val messagesJson = prefs.getString(sender, "[]")
+                val messagesArray = JSONArray(messagesJson)
+                
+                val messageObj = JSONObject().apply {
+                    put("text", "You: $replyText")
+                    put("timestamp", System.currentTimeMillis())
+                }
+                messagesArray.put(messageObj)
+                
+                prefs.edit().putString(sender, messagesArray.toString()).apply()
+            } catch (e: Exception) {
+                Log.e("lupyd-QuickReply", "Error adding quick reply to history", e)
+            }
+            
+            // Update notification to show reply but keep it visible with reply action
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Get updated messages
+            val messages = try {
+                val messagesJson = prefs.getString(sender, "[]")
+                val messagesArray = JSONArray(messagesJson)
+                (0 until messagesArray.length()).map {
+                    messagesArray.getJSONObject(it).getString("text")
+                }
+            } catch (e: Exception) {
+                Log.e("lupyd-QuickReply", "Error getting messages", e)
+                emptyList<String>()
+            }
+            
+            // Create updated inbox style
+            val inboxStyle = NotificationCompat.InboxStyle()
+            messages.forEach { msg ->
+                inboxStyle.addLine(msg)
+            }
+            inboxStyle.setBigContentTitle(sender)
+            
+            // Create content intent
+            val contentIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("sender", sender)
+            }
+            
+            val contentPendingIntent = PendingIntent.getActivity(
+                context, sender.hashCode(), contentIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            // Create reply action (keep it available)
+            val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val replyPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 1, replyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val remoteInput = RemoteInput.Builder(NativeNotificationPlugin.KEY_TEXT_REPLY)
+                .setLabel("Reply to $sender")
+                .build()
+            
+            val replyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_send,
+                "Reply",
+                replyPendingIntent
+            )
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Add quick reply suggestions
+            val quickReplies = arrayOf("Okay", "Thanks", "On my way", "Later")
+            val quickReplyIntent = Intent(context, QuickReplyReceiver::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val quickReplyPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 4, quickReplyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val quickReplyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_revert,
+                "Quick Reply",
+                quickReplyPendingIntent
+            )
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Build updated notification with reply action still available
+            val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
+                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+                .setColor(0xFF000000.toInt())
+                .setContentTitle(sender)
+                .setContentText("You: $replyText")
+                .setAutoCancel(false) // Keep notification visible
+                .setContentIntent(contentPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setStyle(inboxStyle)
+                .addAction(replyAction) // Keep reply action
+                .addAction(quickReplyAction) // Add quick reply action
+                .setGroup(NativeNotificationPlugin.GROUP_KEY_MESSAGES)
+                .setOnlyAlertOnce(true) // Don't alert again
+            
+            notificationManager.notify(sender.hashCode(), builder.build())
+        }
     }
 }

@@ -567,7 +567,7 @@ class ReplyReceiver : BroadcastReceiver() {
                     Log.e(TAG, "Error adding reply to history", e)
                 }
                 
-                // Update notification to show reply
+                // Update notification to show reply but keep it visible with reply action
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 
                 // Get updated messages
@@ -600,7 +600,30 @@ class ReplyReceiver : BroadcastReceiver() {
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 
-                // Build updated notification
+                // Create reply action (keep it available)
+                val replyIntent = Intent(context, ReplyReceiver::class.java).apply {
+                    putExtra("sender", sender)
+                }
+                
+                val replyPendingIntent = PendingIntent.getBroadcast(
+                    context, sender.hashCode() + 1, replyIntent,
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                
+                val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+                    .setLabel("Reply to $sender")
+                    .build()
+                
+                val replyAction = NotificationCompat.Action.Builder(
+                    android.R.drawable.ic_menu_send,
+                    "Reply",
+                    replyPendingIntent
+                )
+                    .addRemoteInput(remoteInput)
+                    .setAllowGeneratedReplies(true)
+                    .build()
+                
+                // Build updated notification with reply action still available
                 val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
                     .setColor(0xFF000000.toInt()) // Black background
@@ -610,6 +633,7 @@ class ReplyReceiver : BroadcastReceiver() {
                     .setContentIntent(contentPendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setStyle(inboxStyle)
+                    .addAction(replyAction) // Keep reply action
                     .setGroup(CHANNEL_ID)
                     .setOnlyAlertOnce(true) // Don't alert again
                 
