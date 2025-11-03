@@ -320,7 +320,7 @@ class NativeNotificationPlugin : Plugin() {
             
             // Build notification - single notification per sender
             val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.color.transparent) // Make small icon transparent to allow large icon to show
+                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
                 .setLargeIcon(profileBitmap) // Set the profile picture with letter
                 .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle(sender)  // Just the sender name (no prefix)
@@ -330,7 +330,7 @@ class NativeNotificationPlugin : Plugin() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
                 .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))  // Use BigTextStyle instead of InboxStyle
+                .setStyle(inboxStyle)  // Expands to show all messages
                 .addAction(replyAction)
                 .addAction(markAsReadAction)  // Mark as Read action
                 .setGroup(GROUP_KEY_MESSAGES)
