@@ -3,10 +3,14 @@ package com.lupyd.app
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.RemoteInput
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import firefly.Message
@@ -16,12 +20,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var db: AppDatabase
     lateinit var encryptionWrapper: EncryptionWrapper
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    
+    // SharedPreferences for persisting notification messages
+    private val notificationPrefs: SharedPreferences by lazy {
+        getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -116,7 +127,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = notification.title
         val body = notification.body
 
-        showLocalNotification(title ?: "Received a Notification", body)
+        showBundledNotification(title ?: "Received a Notification", body ?: "")
     }
 
     fun handleDecryptedMessage(msg: DMessage) {
@@ -124,15 +135,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val inner = Message.UserMessageInner.parseFrom(msg.text)
 
         var body = ""
+        var isCallMessage = false
 
         if (inner.messagePayload.text.isNotEmpty()) {
             body = inner.messagePayload.text
         } else if (!inner.callMessage.message.isEmpty) {
             Log.d(TAG, "=== CALL RECEIVED === from: ${msg.mfrom}")
+            isCallMessage = true
+            body = "Incoming call"
         }
 
-
-        showLocalNotification(msg.mfrom, body)
+        if (isCallMessage) {
+            showCallNotification(msg.mfrom, msg.conversationId)
+        } else {
+            showBundledNotification(msg.mfrom, body)
+        }
     }
 
     override fun onNewToken(token: String) {
@@ -187,52 +204,261 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.d(TAG, "Android version < O, no channel needed")
         }
     }
+    
+    private fun createCallNotificationChannel() {
+        Log.d(TAG, "Creating call notification channel...")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID_CALL,
+                CHANNEL_NAME_CALL,
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            channel.setDescription(CHANNEL_DESCRIPTION_CALL)
+            channel.enableVibration(true)
+            channel.enableLights(true)
+            channel.setVibrationPattern(longArrayOf(0, 1000, 500, 1000))
+            channel.setSound(android.provider.Settings.System.DEFAULT_RINGTONE_URI, null)
+            
+            val notificationManager =
+                getSystemService<NotificationManager?>(NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
+            Log.d(TAG, "Call notification channel created successfully")
+        }
+    }
 
-    private fun showLocalNotification(title: String, message: String?) {
+    /**
+     * Show bundled notification - groups messages by sender
+     * Using 'body' (sender name) as the grouping key temporarily (will change to username later)
+     */
+    private fun showBundledNotification(sender: String, messageBody: String) {
         try {
-            // Create notification channel if needed
             createNotificationChannel()
-
+            
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             if (notificationManager == null) {
                 Log.e(TAG, "Failed to show notification: notificationManager is null")
                 return
             }
-
-            Log.d(TAG, "Notification manager obtained")
-
-
-            // Create an intent that will be fired when the user clicks the notification
+            
+            Log.d(TAG, "Showing bundled notification from: $sender")
+            
+            // Add message to persistent storage
+            addMessageToHistory(sender, messageBody)
+            
+            // Get all messages from this sender
+            val messages = getMessagesFromSender(sender)
+            val messageCount = messages.size
+            
+            Log.d(TAG, "Total messages from $sender: $messageCount")
+            
+            // Create main intent
             val intent = Intent(this, MainActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-
+            intent.putExtra("sender", sender)
+            
             val pendingIntent = PendingIntent.getActivity(
-                this, 0, intent,
+                this, sender.hashCode(), intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-
-            Log.d(TAG, "Pending intent created")
-
-            val notificationBuilder: NotificationCompat.Builder =
-                NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(this.notificationIcon) // Use proper app icon
-                    .setContentTitle(title) // This will show the marker
-                    .setContentText(message)
-                    .setAutoCancel(true)
-                    .setContentIntent(pendingIntent)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
-                    .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
-                    .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-
-            Log.d(TAG, "Notification builder created")
-
-            val notificationId = System.currentTimeMillis().toInt()
-            Log.d(TAG, "Showing notification with ID: $notificationId")
+            
+            // Create reply action
+            val replyIntent = Intent(this, ReplyReceiver::class.java)
+            replyIntent.putExtra("sender", sender)
+            val replyPendingIntent = PendingIntent.getBroadcast(
+                this,
+                sender.hashCode() + 1,
+                replyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+                .setLabel("Reply to $sender")
+                .build()
+            
+            val replyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_send,
+                "Reply",
+                replyPendingIntent
+            )
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Build notification with InboxStyle to show multiple messages
+            val inboxStyle = NotificationCompat.InboxStyle()
+            
+            // Add messages to inbox style (show last 5 messages)
+            val displayMessages = messages.takeLast(5)
+            displayMessages.forEach { msg ->
+                inboxStyle.addLine(msg)
+            }
+            
+            // Set summary text
+            val summaryText = if (messageCount > 5) {
+                "$messageCount messages from $sender"
+            } else if (messageCount > 1) {
+                "$messageCount messages"
+            } else {
+                "New message"
+            }
+            inboxStyle.setSummaryText(summaryText)
+            inboxStyle.setBigContentTitle(sender)
+            
+            val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(this.notificationIcon)
+                .setContentTitle(sender)
+                .setContentText(messageBody)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
+                .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+                .setStyle(inboxStyle)
+                .addAction(replyAction)
+                .setGroup(GROUP_KEY_MESSAGES)
+                .setNumber(messageCount)
+            
+            // Use sender's hashCode as notification ID to update the same notification
+            val notificationId = sender.hashCode()
+            Log.d(TAG, "Showing bundled notification with ID: $notificationId")
             notificationManager.notify(notificationId, notificationBuilder.build())
-            Log.d(TAG, "Local notification shown with ID: $notificationId")
+            Log.d(TAG, "Bundled notification shown for $sender with $messageCount messages")
         } catch (e: Exception) {
-            Log.e(TAG, "Error showing local notification", e)
+            Log.e(TAG, "Error showing bundled notification", e)
+        }
+    }
+    
+    /**
+     * Show call notification with full-screen intent
+     */
+    private fun showCallNotification(caller: String, conversationId: Long) {
+        try {
+            createCallNotificationChannel()
+            
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
+            if (notificationManager == null) {
+                Log.e(TAG, "Failed to show call notification: notificationManager is null")
+                return
+            }
+            
+            Log.d(TAG, "Showing call notification from: $caller")
+            
+            // Create full-screen intent
+            val fullScreenIntent = Intent(this, MainActivity::class.java)
+            fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            fullScreenIntent.putExtra("type", "call")
+            fullScreenIntent.putExtra("caller", caller)
+            fullScreenIntent.putExtra("conversationId", conversationId)
+            
+            val fullScreenPendingIntent = PendingIntent.getActivity(
+                this,
+                caller.hashCode(),
+                fullScreenIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            // Create Accept action
+            val acceptIntent = Intent(this, CallActionReceiver::class.java)
+            acceptIntent.action = ACTION_ACCEPT_CALL
+            acceptIntent.putExtra("caller", caller)
+            acceptIntent.putExtra("conversationId", conversationId)
+            
+            val acceptPendingIntent = PendingIntent.getBroadcast(
+                this,
+                caller.hashCode() + 100,
+                acceptIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            // Create Decline action
+            val declineIntent = Intent(this, CallActionReceiver::class.java)
+            declineIntent.action = ACTION_DECLINE_CALL
+            declineIntent.putExtra("caller", caller)
+            declineIntent.putExtra("conversationId", conversationId)
+            
+            val declinePendingIntent = PendingIntent.getBroadcast(
+                this,
+                caller.hashCode() + 101,
+                declineIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID_CALL)
+                .setSmallIcon(this.notificationIcon)
+                .setContentTitle("Incoming call")
+                .setContentText("$caller is calling...")
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
+                .setAutoCancel(true)
+                .setOngoing(true)
+                .setVibrate(longArrayOf(0, 1000, 500, 1000))
+                .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+                .addAction(android.R.drawable.ic_menu_call, "Accept", acceptPendingIntent)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", declinePendingIntent)
+            
+            val notificationId = CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+            Log.d(TAG, "Showing call notification with ID: $notificationId")
+            notificationManager.notify(notificationId, notificationBuilder.build())
+            Log.d(TAG, "Call notification shown for $caller")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing call notification", e)
+        }
+    }
+    
+    /**
+     * Add message to persistent history using SharedPreferences
+     */
+    private fun addMessageToHistory(sender: String, message: String) {
+        try {
+            val messagesJson = notificationPrefs.getString(sender, "[]")
+            val messagesArray = JSONArray(messagesJson)
+            
+            // Add new message with timestamp
+            val messageObj = JSONObject()
+            messageObj.put("text", message)
+            messageObj.put("timestamp", System.currentTimeMillis())
+            messagesArray.put(messageObj)
+            
+            // Save back to preferences
+            notificationPrefs.edit().putString(sender, messagesArray.toString()).apply()
+            
+            Log.d(TAG, "Message added to history for $sender. Total: ${messagesArray.length()}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding message to history", e)
+        }
+    }
+    
+    /**
+     * Get all messages from a specific sender
+     */
+    private fun getMessagesFromSender(sender: String): List<String> {
+        try {
+            val messagesJson = notificationPrefs.getString(sender, "[]")
+            val messagesArray = JSONArray(messagesJson)
+            val messagesList = mutableListOf<String>()
+            
+            for (i in 0 until messagesArray.length()) {
+                val messageObj = messagesArray.getJSONObject(i)
+                messagesList.add(messageObj.getString("text"))
+            }
+            
+            return messagesList
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting messages from sender", e)
+            return emptyList()
+        }
+    }
+    
+    /**
+     * Clear message history for a sender
+     */
+    private fun clearMessageHistory(sender: String) {
+        try {
+            notificationPrefs.edit().remove(sender).apply()
+            Log.d(TAG, "Message history cleared for $sender")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clearing message history", e)
         }
     }
 
@@ -265,9 +491,122 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     companion object {
+        const val TAG = "lupyd-FCM"
+        const val CHANNEL_ID = "lupyd_notifications"
+        const val CHANNEL_NAME = "Lupyd Notifications"
+        const val CHANNEL_DESCRIPTION = "Lupyd app notifications"
+        
+        const val CHANNEL_ID_CALL = "lupyd_calls"
+        const val CHANNEL_NAME_CALL = "Lupyd Calls"
+        const val CHANNEL_DESCRIPTION_CALL = "Incoming call notifications"
+        
+        const val KEY_TEXT_REPLY = "key_text_reply"
+        const val GROUP_KEY_MESSAGES = "com.lupyd.app.MESSAGES"
+        
+        const val ACTION_ACCEPT_CALL = "com.lupyd.app.ACCEPT_CALL"
+        const val ACTION_DECLINE_CALL = "com.lupyd.app.DECLINE_CALL"
+        
+        const val CALL_NOTIFICATION_ID_BASE = 10000
+    }
+}
+
+/**
+ * BroadcastReceiver to handle inline reply actions
+ */
+class ReplyReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if (context == null || intent == null) return
+        
+        try {
+            val sender = intent.getStringExtra("sender") ?: return
+            val remoteInput = RemoteInput.getResultsFromIntent(intent)
+            val replyText = remoteInput?.getCharSequence(KEY_TEXT_REPLY)
+            
+            if (replyText != null) {
+                Log.d(TAG, "Reply received for $sender: $replyText")
+                
+                // TODO: Send the reply message through the encryption system
+                // This will require access to the database and encryption wrapper
+                // For now, we'll just log it
+                
+                // Update notification to show "Reply sent"
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setSmallIcon(context.applicationInfo.icon)
+                    .setContentTitle("Reply sent")
+                    .setContentText("Your reply to $sender has been sent")
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setAutoCancel(true)
+                
+                notificationManager.notify(sender.hashCode(), builder.build())
+                
+                Log.d(TAG, "Reply notification updated for $sender")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling reply", e)
+        }
+    }
+    
+    companion object {
         private const val TAG = "lupyd-FCM"
+        private const val KEY_TEXT_REPLY = "key_text_reply"
         private const val CHANNEL_ID = "lupyd_notifications"
-        private const val CHANNEL_NAME = "Lupyd Notifications"
-        private const val CHANNEL_DESCRIPTION = "Lupyd app notifications"
+    }
+}
+
+/**
+ * BroadcastReceiver to handle call action buttons (Accept/Decline)
+ */
+class CallActionReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if (context == null || intent == null) return
+        
+        try {
+            val action = intent.action
+            val caller = intent.getStringExtra("caller") ?: return
+            val conversationId = intent.getLongExtra("conversationId", 0L)
+            
+            Log.d(TAG, "Call action received: $action from $caller")
+            
+            when (action) {
+                ACTION_ACCEPT_CALL -> {
+                    Log.d(TAG, "Call accepted from $caller")
+                    // TODO: Implement call acceptance logic
+                    // This would typically open the call UI and establish the connection
+                    
+                    // For now, just dismiss the notification
+                    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    val notificationId = CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+                    notificationManager.cancel(notificationId)
+                    
+                    // Show a toast or start the call activity
+                    val callIntent = Intent(context, MainActivity::class.java)
+                    callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    callIntent.putExtra("type", "call_accepted")
+                    callIntent.putExtra("caller", caller)
+                    callIntent.putExtra("conversationId", conversationId)
+                    context.startActivity(callIntent)
+                }
+                ACTION_DECLINE_CALL -> {
+                    Log.d(TAG, "Call declined from $caller")
+                    // TODO: Implement call decline logic
+                    // This would send a decline message to the caller
+                    
+                    // Dismiss the notification
+                    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    val notificationId = CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+                    notificationManager.cancel(notificationId)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling call action", e)
+        }
+    }
+    
+    companion object {
+        private const val TAG = "lupyd-FCM"
+        private const val ACTION_ACCEPT_CALL = "com.lupyd.app.ACCEPT_CALL"
+        private const val ACTION_DECLINE_CALL = "com.lupyd.app.DECLINE_CALL"
+        private const val CALL_NOTIFICATION_ID_BASE = 10000
     }
 }

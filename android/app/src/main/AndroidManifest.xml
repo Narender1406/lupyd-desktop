@@ -57,6 +57,24 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        
+        <!-- Broadcast Receivers for Notification Actions -->
+        <receiver
+            android:name=".ReplyReceiver"
+            android:exported="false" />
+        
+        <receiver
+            android:name=".CallActionReceiver"
+            android:exported="false" />
+        
+        <!-- Native Notification Receivers -->
+        <receiver
+            android:name=".ReplyReceiverNative"
+            android:exported="false" />
+        
+        <receiver
+            android:name=".CallActionReceiverNative"
+            android:exported="false" />
 
         <!-- Notification Channels -->
         <meta-data
