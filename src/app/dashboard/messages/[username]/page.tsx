@@ -103,19 +103,23 @@ export default function UserMessagePage() {
 
   const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].convoId, [messages]);
 
+  // const myCallSession = new CallSession({
+  //   onSendMessage: (callMessage) => {
+  //     sendMessage(FireflyProtos.UserMessageInner.create({ callMessage }))
+  //   }
+  // })
 
   useEffect(() => {
-    if (!sender || !receiver) {
-      return
-    }
-
-
-    getOlderMessages()
-
     const callback = async (_: FireflyWsClient, msg: DMessage) => {
       if (!(msg.from == receiver || msg.to == receiver)) {
         return
       }
+      // const decryptedMessage = FireflyProtos.UserMessageInner.decode(msg.text)
+
+      // if (decryptedMessage.callMessage) {
+      //   myCallSession.handleCallMessage(decryptedMessage.callMessage)
+      // }
+
       setMessages(prev => addMessage(prev, msg))
 
       const other = msg.from == sender ? msg.to : msg.from
@@ -128,6 +132,11 @@ export default function UserMessagePage() {
 
     return () => firefly.removeEventListener(callback)
   }, [auth])
+
+
+  useEffect(() => {
+    getOlderMessages()
+  }, [])
 
 
 
@@ -162,7 +171,6 @@ export default function UserMessagePage() {
   function addEmoji(emoji: string) {
     throw new Error('Function not implemented.');
   }
-
 
   async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
 
@@ -519,11 +527,6 @@ export function MessageBody(props: { inner: Uint8Array }) {
   if (message.messagePayload) {
     return <div>{message.messagePayload.text}</div>
   }
-
-  if (message.callMessage) {
-      // handleCallMessage(message.callMessage)
-  }
-
 
 
   return <div></div>
