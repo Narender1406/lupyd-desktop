@@ -9,6 +9,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -309,19 +314,16 @@ class NativeNotificationPlugin : Plugin() {
                 ).build()
             }
             
-            // Create sender name with first letter if no profile picture
-            val senderDisplayName = if (sender.isNotEmpty()) sender else "Unknown"
-            val firstLetter = if (senderDisplayName.isNotEmpty()) {
-                senderDisplayName.substring(0, 1).uppercase()
-            } else {
-                "?"
-            }
+            // Create large profile icon with letter
+            val profileIconSize = context.resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
+            val profileBitmap = createProfileBitmap(sender, profileIconSize)
             
             // Build notification - single notification per sender
             val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+                .setLargeIcon(profileBitmap) // Set the profile picture with letter
                 .setColor(0xFF000000.toInt()) // Black background
-                .setContentTitle("$firstLetter $senderDisplayName")  // Add first letter before sender name
+                .setContentTitle(sender)  // Just the sender name (no prefix)
                 .setContentText(messageBody)  // Latest message as preview
                 .setAutoCancel(true)
                 .setContentIntent(contentPendingIntent)
@@ -434,6 +436,48 @@ class NativeNotificationPlugin : Plugin() {
     
     fun addReplyToHistory(sender: String, replyText: String) {
         addMessageToHistory(sender, "You: $replyText")
+    }
+    
+    private fun createProfileBitmap(sender: String, size: Int): android.graphics.Bitmap {
+        // Create a bitmap with the specified size
+        val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        
+        // Create paint for background circle
+        val paint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.FILL
+            color = 0xFF4CAF50.toInt() // Green color similar to WhatsApp
+        }
+        
+        // Draw background circle
+        val radius = size / 2f
+        canvas.drawCircle(radius, radius, radius, paint)
+        
+        // Draw the first letter
+        if (sender.isNotEmpty()) {
+            val firstLetter = sender.substring(0, 1).uppercase()
+            
+            val textPaint = Paint().apply {
+                isAntiAlias = true
+                color = 0xFFFFFFFF.toInt() // White text
+                textSize = size * 0.6f // Larger text
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            
+            // Measure text to center it
+            val textBounds = Rect()
+            textPaint.getTextBounds(firstLetter, 0, firstLetter.length, textBounds)
+            
+            // Draw centered text
+            val x = size / 2f
+            val y = (size / 2f) - (textBounds.exactCenterY())
+            
+            canvas.drawText(firstLetter, x, y, textPaint)
+        }
+        
+        return bitmap
     }
     
     private fun getMessagesFromSender(sender: String): List<String> {

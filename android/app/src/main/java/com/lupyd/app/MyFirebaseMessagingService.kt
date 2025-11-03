@@ -2,6 +2,11 @@ package com.lupyd.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -227,6 +232,52 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     /**
+     * Create a profile bitmap with the first letter of the sender name
+     * This creates a circular bitmap with a colored background and the first letter centered
+     */
+    private fun createProfileBitmap(sender: String, size: Int): Bitmap {
+        // Create a bitmap with the specified size
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        
+        // Create paint for background circle
+        val paint = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.FILL
+            color = 0xFF4CAF50.toInt() // Green color similar to WhatsApp
+        }
+        
+        // Draw background circle
+        val radius = size / 2f
+        canvas.drawCircle(radius, radius, radius, paint)
+        
+        // Draw the first letter
+        if (sender.isNotEmpty()) {
+            val firstLetter = sender.substring(0, 1).uppercase()
+            
+            val textPaint = Paint().apply {
+                isAntiAlias = true
+                color = 0xFFFFFFFF.toInt() // White text
+                textSize = size * 0.6f // Larger text
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+            }
+            
+            // Measure text to center it
+            val textBounds = Rect()
+            textPaint.getTextBounds(firstLetter, 0, firstLetter.length, textBounds)
+            
+            // Draw centered text
+            val x = size / 2f
+            val y = (size / 2f) - (textBounds.exactCenterY())
+            
+            canvas.drawText(firstLetter, x, y, textPaint)
+        }
+        
+        return bitmap
+    }
+    
+    /**
      * Show bundled notification - groups messages by sender
      * Using 'body' (sender name) as the grouping key temporarily (will change to username later)
      */
@@ -318,18 +369,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 ).build()
             }
             
-            // Create sender name with first letter if no profile picture
-            val senderDisplayName = if (sender.isNotEmpty()) sender else "Unknown"
-            val firstLetter = if (senderDisplayName.isNotEmpty()) {
-                senderDisplayName.substring(0, 1).uppercase()
-            } else {
-                "?"
-            }
+            // Create large profile icon with letter
+            val profileIconSize = resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
+            val profileBitmap = createProfileBitmap(sender, profileIconSize)
             
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
+                .setLargeIcon(profileBitmap) // Set the profile picture with letter
                 .setColor(0xFF000000.toInt()) // Black background
-                .setContentTitle("$firstLetter $senderDisplayName")  // Add first letter before sender name
+                .setContentTitle(sender)  // Just the sender name (no prefix)
                 .setContentText(messageBody)  // Latest message preview
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
