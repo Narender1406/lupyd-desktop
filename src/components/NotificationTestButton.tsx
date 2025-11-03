@@ -8,7 +8,7 @@ interface NotificationTestButtonProps {
 }
 
 const NotificationTestButton: React.FC<NotificationTestButtonProps> = ({ toast }) => {
-  const { pushToken, isPushSupported, isLocalSupported, sendLocalNotification } = useNotification();
+  const { pushToken, showBundledNotification, showCallNotification } = useNotification();
 
   // Log token when it's available
   useEffect(() => {
@@ -18,19 +18,57 @@ const NotificationTestButton: React.FC<NotificationTestButtonProps> = ({ toast }
     }
   }, [pushToken]);
 
-  const handleSendLocalNotification = async () => {
+  const handleSendTestMessage = async () => {
     try {
-      console.log('=== USER CLICKED SEND LOCAL NOTIFICATION ===')
-      await sendLocalNotification("Test Local Notification", "This is a test local notification from Lupyd app. Check your notification tray!")
+      console.log('=== USER CLICKED SEND TEST MESSAGE ===')
+      await showBundledNotification("Alice", "Hey! How are you doing?")
       toast({
-        title: "Local Notification Sent",
-        description: "Check your device's notification tray in 2 seconds",
+        title: "Test Message Sent",
+        description: "Check your notification tray",
       })
     } catch (error) {
-      console.error('Error sending local notification:', error)
+      console.error('Error sending test message:', error)
       toast({
         title: "Error",
-        description: "Failed to send local notification: " + (error as Error).message,
+        description: "Failed to send message: " + (error as Error).message,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSendBundledMessages = async () => {
+    try {
+      console.log('=== SENDING BUNDLED MESSAGES ===')
+      await showBundledNotification("Bob", "First message")
+      setTimeout(() => showBundledNotification("Bob", "Second message"), 1000)
+      setTimeout(() => showBundledNotification("Bob", "Third message"), 2000)
+      toast({
+        title: "Bundled Messages Sent",
+        description: "3 messages from Bob - expand to see all",
+      })
+    } catch (error) {
+      console.error('Error sending bundled messages:', error)
+      toast({
+        title: "Error",
+        description: "Failed: " + (error as Error).message,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSendCall = async () => {
+    try {
+      console.log('=== SENDING CALL NOTIFICATION ===')
+      await showCallNotification("John Doe", 12345)
+      toast({
+        title: "Call Notification Sent",
+        description: "Check for incoming call",
+      })
+    } catch (error) {
+      console.error('Error sending call:', error)
+      toast({
+        title: "Error",
+        description: "Failed: " + (error as Error).message,
         variant: "destructive",
       })
     }
@@ -46,12 +84,12 @@ const NotificationTestButton: React.FC<NotificationTestButtonProps> = ({ toast }
     }
   }
 
-  if (!isPushSupported && !isLocalSupported) {
+  if (!pushToken) {
     return (
       <div className="p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
-        <h3 className="text-lg font-semibold mb-2">Notification Test</h3>
+        <h3 className="text-lg font-semibold mb-2">Native Notification Test</h3>
         <p className="text-sm text-gray-600 dark:text-gray-300">
-          Notifications are not supported on this platform.
+          Initializing notifications...
         </p>
       </div>
     )
@@ -59,59 +97,63 @@ const NotificationTestButton: React.FC<NotificationTestButtonProps> = ({ toast }
 
   return (
     <div className="p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
-      <h3 className="text-lg font-semibold mb-2">Notification Test</h3>
+      <h3 className="text-lg font-semibold mb-2">Native Notification Test</h3>
       
       <div className="mb-4">
         <p className="text-sm text-gray-600 dark:text-gray-300">
           Platform: {Capacitor.getPlatform()}
         </p>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Push Notifications: {isPushSupported ? 'Supported' : 'Not Supported'}
-        </p>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Local Notifications: {isLocalSupported ? 'Supported' : 'Not Supported'}
-        </p>
         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
-          Push Token: {pushToken ? `${pushToken.substring(0, 20)}...` : 'Not available'}
+          FCM Token: {pushToken ? `${pushToken.substring(0, 20)}...` : 'Not available'}
         </p>
         {pushToken && (
           <button
             onClick={handleCopyToken}
-            className="mt-1 text-xs text-blue-600 hover:underline"
+            className="mt-1 text-xs text-blue-600 hover:underline dark:text-blue-400"
           >
-            Copy Token
+            📋 Copy Token
           </button>
         )}
       </div>
       
       <div className="space-y-2">
         <button
-          onClick={handleSendLocalNotification}
-          disabled={!isLocalSupported}
-          className={`w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-            isLocalSupported
-              ? "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
+          onClick={handleSendTestMessage}
+          className="w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500"
         >
-          {isLocalSupported ? "Send Test Local Notification" : "Local Notifications Not Supported"}
+          Send Test Message
+        </button>
+
+        <button
+          onClick={handleSendBundledMessages}
+          className="w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500"
+        >
+          Send 3 Bundled Messages
+        </button>
+
+        <button
+          onClick={handleSendCall}
+          className="w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 bg-green-600 text-white hover:bg-green-700 focus:ring-green-500"
+        >
+          Send Call Notification
         </button>
       </div>
       
       <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-        <p className="font-medium">Debug Information:</p>
+        <p className="font-medium">✅ Features:</p>
         <ul className="list-disc pl-5 mt-1 space-y-1">
-          <li>Check browser console for detailed logs</li>
-          <li>Local notifications appear in 2 seconds</li>
-          <li>Push notifications convert to local notifications</li>
-          <li>Token needed for Firebase Console testing</li>
+          <li>Single notification per sender</li>
+          <li>All messages visible when expanded</li>
+          <li>Reply button (inline text input)</li>
+          <li>Call notifications with Accept/Decline</li>
+          <li>100% native Android - no Capacitor plugins</li>
         </ul>
-        <p className="mt-2 font-medium">Testing Instructions:</p>
+        <p className="mt-2 font-medium">📱 How to Test:</p>
         <ol className="list-decimal pl-5 mt-1 space-y-1">
-          <li>Copy the push token above</li>
-          <li>Go to Firebase Console &gt; Cloud Messaging</li>
-          <li>Create a new notification with the token</li>
-          <li>Send and check your device</li>
+          <li>Tap "Send 3 Bundled Messages"</li>
+          <li>Expand notification to see all 3 messages</li>
+          <li>Long-press to reply inline</li>
+          <li>Copy token above for FCM Console testing</li>
         </ol>
       </div>
     </div>

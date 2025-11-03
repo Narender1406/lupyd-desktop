@@ -284,39 +284,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setAllowGeneratedReplies(true)
                 .build()
             
-            // Build notification with InboxStyle to show multiple messages
+            // Build notification with InboxStyle to show ALL messages
             val inboxStyle = NotificationCompat.InboxStyle()
             
-            // Add messages to inbox style (show last 5 messages)
-            val displayMessages = messages.takeLast(5)
-            displayMessages.forEach { msg ->
+            // Add ALL messages to inbox style when expanded
+            messages.forEach { msg ->
                 inboxStyle.addLine(msg)
             }
             
-            // Set summary text
-            val summaryText = if (messageCount > 5) {
-                "$messageCount messages from $sender"
-            } else if (messageCount > 1) {
-                "$messageCount messages"
-            } else {
-                "New message"
-            }
-            inboxStyle.setSummaryText(summaryText)
+            // No summary text - just show sender name
             inboxStyle.setBigContentTitle(sender)
             
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(this.notificationIcon)
-                .setContentTitle(sender)
-                .setContentText(messageBody)
+                .setContentTitle(sender)  // No message counter
+                .setContentText(messageBody)  // Latest message preview
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
                 .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
-                .setStyle(inboxStyle)
+                .setStyle(inboxStyle)  // Shows ALL messages when expanded
                 .addAction(replyAction)
                 .setGroup(GROUP_KEY_MESSAGES)
-                .setNumber(messageCount)
+                .setOnlyAlertOnce(false)  // Alert for each new message
             
             // Use sender's hashCode as notification ID to update the same notification
             val notificationId = sender.hashCode()

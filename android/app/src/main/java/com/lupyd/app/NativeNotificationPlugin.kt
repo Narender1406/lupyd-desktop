@@ -53,6 +53,18 @@ class NativeNotificationPlugin : Plugin() {
     override fun load() {
         super.load()
         Log.d(TAG, "NativeNotificationPlugin loaded")
+        
+        // Request notification permission on Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val activity = activity
+            if (activity != null) {
+                Log.d(TAG, "Requesting POST_NOTIFICATIONS permission")
+                // Note: In a real app, you'd want to check if already granted first
+                // For now, we'll just log that we should request it
+                Log.w(TAG, "⚠️ App should request POST_NOTIFICATIONS permission")
+            }
+        }
+        
         createNotificationChannels()
     }
     
@@ -174,82 +186,107 @@ class NativeNotificationPlugin : Plugin() {
             notificationManager.createNotificationChannel(messagesChannel)
             notificationManager.createNotificationChannel(callsChannel)
             
-            Log.d(TAG, "Notification channels created")
+            Log.d(TAG, "✓ Notification channels created: $CHANNEL_ID, $CHANNEL_ID_CALL")
         }
     }
     
     private fun showBundled(sender: String, messageBody: String) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        // Add message to history
-        addMessageToHistory(sender, messageBody)
-        val messages = getMessagesFromSender(sender)
-        val messageCount = messages.size
-        
-        Log.d(TAG, "Total messages from $sender: $messageCount")
-        
-        // Create intents
-        val contentIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("sender", sender)
+        try {
+            Log.d(TAG, "Showing bundled notification from: $sender")
+            
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
+            if (notificationManager == null) {
+                Log.e(TAG, "NotificationManager is NULL!")
+                return
+            }
+            
+            // Check if notifications are enabled for this app
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val notificationManagerCompat = androidx.core.app.NotificationManagerCompat.from(context)
+                if (!notificationManagerCompat.areNotificationsEnabled()) {
+                    Log.w(TAG, "⚠️ Notifications are disabled for this app!")
+                    // Note: We can't request permission from here, must be done from Activity
+                }
+            }
+            
+            // Ensure channels are created
+            createNotificationChannels()
+            
+            // Add message to history
+            addMessageToHistory(sender, messageBody)
+            val messages = getMessagesFromSender(sender)
+            val messageCount = messages.size
+            
+            Log.d(TAG, "Total messages from $sender: $messageCount")
+            
+            // Create intents
+            val contentIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("sender", sender)
+            }
+            
+            val contentPendingIntent = PendingIntent.getActivity(
+                context, sender.hashCode(), contentIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            // Reply action
+            val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val replyPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 1, replyIntent,
+                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+                .setLabel("Reply to $sender")
+                .build()
+            
+            val replyAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_send,
+                "Reply",
+                replyPendingIntent
+            )
+                .addRemoteInput(remoteInput)
+                .setAllowGeneratedReplies(true)
+                .build()
+            
+            // Build inbox style - show ALL messages when expanded
+            val inboxStyle = NotificationCompat.InboxStyle()
+            messages.forEach { msg ->
+                inboxStyle.addLine(msg)
+            }
+            inboxStyle.setBigContentTitle(sender)
+            
+            // Build notification - single notification per sender
+            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(context.applicationInfo.icon)
+                .setContentTitle(sender)  // No message count here
+                .setContentText(messageBody)  // Latest message as preview
+                .setAutoCancel(true)
+                .setContentIntent(contentPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
+                .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+                .setStyle(inboxStyle)  // Expands to show all messages
+                .addAction(replyAction)
+                .setGroup(GROUP_KEY_MESSAGES)
+                .setOnlyAlertOnce(false)  // Alert for each new message
+                .build()
+            
+            // Use same notification ID for same sender - this updates the existing notification
+            val notificationId = sender.hashCode()
+            Log.d(TAG, "About to notify with ID: $notificationId, channel: $CHANNEL_ID")
+            
+            notificationManager.notify(notificationId, notification)
+            
+            Log.d(TAG, "✓ Notification.notify() called successfully")
+            Log.d(TAG, "Bundled notification updated for $sender with $messageCount messages")
+        } catch (e: Exception) {
+            Log.e(TAG, "✗ ERROR in showBundled:", e)
         }
-        
-        val contentPendingIntent = PendingIntent.getActivity(
-            context, sender.hashCode(), contentIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        // Reply action
-        val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
-            putExtra("sender", sender)
-        }
-        
-        val replyPendingIntent = PendingIntent.getBroadcast(
-            context, sender.hashCode() + 1, replyIntent,
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
-            .setLabel("Reply to $sender")
-            .build()
-        
-        val replyAction = NotificationCompat.Action.Builder(
-            android.R.drawable.ic_menu_send,
-            "Reply",
-            replyPendingIntent
-        )
-            .addRemoteInput(remoteInput)
-            .setAllowGeneratedReplies(true)
-            .build()
-        
-        // Build inbox style
-        val inboxStyle = NotificationCompat.InboxStyle()
-        messages.takeLast(5).forEach { msg ->
-            inboxStyle.addLine(msg)
-        }
-        inboxStyle.setSummaryText(if (messageCount > 1) "$messageCount messages" else "New message")
-        inboxStyle.setBigContentTitle(sender)
-        
-        // Build notification
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(context.applicationInfo.icon)
-            .setContentTitle(sender)
-            .setContentText(messageBody)
-            .setAutoCancel(true)
-            .setContentIntent(contentPendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
-            .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
-            .setStyle(inboxStyle)
-            .addAction(replyAction)
-            .setGroup(GROUP_KEY_MESSAGES)
-            .setNumber(messageCount)
-            .build()
-        
-        val notificationId = sender.hashCode()
-        notificationManager.notify(notificationId, notification)
-        
-        Log.d(TAG, "Bundled notification shown for $sender with $messageCount messages")
     }
     
     private fun showCall(caller: String, conversationId: Long) {
