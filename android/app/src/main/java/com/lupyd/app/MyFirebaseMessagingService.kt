@@ -275,24 +275,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             canvas.drawText(firstLetter, x, y, textPaint)
         }
         
-        // Draw app icon overlay at bottom right
-        try {
-            val appIcon = resources.getDrawable(
-                resources.getIdentifier("flower_notification_icon", "drawable", packageName),
-                null
-            )
-            
-            // Make the overlay icon 1/3 of the profile picture size
-            val overlaySize = size / 3
-            val overlayLeft = size - overlaySize
-            val overlayTop = size - overlaySize
-            
-            appIcon.setBounds(overlayLeft, overlayTop, size, size)
-            appIcon.draw(canvas)
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not load app icon overlay", e)
-        }
-        
         return bitmap
     }
     
@@ -393,7 +375,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val profileBitmap = createProfileBitmap(sender, profileIconSize)
             
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
+                .setSmallIcon(android.R.color.transparent) // Make small icon transparent to allow large icon to show
                 .setLargeIcon(profileBitmap) // Set the profile picture with letter
                 .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle(sender)  // Just the sender name (no prefix)
@@ -403,10 +385,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
                 .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
-                .setStyle(inboxStyle)  // Shows ALL messages when expanded
+                .setStyle(NotificationCompat.BigTextStyle().bigText(messageBody))  // Use BigTextStyle instead of InboxStyle
                 .addAction(replyAction)
                 .setGroup(GROUP_KEY_MESSAGES)
                 .setOnlyAlertOnce(false)  // Alert for each new message
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Ensure content is visible
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setShowWhen(true)
             
             // Add deep link action if URL detected
             if (deepLinkAction != null) {
