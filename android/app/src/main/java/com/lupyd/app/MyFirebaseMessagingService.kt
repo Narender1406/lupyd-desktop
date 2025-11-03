@@ -318,10 +318,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 ).build()
             }
             
+            // Create sender name with first letter if no profile picture
+            val senderDisplayName = if (sender.isNotEmpty()) sender else "Unknown"
+            val firstLetter = if (senderDisplayName.isNotEmpty()) {
+                senderDisplayName.substring(0, 1).uppercase()
+            } else {
+                "?"
+            }
+            
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
                 .setColor(0xFF000000.toInt()) // Black background
-                .setContentTitle(sender)  // No message counter
+                .setContentTitle("$firstLetter $senderDisplayName")  // Add first letter before sender name
                 .setContentText(messageBody)  // Latest message preview
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
