@@ -234,6 +234,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     /**
      * Create a profile bitmap with the first letter of the sender name
      * This creates a circular bitmap with a colored background and the first letter centered
+     * Plus adds the app icon as an overlay at the bottom right
      */
     private fun createProfileBitmap(sender: String, size: Int): Bitmap {
         // Create a bitmap with the specified size
@@ -272,6 +273,24 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val y = (size / 2f) - (textBounds.exactCenterY())
             
             canvas.drawText(firstLetter, x, y, textPaint)
+        }
+        
+        // Draw app icon overlay at bottom right
+        try {
+            val appIcon = resources.getDrawable(
+                resources.getIdentifier("flower_notification_icon", "drawable", packageName),
+                null
+            )
+            
+            // Make the overlay icon 1/3 of the profile picture size
+            val overlaySize = size / 3
+            val overlayLeft = size - overlaySize
+            val overlayTop = size - overlaySize
+            
+            appIcon.setBounds(overlayLeft, overlayTop, size, size)
+            appIcon.draw(canvas)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not load app icon overlay", e)
         }
         
         return bitmap

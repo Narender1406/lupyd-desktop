@@ -477,6 +477,24 @@ class NativeNotificationPlugin : Plugin() {
             canvas.drawText(firstLetter, x, y, textPaint)
         }
         
+        // Draw app icon overlay at bottom right
+        try {
+            val appIcon = context.resources.getDrawable(
+                context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName),
+                null
+            )
+            
+            // Make the overlay icon 1/3 of the profile picture size
+            val overlaySize = size / 3
+            val overlayLeft = size - overlaySize
+            val overlayTop = size - overlaySize
+            
+            appIcon.setBounds(overlayLeft, overlayTop, size, size)
+            appIcon.draw(canvas)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not load app icon overlay", e)
+        }
+        
         return bitmap
     }
     
