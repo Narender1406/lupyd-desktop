@@ -266,16 +266,6 @@
   dependencies:
     tslib "^2.1.0"
 
-"@capacitor/local-notifications@^7.0.3":
-  version "7.0.3"
-  resolved "https://registry.yarnpkg.com/@capacitor/local-notifications/-/local-notifications-7.0.3.tgz#27207215b39af342204b19c13efb6c55a89880aa"
-  integrity sha512-zVHZk5AYRiBwBDynaD7caPUROozgvwOG0L2SPFw1HBTWCscJvo0fsaE67NWW252jzel3PH0XogglJUYFx/jtHA==
-
-"@capacitor/push-notifications@^7.0.3":
-  version "7.0.3"
-  resolved "https://registry.yarnpkg.com/@capacitor/push-notifications/-/push-notifications-7.0.3.tgz#b053f5c8db8cc8ceddda8dd9a1c744a72113e202"
-  integrity sha512-4qt5dRVBkHzq202NEoj3JC+S+zQCrZ1FJh7sjkICy/i1iEos+VaoB3bie8eWDQ2LTARktB4+k2xkdpu8pcVo/g==
-
 "@date-fns/tz@^1.4.1":
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/@date-fns/tz/-/tz-1.4.1.tgz#2d905f282304630e07bef6d02d2e7dbf3f0cc4e4"

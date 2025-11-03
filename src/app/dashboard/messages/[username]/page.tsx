@@ -78,6 +78,9 @@ export default function UserMessagePage() {
     }
   }
 
+
+  useEffect(() => { getOlderMessages() }, [])
+
   const getOlderMessages = async () => {
     const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].id
     const count = 100
@@ -114,6 +117,11 @@ export default function UserMessagePage() {
         return
       }
       setMessages(prev => addMessage(prev, msg))
+
+      const other = msg.from == sender ? msg.to : msg.from
+
+      EncryptionPlugin.markAsReadUntil({ username: other, ts: msg.id })
+
     }
 
     firefly.addEventListener(callback)
@@ -160,6 +168,8 @@ export default function UserMessagePage() {
 
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
     const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
+
+    setMessages(prev => addMessage(prev, msg))
   }
 
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -504,9 +514,17 @@ export function MessageBody(props: { inner: Uint8Array }) {
   if (message.plainText) {
     const text = new TextDecoder().decode(message.plainText);
     return <div>{text}</div>
-  } else {
-    // handleCallMessage(message.callMessage)
-
-    return <div>Received a Call Message</div>
   }
+
+  if (message.messagePayload) {
+    return <div>{message.messagePayload.text}</div>
+  }
+
+  if (message.callMessage) {
+      // handleCallMessage(message.callMessage)
+  }
+
+
+
+  return <div></div>
 }

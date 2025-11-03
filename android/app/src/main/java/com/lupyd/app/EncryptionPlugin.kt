@@ -1,6 +1,7 @@
 package com.lupyd.app
 
 import android.util.Base64
+import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Room
 import com.getcapacitor.JSArray
@@ -9,8 +10,10 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.google.protobuf.ByteString
-import firefly.Message
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -20,12 +23,36 @@ class EncryptionPlugin : Plugin() {
     lateinit var db: AppDatabase
     lateinit var encryptionWrapper: EncryptionWrapper
 
+    lateinit var testJob: Job
+
+    val tag = "lupyd-ep"
+
     override fun load() {
         super.load()
 
         db = getDatabase(context)
         encryptionWrapper = EncryptionWrapper(db, this::sendUserMessage)
+
+        testJob = startInterval(10000) {
+//            notifyListeners("testPing", JSObject().put("result", "ping").put("time", System.currentTimeMillis()))
+        }
+
     }
+
+
+    override fun handleOnDestroy() {
+        super.handleOnDestroy()
+        testJob.cancel()
+    }
+
+    fun startInterval(intervalMs: Long, block: suspend () -> Unit): Job =
+        CoroutineScope(Dispatchers.Default).launch {
+            while (true) {
+                block()
+                delay(intervalMs)
+            }
+        }
+
 
     fun dMessageToJsObj(msg: DMessage): JSObject {
         val base64 = Base64.encodeToString(msg.text, Base64.NO_WRAP)
@@ -39,27 +66,42 @@ class EncryptionPlugin : Plugin() {
         return obj
     }
 
+    @PluginMethod
+    fun testMethod(call: PluginCall) {
+        val data = call.data
+        bridge.activity.lifecycleScope.launch {
+            delay(1000)
+            val result = JSObject().put("receivedAt", System.currentTimeMillis())
+            for (key in data.keys()) {
+                val value = data.get(key)
+                result.put(key, value)
+            }
+
+            call.resolve(result)
+        }
+    }
+
 
     @PluginMethod
     fun onUserMessage(call: PluginCall) {
 
         bridge.activity.lifecycleScope.launch {
             try {
-                val conversationId = call.data.getInteger("convoId")
+                val conversationId = call.data.getLong("convoId")
                 val from = call.data.getString("from")
                 val to = call.data.getString("to")
                 val textB64 = call.data.getString("textB64")
                 val type = call.data.getInteger("type")
                 val text = Base64.decode(textB64, Base64.NO_WRAP)
-                val id = call.data.getInteger("id")
+                val id = call.data.getLong("id")
                 val result = encryptionWrapper
                     .onUserMessage(
                         from!!,
                         to!!,
                         text,
                         type!!,
-                        conversationId!!.toLong(),
-                        id!!.toLong()
+                        conversationId,
+                        id
                     )
                 if (result != null) {
                     call.resolve(dMessageToJsObj(result))
@@ -67,7 +109,7 @@ class EncryptionPlugin : Plugin() {
                     call.reject("Something went wrong")
                 }
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
 
         }
@@ -79,7 +121,7 @@ class EncryptionPlugin : Plugin() {
 
         bridge.activity.lifecycleScope.launch {
             try {
-                val conversationId = call.data.getInteger("convoId")!!
+                val conversationId = call.data.getLong("convoId")
                 val payloadB64 = call.data.getString("textB64")!!
                 val to = call.data.getString("to")!!
                 val token = call.data.getString("token")!!
@@ -87,14 +129,15 @@ class EncryptionPlugin : Plugin() {
 
                 val dmsg = encryptionWrapper.encryptAndSend(
                     to,
-                    conversationId.toLong(),
+                    conversationId,
                     payload,
                     token
                 )
 
                 call.resolve(dMessageToJsObj(dmsg))
             } catch (e: Exception) {
-                call.reject(e.message)
+                Log.e(tag, e.toString())
+                call.reject(e.toString())
             }
 
         }
@@ -106,10 +149,17 @@ class EncryptionPlugin : Plugin() {
         bridge.activity.lifecycleScope.launch {
             try {
                 val msgs = db.messagesDao().getLastMessagesFromAllConversations()
-                val arr = JSArray.from(msgs.map { dMessageToJsObj(it) })
+                for (msg in msgs) {
+                    Log.i(tag, msg.toString())
+                }
+                val arr = JSArray()
+                for (msg in msgs) {
+                    arr.put(dMessageToJsObj(msg))
+                }
+
                 call.resolve(JSObject().put("result", arr))
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
 
@@ -125,10 +175,14 @@ class EncryptionPlugin : Plugin() {
                 val limit = call.getInt("limit")!!
                 val before = call.getLong("before")!!
                 val msgs = db.messagesDao().getLastMessages(from, to, before, limit)
-                val arr = JSArray.from(msgs.map { dMessageToJsObj(it) })
+
+                val arr = JSArray()
+                for (msg in  msgs) {
+                    arr.put(dMessageToJsObj(msg))
+                }
                 call.resolve(JSObject().put("result", arr))
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
     }
@@ -143,10 +197,13 @@ class EncryptionPlugin : Plugin() {
                 val before = call.getLong("before")!!
 
                 val msgs = db.messagesDao().getLastMessagesInBetween(from, to, before, limit)
-                val arr = JSArray.from(msgs.map { dMessageToJsObj(it) })
+                val arr = JSArray()
+                for (msg in  msgs) {
+                    arr.put(dMessageToJsObj(msg))
+                }
                 call.resolve(JSObject().put("result", arr))
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
     }
@@ -169,7 +226,7 @@ class EncryptionPlugin : Plugin() {
                 call.resolve()
 
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
     }
@@ -182,7 +239,7 @@ class EncryptionPlugin : Plugin() {
                 encryptionWrapper.checkSetup()
                 call.resolve()
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
     }
@@ -194,7 +251,7 @@ class EncryptionPlugin : Plugin() {
                 encryptionWrapper.syncUserMessages()
                 call.resolve()
             } catch (e: Exception) {
-                call.reject(e.message)
+                call.reject(e.toString())
             }
         }
     }
@@ -204,4 +261,57 @@ class EncryptionPlugin : Plugin() {
         notifyListeners("onUserMessage", dMessageToJsObj(msg))
     }
 
+
+
+    @PluginMethod
+    fun getLastSeenUserMessageTimestamp(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val username = call.data.getString("username")
+                if (username == null) {
+                    call.resolve()
+                } else {
+                    val ts = db.lastSeenTimestampDao().get(username)
+                        call.resolve(JSObject().put("ts", ts))
+                }
+            } catch (e: Exception) {
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun markAsReadUntil(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val username = call.data.getString("username")
+                val ts = call.data.getLong("ts")
+                if (username == null) {
+                    call.reject("Invalid parameters")
+                } else {
+                    encryptionWrapper.markAsReadUntil(username, ts)
+                    call.resolve()
+                }
+            } catch (e: Exception) {
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun getNumberOfMessagesInBetweenSince(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val from = call.data.getString("from")!!
+                val to = call.data.getString("to")!!
+                val since = call.data.getLong("since")
+                val count = db.messagesDao().getNumberOfMessagesInBetweenSince(from, to, since)
+
+                call.resolve(JSObject().put("count", count))
+
+            } catch (e: Exception) {
+                call.reject(e.toString())
+            }
+        }
+    }
 }

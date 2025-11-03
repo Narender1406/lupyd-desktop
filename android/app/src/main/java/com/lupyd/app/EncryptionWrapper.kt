@@ -177,6 +177,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             handleMessage(dMsg)
             return dMsg
         } else if (response.status == HttpStatusCode.NotFound) {
+            Log.i(tag, "That conversation id doesn't exist, recreating new one")
             val convo = createConversation(to, token)
             processPreKeyBundle(convo.bundle!!, to)
             conversationId = convo.conversationId
@@ -212,6 +213,9 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
     fun processPreKeyBundle(bundle: Message.PreKeyBundle, owner: String) {
 
+
+        Log.i(tag, "Processing key bundle from ${owner} preKeyId: ${bundle.preKeyId}")
+
         if (bundle.equals(Message.PreKeyBundle.getDefaultInstance())) {
             throw Exception("PreKeyBundle is null")
         }
@@ -239,42 +243,57 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         )
 
         session.process(preKeyBundle)
+
+        Log.i(tag, "Processed key bundle from ${owner} preKeyId: ${bundle.preKeyId}")
+    }
+
+    suspend fun getAccessTokenFromLocalStore(): String? {
+        try {
+            val oldAccessToken = db.keyValueDao().get("auth0AccessToken") ?: return null
+
+            Log.i(tag, "old access token ${oldAccessToken}")
+                val token = SignedJWT.parse(oldAccessToken)
+
+                Log.i(
+                    tag,
+                    "Parsed Signed Token ${token.header.toJSONObject()} ${token.payload.toJSONObject()} ${token.signature}"
+                )
+
+                val payload = token.payload.toJSONObject()
+
+                val expiry = (payload.get("exp") as Number).toLong()
+                val _username =
+                    payload.get("uname") as String? ?: throw Exception("User not logged in")
+
+                val now = System.currentTimeMillis() / 1000
+                if (expiry < now) {
+                    Log.i(tag, "Get a new token, because old one expired ${expiry} ${now}")
+                    return null
+                } else {
+                    return oldAccessToken
+                }
+
+        } catch (e: Exception) {
+            Log.i(tag, "Failed to get access token from local store ${e}")
+        }
+
+            return null
     }
 
     suspend fun getAccessToken(): String {
-        val oldAccessToken = db.keyValueDao().get("auth0AccessToken")
+
+        val oldAccessToken = getAccessTokenFromLocalStore()
+
         if (oldAccessToken != null) {
-            Log.i(tag, "old access token ${oldAccessToken}")
-            val token = SignedJWT.parse(oldAccessToken)
-
-            Log.i(
-                tag,
-                "Parsed Signed Token ${token.header.toJSONObject()} ${token.payload.toJSONObject()} ${token.signature}"
-            )
-
-            val payload = token.payload.toJSONObject()
-
-            val expiry = (payload.get("exp") as Number).toLong()
-            val username = payload.get("uname") as String?
-
-            if (username == null) {
-                throw Exception("User not logged in")
-            }
-
-            val now = System.currentTimeMillis() / 1000
-            if (expiry < now) {
-                Log.i(tag, "Getting new token, because old one expired ${expiry} ${now}")
-                return getNewAccessToken()
-            } else {
-                return oldAccessToken
-            }
-        } else {
-            Log.i(tag, "Getting new access token, because there is no old one");
-            return getNewAccessToken()
+            return oldAccessToken
         }
+
+        Log.i(tag, "Getting new access token, old token: ${oldAccessToken}")
+        return getNewAccessToken()
     }
 
     suspend fun getNewAccessToken(): String {
+
         val refreshToken = db.keyValueDao().get("auth0RefreshToken")
         if (refreshToken == null) {
             throw Exception("No refresh token")
@@ -283,6 +302,11 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             .put("grant_type", "refresh_token")
             .put("client_id", Constants.AUTH0_CLIENT_ID)
             .put("refresh_token", refreshToken)
+
+        val oldAccessToken = getAccessTokenFromLocalStore()
+        if (oldAccessToken != null) { return oldAccessToken }
+
+
         val response = httpClient.post("${Constants.AUTH0_DOMAIN}/oauth/token") {
             headers {
                 append(HttpHeaders.ContentType, "application/json")
@@ -326,6 +350,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             if (lastUserMessageTimestampString != null) {
                 lastUserMessageTimestamp = lastUserMessageTimestampString.toLong()
             }
+            Log.i(tag, "Syncing since ${lastUserMessageTimestamp}")
             val token = getAccessToken()
             val response = httpClient.get("${Constants.FIREFLY_API_URL}/user/sync") {
                 headers {
@@ -388,6 +413,19 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         }
     }
 
+    suspend fun markAsReadUntil(other: String, ts: Long) {
+        db.withTransaction {
+            val oldTs = db.lastSeenTimestampDao().get(other)
+            if (oldTs == null) {
+                db.lastSeenTimestampDao().put(LastSeenTimestamp(other, ts))
+            } else {
+                if (oldTs < ts) {
+                    db.lastSeenTimestampDao().put(LastSeenTimestamp(other, ts))
+                }
+            }
+        }
+    }
+
 
     suspend fun recreateConversations(token: String) {
 
@@ -429,7 +467,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         Log.i(tag, "Bundles to delete ${bundlesToDelete.joinToString()}")
         if (bundlesToDelete.isNotEmpty()) {
             response = httpClient.delete("${Constants.FIREFLY_API_URL}/user/preKeyBundles") {
-                parameter("id", bundlesToDelete.joinToString("%2C"))
+                parameter("id", bundlesToDelete.joinToString(","))
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${token}")
                 }
@@ -589,8 +627,11 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
 
         if (identity == null) {
+            Log.i(tag, "Identity Key does not exist yet, recreating conversation")
             // first time registering user
             recreateConversations(token)
+        } else {
+            Log.i(tag, "Identitiy Key Exists")
         }
 
         checkKeys(token)

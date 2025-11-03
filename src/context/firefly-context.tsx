@@ -51,22 +51,17 @@ export default function FireflyProvider() {
 
   useEffect(() => {
 
-    const listener = Capacitor.addListener!("EncryptionPlugin", "onUserMessage", (data, err) => {
-      if (err) {
-        throw err
-      }
-
-
-      if (isBMessage(data)) {
+    const listener =
+      EncryptionPlugin.addListener("onUserMessage", (data) => {
+        const isValid = isBMessage(data)
+        console.log(`onUserMessage Recevied  ${isValid} ${JSON.stringify(data)}`)
         const dmsg = bMessageToDMessage(data)
         eventListeners.current.forEach(e => e(client, dmsg))
-      }
+      })
 
-    })
+    return () => { listener.then(_ => _.remove()) }
 
-    return () => { listener.remove() }
-
-  }, [])
+  }, [eventListeners])
 
 
   if (!auth.username) {

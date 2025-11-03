@@ -37,6 +37,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   // useEffect(() => {
+  //   const listener = EncryptionPlugin.addListener("testPing", (data) => {
+  //     console.log({ data });
+
+  //     EncryptionPlugin.testMethod({
+  //       a: Math.random().toString(),
+  //       b: Math.random()
+  //     }).then(result => {
+  //       console.log({ result })
+  //     }).catch(err => console.error(err))
+  //   })
+
+  //   return () => { listener.then(_ => _.remove() )}
+    
+  // }, [])
+
+  // useEffect(() => {
   //   if (typeof window !== "undefined") {
 
   //     const domain = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_DOMAIN

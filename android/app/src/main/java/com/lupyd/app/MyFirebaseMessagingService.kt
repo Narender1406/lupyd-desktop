@@ -11,7 +11,9 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import firefly.Message
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -21,7 +23,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var db: AppDatabase
     lateinit var encryptionWrapper: EncryptionWrapper
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    @OptIn(DelicateCoroutinesApi::class)
+    private val scope = GlobalScope
 
     override fun onCreate() {
         super.onCreate()
@@ -34,7 +37,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onDestroy() {
-        scope.cancel()
+//        scope.cancel()
         super.onDestroy()
     }
 

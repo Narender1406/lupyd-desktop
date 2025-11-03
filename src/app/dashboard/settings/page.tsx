@@ -35,7 +35,6 @@ import { useAuth } from "@/context/auth-context"
 import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
 import { useApiService } from "@/context/apiService"
-import NotificationTestButton from "@/components/NotificationTestButton"
 import { toast } from "@/hooks/use-toast"
 
 
@@ -314,10 +313,6 @@ export default function SettingsPage() {
 
             <TabsContent value="notifications" className="mt-0 space-y-6">
               <NotificationsSection />
-              {/* Notification Test Button */}
-              <div className="mt-6">
-                <NotificationTestButton toast={toast} />
-              </div>
             </TabsContent>
 
             <TabsContent value="security" className="mt-0 space-y-6">

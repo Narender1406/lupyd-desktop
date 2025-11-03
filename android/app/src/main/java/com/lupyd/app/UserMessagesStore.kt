@@ -29,4 +29,8 @@ interface DMessagesDao {
 
     @Query("select t1.* from user_messages t1 where t1.msgId = ( select max(t2.msgId) from user_messages t2 where t2.mfrom = t1.mfrom and t2.mto = t1.mto )")
     suspend fun getLastMessagesFromAllConversations(): List<DMessage>
+
+
+    @Query("SELECT COUNT(msgId) FROM user_messages WHERE ((mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from)) AND msgId > :since")
+    suspend fun getNumberOfMessagesInBetweenSince(from: String, to: String, since: Long): Int
 }

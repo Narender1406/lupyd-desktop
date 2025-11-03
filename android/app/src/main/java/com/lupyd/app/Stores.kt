@@ -2,6 +2,7 @@ package com.lupyd.app
 
 
 import android.content.Context
+import android.util.Log
 import org.signal.libsignal.protocol.SignalProtocolAddress
 
 
@@ -156,6 +157,21 @@ interface KeyValueDao {
     suspend fun delete(key: String)
 }
 
+@Entity(tableName = "last_seen_timestamps")
+class LastSeenTimestamp(
+    @PrimaryKey val username: String,
+    val lastMessageSeenTimestamp: Long
+)
+
+@Dao
+interface LastSeenTimestampDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(entry: LastSeenTimestamp)
+
+    @Query("SELECT lastMessageSeenTimestamp FROM last_seen_timestamps WHERE username = :username")
+    suspend fun get(username: String): Long?
+}
+
 @Database(entities = [
     DMessage::class,
     KeyValueEntry::class,
@@ -164,7 +180,8 @@ interface KeyValueDao {
     KyberPreKeyEntry::class,
     SessionEntry::class,
     IdentityEntry::class,
-    TrustedKeyEntry::class], version = 1)
+    TrustedKeyEntry::class,
+    LastSeenTimestamp::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun preKeysDao(): PreKeysDao
     abstract fun signedPreKeysDao(): SignedPreKeysDao
@@ -174,11 +191,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trustedKeysDao(): TrustedKeysDao
     abstract fun keyValueDao(): KeyValueDao
     abstract fun messagesDao(): DMessagesDao
+
+    abstract fun lastSeenTimestampDao(): LastSeenTimestampDao
 }
 
 
 fun getDatabase(context: Context): AppDatabase {
-    val db = Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()
+    val db = Room.databaseBuilder(context, AppDatabase::class.java, "app.db")
+        .build()
     return db
 }
 
@@ -285,15 +305,12 @@ public class SqlSessionStore(val db: AppDatabase) : SessionStore {
 
 public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
     override fun getIdentityKeyPair(): IdentityKeyPair? {
-        val value = runBlocking {
-            db.identitiesDao().get()
-        }
-
         val key = runBlocking {
             db.withTransaction {
                 val entry = db.identitiesDao().get()
                 if (entry == null) {
                     val newKey = IdentityKeyPair.generate()
+                    Log.i("lupyd-ec", "Created a new IdentityKeyPair");
                     db.identitiesDao().put(IdentityEntry(0, newKey.serialize(), 1));
                     newKey
                 } else {
@@ -337,8 +354,10 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
         if (address == null || identityKey == null) {
             return false
         }
-        val trusted = getIdentity(address)
-        return trusted == null || trusted == identityKey
+//        val trusted = getIdentity(address)
+//        return trusted == null || trusted == identityKey
+
+        return true
     }
 
     override fun getIdentity(address: SignalProtocolAddress?): IdentityKey? {

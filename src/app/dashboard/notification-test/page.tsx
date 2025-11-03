@@ -1,7 +1,6 @@
 "use client"
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import NotificationTestButton from "@/components/NotificationTestButton"
 import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -26,7 +25,6 @@ export default function NotificationTestPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <NotificationTestButton toast={toast} />
                 
                 <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
                   <h3 className="font-medium mb-2">How to Test Push Notifications</h3>

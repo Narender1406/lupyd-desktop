@@ -1,7 +1,7 @@
 "use client"
 
 
-import react from "react"
+import react, { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AnimatedCard } from "@/components/animated-card"
@@ -15,14 +15,12 @@ import { MessageBody } from "./[username]/page"
 import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin"
 
 
-
 // Emoji picker options
 // const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
 
 
 export default function MessagesPage() {
-  const router = useNavigate()
   // const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
 
   // const [replyingTo, setReplyingTo] = useState<FireflyProtos.UserMessage | null>(null)
@@ -111,29 +109,62 @@ export default function MessagesPage() {
 
 
 
+
+  const addLastConversation = (convo: DMessage) => {
+    setLastConversations(prev => {
+      const newConversations: DMessage[] = []
+
+      let alreadyPushed = false;
+
+      for (const c of prev) {
+        const other = c.from == auth.username ? c.to : c.from
+        if (other == convo.from || other == convo.to) {
+          if (c.id > convo.id) {
+            newConversations.push(c)
+          } else {
+            newConversations.push(convo)
+          }
+          alreadyPushed = true;
+        } else {
+          newConversations.push(c)
+        }
+      }
+
+      if (!alreadyPushed) {
+        newConversations.push(convo)
+      }
+
+      return newConversations.sort((a, b) => b.id - a.id)
+    })
+  }
+
+
   react.useEffect(() => {
     if (!auth.username) return
 
     EncryptionPlugin.getLastMessagesFromAllConversations().then((result) => {
+      console.log({ result })
       const messages = result.result
-
-      const newMessages: DMessage[] = []
-
-      const set = new Set<string>()
-
-      for (const message of messages.sort((a, b) => Number(b.id - a.id))) {
-        const other = message.from == auth.username ? message.to : message.from
-
-        if (set.has(other)) { continue }
-        set.add(other)
-
-        newMessages.push(bMessageToDMessage(message))
+      // could be more efficient if batch processed
+      for (const message of messages) {
+        addLastConversation(bMessageToDMessage(message))
       }
-
-      setLastConversations(newMessages)
     })
 
 
+    firefly.service.getConversations().then(conversations => {
+      for (const conversation of conversations.conversations) {
+        addLastConversation(
+          {
+            id: 0,
+            convoId: Number(conversation.id),
+            from: conversation.startedBy,
+            to: conversation.other,
+            text: FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create()).finish()
+          }
+        )
+      }
+    })
   }, [auth])
 
   // Scroll to bottom of messages when conversation changes or new message is added
@@ -165,49 +196,76 @@ export default function MessagesPage() {
           </div>}
         {
 
-          lastConversations.map((conversation, index) => {
-
-            const username = auth.username == conversation.from ? conversation.to : conversation.from
-            const unread = false
-
-            const lastTs = new Date(Number(conversation.id / 1000))
-
-
-            return (
-              <AnimatedCard key={username} delay={0.1 * (index + 1)}>
-                <Link to={`/messages/${username}`}>
-                  <div className="p-4 hover:bg-gray-50 cursor-pointer">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <UserAvatar username={username} />
-                        {false && (
-                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 border-2 border-white"></span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="w-full">
-                          <div className="flex items-center justify-between w-full max-w-[800px]" >
-                            <p className={`font-medium truncate ${unread ? "text-black" : ""}`}>
-                              {username}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{dateToRelativeString(lastTs)}</p>
-                          </div>
-                        </div>
-                        <p
-                          className={`text-sm truncate ${unread ? "text-black font-medium" : "text-muted-foreground"}`}
-                        >
-                          <MessageBody inner={conversation.text}></MessageBody>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </AnimatedCard>
-            )
-          })}
+          lastConversations.map((conversation, index) => <ConversationElement conversation={conversation} index={index} sender={auth.username!} />)
+        }
       </div>
     </div>
 
   </DashboardLayout>)
 
+}
+
+
+function ConversationElement(props: { conversation: DMessage, sender: string, index: number }) {
+
+  const { conversation, sender, index } = props
+
+  console.log({ conversation })
+
+
+  const username = sender == conversation.from ? conversation.to : conversation.from
+
+  const lastTs = new Date(Number(conversation.id / 1000))
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
+
+  const unread = useMemo(() => unreadMessagesCount > 0, [unreadMessagesCount])
+
+  useEffect(() => {
+
+    (async () => {
+
+      const { ts } = await EncryptionPlugin.getLastSeenUserMessageTimestamp({ username })
+
+      const { count } = await EncryptionPlugin.getNumberOfMessagesInBetweenSince({
+        from: conversation.from,
+        to: conversation.to,
+        since: ts
+      })
+
+      setUnreadMessagesCount(count)
+    })()
+  }, [])
+
+
+  return (
+    <AnimatedCard key={username} delay={0.1 * (index + 1)}>
+      <Link to={`/messages/${username}`}>
+        <div className="p-4 hover:bg-gray-50 cursor-pointer">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <UserAvatar username={username} />
+              {false && (
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 border-2 border-white"></span>
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="w-full">
+                <div className="flex items-center justify-between w-full max-w-[800px]" >
+                  <p className={`font-medium truncate ${unread ? "text-black" : ""}`}>
+                    {username}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{dateToRelativeString(lastTs)}</p>
+                </div>
+              </div>
+              <p
+                className={`text-sm truncate ${unread ? "text-black font-medium" : "text-muted-foreground"}`}
+              >
+                <MessageBody inner={conversation.text}></MessageBody>
+              </p>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </AnimatedCard>
+  )
 }

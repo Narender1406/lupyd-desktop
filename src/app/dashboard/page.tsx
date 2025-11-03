@@ -16,7 +16,7 @@ import { PostCard } from "@/components/dashboard/post-card"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
 import { useApiService } from "@/context/apiService"
-import NotificationTestButton from "@/components/NotificationTestButton"
+// import NotificationTestButton from "@/components/NotificationTestButton"
 import { toast } from "@/hooks/use-toast"
 
 
@@ -69,8 +69,6 @@ export default function DashboardPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Notification Test Button */}
-              <NotificationTestButton toast={toast} />
 
               {/* Suggested Connections */}
               <Card className="border-none shadow-sm">

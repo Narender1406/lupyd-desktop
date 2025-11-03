@@ -5,7 +5,6 @@ import {  Route, Routes } from 'react-router-dom'
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { useAuth0 } from '@auth0/auth0-react';
-import { NotificationProvider } from './context/notification-context';
 import { useAuth } from './context/auth-context';
 
 

@@ -1,6 +1,6 @@
 import { fromBase64 } from "@/lib/utils";
 
-import { registerPlugin } from '@capacitor/core'
+import { type Plugin as CapacitorPlugin, registerPlugin, type PluginCallback, type PluginListenerHandle } from '@capacitor/core'
 
 export interface BMessage {
   id: number,
@@ -33,7 +33,7 @@ export function bMessageToDMessage(msg: BMessage): DMessage {
 }
 
 
-export interface EncryptionPluginType {
+export interface EncryptionPluginType extends CapacitorPlugin {
   onUserMessage(options: {
     convoId: number,
     textB64: string,
@@ -75,10 +75,18 @@ export interface EncryptionPluginType {
   }): Promise<void>
 
 
-  syncUserMessages(): Promise<void>
+  syncUserMessages(): Promise<void>,
 
-  
-}
+  testMethod(obj: any): Promise<any>,
+
+
+  markAsReadUntil(options: { username: string, ts: number }): Promise<void>,
+
+  getLastSeenUserMessageTimestamp(options: { username: string }): Promise<{ ts: number }>
+
+
+  getNumberOfMessagesInBetweenSince(options: { from: string, to: string, since: number }): Promise<{ count: number }>
+};
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 
