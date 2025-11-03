@@ -253,6 +253,22 @@ class NativeNotificationPlugin : Plugin() {
                 .setAllowGeneratedReplies(true)
                 .build()
             
+            // Mark as Read action
+            val markAsReadIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
+                putExtra("sender", sender)
+            }
+            
+            val markAsReadPendingIntent = PendingIntent.getBroadcast(
+                context, sender.hashCode() + 2, markAsReadIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            val markAsReadAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_view,
+                "Mark as Read",
+                markAsReadPendingIntent
+            ).build()
+            
             // Build inbox style - show ALL messages when expanded
             val inboxStyle = NotificationCompat.InboxStyle()
             messages.forEach { msg ->
@@ -260,8 +276,31 @@ class NativeNotificationPlugin : Plugin() {
             }
             inboxStyle.setBigContentTitle(sender)
             
+            // Check for URLs in the latest message
+            var deepLinkAction: NotificationCompat.Action? = null
+            val urlPattern = "(https?://[^\\s]+)".toRegex()
+            val urlMatch = urlPattern.find(messageBody)
+            
+            if (urlMatch != null) {
+                val url = urlMatch.value
+                Log.d(TAG, "URL detected in message: $url")
+                
+                // Create deep link intent
+                val deepLinkIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                val deepLinkPendingIntent = PendingIntent.getActivity(
+                    context, sender.hashCode() + 3, deepLinkIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                
+                deepLinkAction = NotificationCompat.Action.Builder(
+                    android.R.drawable.ic_menu_share,
+                    "Open Link",
+                    deepLinkPendingIntent
+                ).build()
+            }
+            
             // Build notification - single notification per sender
-            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
                 .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle(sender)  // No message count here
@@ -273,15 +312,20 @@ class NativeNotificationPlugin : Plugin() {
                 .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
                 .setStyle(inboxStyle)  // Expands to show all messages
                 .addAction(replyAction)
+                .addAction(markAsReadAction)  // Mark as Read action
                 .setGroup(GROUP_KEY_MESSAGES)
                 .setOnlyAlertOnce(false)  // Alert for each new message
-                .build()
+            
+            // Add deep link action if URL detected
+            if (deepLinkAction != null) {
+                notificationBuilder.addAction(deepLinkAction)
+            }
             
             // Use same notification ID for same sender - this updates the existing notification
             val notificationId = sender.hashCode()
             Log.d(TAG, "About to notify with ID: $notificationId, channel: $CHANNEL_ID")
             
-            notificationManager.notify(notificationId, notification)
+            notificationManager.notify(notificationId, notificationBuilder.build())
             
             Log.d(TAG, "✓ Notification.notify() called successfully")
             Log.d(TAG, "Bundled notification updated for $sender with $messageCount messages")
@@ -370,6 +414,10 @@ class NativeNotificationPlugin : Plugin() {
         }
     }
     
+    fun addReplyToHistory(sender: String, replyText: String) {
+        addMessageToHistory(sender, "You: $replyText")
+    }
+    
     private fun getMessagesFromSender(sender: String): List<String> {
         return try {
             val messagesJson = notificationPrefs.getString(sender, "[]")
@@ -381,6 +429,10 @@ class NativeNotificationPlugin : Plugin() {
             Log.e(TAG, "Error getting messages", e)
             emptyList()
         }
+    }
+    
+    fun getSenderMessages(sender: String): List<String> {
+        return getMessagesFromSender(sender)
     }
     
     private fun notifyTokenReceived(token: String) {
@@ -403,13 +455,68 @@ class ReplyReceiverNative : BroadcastReceiver() {
             Log.d("lupyd-ReplyReceiver", "Reply received for $sender: $replyText")
             // TODO: Send reply through encryption system
             
+            // Add reply to message history using shared preferences directly
+            val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
+            try {
+                val messagesJson = prefs.getString(sender, "[]")
+                val messagesArray = JSONArray(messagesJson)
+                
+                val messageObj = JSONObject().apply {
+                    put("text", "You: $replyText")
+                    put("timestamp", System.currentTimeMillis())
+                }
+                messagesArray.put(messageObj)
+                
+                prefs.edit().putString(sender, messagesArray.toString()).apply()
+            } catch (e: Exception) {
+                Log.e("lupyd-ReplyReceiver", "Error adding reply to history", e)
+            }
+            
+            // Update notification to show reply
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Get updated messages
+            val messages = try {
+                val messagesJson = prefs.getString(sender, "[]")
+                val messagesArray = JSONArray(messagesJson)
+                (0 until messagesArray.length()).map {
+                    messagesArray.getJSONObject(it).getString("text")
+                }
+            } catch (e: Exception) {
+                Log.e("lupyd-ReplyReceiver", "Error getting messages", e)
+                emptyList<String>()
+            }
+            
+            // Create updated inbox style
+            val inboxStyle = NotificationCompat.InboxStyle()
+            messages.forEach { msg ->
+                inboxStyle.addLine(msg)
+            }
+            inboxStyle.setBigContentTitle(sender)
+            
+            // Create content intent
+            val contentIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("sender", sender)
+            }
+            
+            val contentPendingIntent = PendingIntent.getActivity(
+                context, sender.hashCode(), contentIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            
+            // Build updated notification
             val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
-                .setSmallIcon(context.applicationInfo.icon)
-                .setContentTitle("Reply sent")
-                .setContentText("Your reply to $sender has been sent")
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setAutoCancel(true)
+                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+                .setColor(0xFF000000.toInt())
+                .setContentTitle(sender)
+                .setContentText("You: $replyText")
+                .setAutoCancel(false) // Keep notification visible
+                .setContentIntent(contentPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setStyle(inboxStyle)
+                .setGroup(NativeNotificationPlugin.GROUP_KEY_MESSAGES)
+                .setOnlyAlertOnce(true) // Don't alert again
             
             notificationManager.notify(sender.hashCode(), builder.build())
         }
@@ -445,5 +552,31 @@ class CallActionReceiverNative : BroadcastReceiver() {
                 notificationManager.cancel(notificationId)
             }
         }
+    }
+}
+
+class MarkAsReadReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if (context == null || intent == null) return
+        
+        val sender = intent.getStringExtra("sender") ?: return
+        
+        Log.d("lupyd-MarkAsRead", "Marking conversation with $sender as read")
+        
+        // Cancel the notification
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(sender.hashCode())
+        
+        // Show confirmation
+        val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
+            .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+            .setColor(0xFF000000.toInt())
+            .setContentTitle("Conversation marked as read")
+            .setContentText("Conversation with $sender marked as read")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setTimeoutAfter(2000) // Auto dismiss after 2 seconds
+        
+        notificationManager.notify(-sender.hashCode(), builder.build())
     }
 }

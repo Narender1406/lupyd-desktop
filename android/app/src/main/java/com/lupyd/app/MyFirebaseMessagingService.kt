@@ -295,6 +295,29 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             // No summary text - just show sender name
             inboxStyle.setBigContentTitle(sender)
             
+            // Check for URLs in the latest message
+            var deepLinkAction: NotificationCompat.Action? = null
+            val urlPattern = "(https?://[^\\s]+)".toRegex()
+            val urlMatch = urlPattern.find(messageBody)
+            
+            if (urlMatch != null) {
+                val url = urlMatch.value
+                Log.d(TAG, "URL detected in message: $url")
+                
+                // Create deep link intent
+                val deepLinkIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                val deepLinkPendingIntent = PendingIntent.getActivity(
+                    this, sender.hashCode() + 3, deepLinkIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                
+                deepLinkAction = NotificationCompat.Action.Builder(
+                    android.R.drawable.ic_menu_share,
+                    "Open Link",
+                    deepLinkPendingIntent
+                ).build()
+            }
+            
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
                 .setColor(0xFF000000.toInt()) // Black background
@@ -309,6 +332,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .addAction(replyAction)
                 .setGroup(GROUP_KEY_MESSAGES)
                 .setOnlyAlertOnce(false)  // Alert for each new message
+            
+            // Add deep link action if URL detected
+            if (deepLinkAction != null) {
+                notificationBuilder.addAction(deepLinkAction)
+            }
             
             // Use sender's hashCode as notification ID to update the same notification
             val notificationId = sender.hashCode()
@@ -522,14 +550,68 @@ class ReplyReceiver : BroadcastReceiver() {
                 // This will require access to the database and encryption wrapper
                 // For now, we'll just log it
                 
-                // Update notification to show "Reply sent"
+                // Add reply to message history using shared preferences directly
+                val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
+                try {
+                    val messagesJson = prefs.getString(sender, "[]")
+                    val messagesArray = JSONArray(messagesJson)
+                    
+                    val messageObj = JSONObject().apply {
+                        put("text", "You: $replyText")
+                        put("timestamp", System.currentTimeMillis())
+                    }
+                    messagesArray.put(messageObj)
+                    
+                    prefs.edit().putString(sender, messagesArray.toString()).apply()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error adding reply to history", e)
+                }
+                
+                // Update notification to show reply
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                
+                // Get updated messages
+                val messages = try {
+                    val messagesJson = prefs.getString(sender, "[]")
+                    val messagesArray = JSONArray(messagesJson)
+                    (0 until messagesArray.length()).map {
+                        messagesArray.getJSONObject(it).getString("text")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error getting messages", e)
+                    emptyList<String>()
+                }
+                
+                // Create updated inbox style
+                val inboxStyle = NotificationCompat.InboxStyle()
+                messages.forEach { msg ->
+                    inboxStyle.addLine(msg)
+                }
+                inboxStyle.setBigContentTitle(sender)
+                
+                // Create content intent
+                val contentIntent = Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    putExtra("sender", sender)
+                }
+                
+                val contentPendingIntent = PendingIntent.getActivity(
+                    context, sender.hashCode(), contentIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                
+                // Build updated notification
                 val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(context.applicationInfo.icon)
-                    .setContentTitle("Reply sent")
-                    .setContentText("Your reply to $sender has been sent")
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .setAutoCancel(true)
+                    .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+                    .setColor(0xFF000000.toInt()) // Black background
+                    .setContentTitle(sender)
+                    .setContentText("You: $replyText")
+                    .setAutoCancel(false) // Keep notification visible
+                    .setContentIntent(contentPendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setStyle(inboxStyle)
+                    .setGroup(CHANNEL_ID)
+                    .setOnlyAlertOnce(true) // Don't alert again
                 
                 notificationManager.notify(sender.hashCode(), builder.build())
                 

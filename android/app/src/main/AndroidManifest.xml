@@ -75,6 +75,10 @@
         <receiver
             android:name=".CallActionReceiverNative"
             android:exported="false" />
+            
+        <receiver
+            android:name=".MarkAsReadReceiver"
+            android:exported="false" />
 
         <!-- Notification Channels -->
         <meta-data
