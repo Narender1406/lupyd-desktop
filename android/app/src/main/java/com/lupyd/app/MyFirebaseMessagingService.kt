@@ -296,7 +296,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             inboxStyle.setBigContentTitle(sender)
             
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(this.notificationIcon)
+                .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
+                .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle(sender)  // No message counter
                 .setContentText(messageBody)  // Latest message preview
                 .setAutoCancel(true)
@@ -375,7 +376,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             )
             
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID_CALL)
-                .setSmallIcon(this.notificationIcon)
+                .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
+                .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle("Incoming call")
                 .setContentText("$caller is calling...")
                 .setPriority(NotificationCompat.PRIORITY_MAX)

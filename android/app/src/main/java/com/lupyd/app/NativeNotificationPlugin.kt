@@ -262,7 +262,8 @@ class NativeNotificationPlugin : Plugin() {
             
             // Build notification - single notification per sender
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(context.applicationInfo.icon)
+                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+                .setColor(0xFF000000.toInt()) // Black background
                 .setContentTitle(sender)  // No message count here
                 .setContentText(messageBody)  // Latest message as preview
                 .setAutoCancel(true)
@@ -331,7 +332,8 @@ class NativeNotificationPlugin : Plugin() {
         
         // Build notification
         val notification = NotificationCompat.Builder(context, CHANNEL_ID_CALL)
-            .setSmallIcon(context.applicationInfo.icon)
+            .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+            .setColor(0xFF000000.toInt()) // Black background
             .setContentTitle("Incoming call")
             .setContentText("$caller is calling...")
             .setPriority(NotificationCompat.PRIORITY_MAX)
