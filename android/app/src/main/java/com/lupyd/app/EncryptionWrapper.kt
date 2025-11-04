@@ -7,6 +7,7 @@ import com.nimbusds.jwt.SignedJWT
 import firefly.Message
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -30,7 +31,9 @@ import org.signal.libsignal.protocol.state.PreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import kotlin.random.Random
 
-val httpClient = HttpClient(CIO)
+val httpClient = HttpClient(CIO) {
+    install(HttpCache)
+}
 
 class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Unit)? = null) {
 
@@ -52,7 +55,12 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         msgId: Long
     ): DMessage? {
         try {
+
+            Log.i(tag, "Decrypting message from ${from} to ${to}")
+
             val decrypted = decrypt(from, text, messageType)
+
+            Log.i(tag, "decrypted message from ${from} to ${to}")
             val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
             handleMessage(dmsg)
 
@@ -147,6 +155,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
         var conversationId = convoId
         if (conversationId == 0L) {
+            Log.i(tag, "Creating conversatoin because conversationId is 0")
             val convo = createConversation(to, token)
             processPreKeyBundle(convo.bundle!!, to)
 
@@ -211,10 +220,17 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         throw Exception("Unable to encrypt and send message")
     }
 
+    fun getUsernameFromToken(token: String): String? {
+        try {
+            return SignedJWT.parse(token).payload.toJSONObject().get("uname") as String?
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to get username from token ${e}")
+        }
+        return null
+    }
+
     fun processPreKeyBundle(bundle: Message.PreKeyBundle, owner: String) {
-
-
-        Log.i(tag, "Processing key bundle from ${owner} preKeyId: ${bundle.preKeyId}")
+        Log.i(tag, "Processing key bundle from ${owner} preKeyId: ${bundle.preKeyId}, sPreKeyId: ${bundle.signedPreKeyId}, kyberPreKeyId: ${bundle.kemPreKeyId}")
 
         if (bundle.equals(Message.PreKeyBundle.getDefaultInstance())) {
             throw Exception("PreKeyBundle is null")
@@ -392,20 +408,25 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
     }
 
     suspend fun handleMessage(msg: DMessage) {
+        Log.i(tag, "Handling message ${msg.msgId}")
         db.withTransaction {
-            val value = db.keyValueDao().get("lastSyncTimestampInMicroseconds")
+
+            val value = db.keyValueDao().get("lastUserMessageTimestampInMicroseconds")
+
+            Log.i(tag, "lastUserMessageTimestampInMicroseconds ${value}")
             if (value != null) {
                 val lastSyncTimestamp = value.toLong()
                 if (msg.msgId > lastSyncTimestamp) {
                     db.keyValueDao()
-                        .put(KeyValueEntry("lastSyncTimestampInMicroseconds", msg.msgId.toString()))
+                        .put(KeyValueEntry("lastUserMessageTimestampInMicroseconds", msg.msgId.toString()))
                 }
             } else {
                 db.keyValueDao()
-                    .put(KeyValueEntry("lastSyncTimestampInMicroseconds", msg.msgId.toString()))
+                    .put(KeyValueEntry("lastUserMessageTimestampInMicroseconds", msg.msgId.toString()))
             }
         }
 
+        Log.i(tag, "Saving message ${msg.toString()}")
         db.messagesDao().put(msg)
 
         if (onMessageCb != null) {
@@ -467,7 +488,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         Log.i(tag, "Bundles to delete ${bundlesToDelete.joinToString()}")
         if (bundlesToDelete.isNotEmpty()) {
             response = httpClient.delete("${Constants.FIREFLY_API_URL}/user/preKeyBundles") {
-                parameter("id", bundlesToDelete.joinToString(","))
+                parameter("ids", bundlesToDelete.joinToString(","))
                 headers {
                     append(HttpHeaders.Authorization, "Bearer ${token}")
                 }
@@ -495,7 +516,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             preKeyBundles.addBundles(proto)
         }
 
-        Log.i(tag, "Uploading new pre key bundles")
+        Log.i(tag, "Uploading new pre key bundles ${bundlesToUpload} ${maxBundlesToKeep} ${bundlesRemained}")
 
         response = httpClient.post("${Constants.FIREFLY_API_URL}/user/preKeyBundles") {
             headers {

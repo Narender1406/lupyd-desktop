@@ -1,5 +1,6 @@
 package com.lupyd.app
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.graphics.Bitmap
@@ -11,7 +12,8 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -19,16 +21,23 @@ import androidx.core.app.RemoteInput
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import firefly.Message
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import androidx.core.net.toUri
+import androidx.core.graphics.createBitmap
+import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID
+import com.lupyd.app.MyFirebaseMessagingService.Companion.GROUP_KEY_MESSAGES
+import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.jvm.javaio.toInputStream
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var db: AppDatabase
@@ -38,9 +47,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     private val scope = GlobalScope
     
     // SharedPreferences for persisting notification messages
-    private val notificationPrefs: SharedPreferences by lazy {
-        getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -136,13 +142,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = notification.title
         val body = notification.body
 
-        showBundledNotification(title ?: "Received a Notification", body ?: "")
+        showLocalNotification(title ?: "Received a Notification", body ?: "")
     }
+
+    private fun showLocalNotification(title: String, body: String) {}
 
     fun handleDecryptedMessage(msg: DMessage) {
 
+        Log.i(TAG, "Showing decrypted message notification ${msg}");
+
         val inner = Message.UserMessageInner.parseFrom(msg.text)
 
+        Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
         var body = ""
         var isCallMessage = false
 
@@ -154,10 +165,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             body = "Incoming call"
         }
 
+        val me = runBlocking {
+            encryptionWrapper.getUsernameFromToken(encryptionWrapper.getAccessToken())
+        }
+
         if (isCallMessage) {
             showCallNotification(msg.mfrom, msg.conversationId)
         } else {
-            showBundledNotification(msg.mfrom, body)
+            showUserBundledNotification(msg, me!!)
         }
     }
 
@@ -240,97 +255,60 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
      * This creates a circular bitmap with a colored background and the first letter centered
      * Plus adds the app icon as an overlay at the bottom right
      */
-    private fun createProfileBitmap(sender: String, size: Int): Bitmap {
-        // Create a bitmap with the specified size
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        
-        // Create paint for background circle
-        val paint = Paint().apply {
-            isAntiAlias = true
-            style = Paint.Style.FILL
-            color = 0xFF4CAF50.toInt() // Green color similar to WhatsApp
-        }
-        
-        // Draw background circle
-        val radius = size / 2f
-        canvas.drawCircle(radius, radius, radius, paint)
-        
-        // Draw the first letter
-        if (sender.isNotEmpty()) {
-            val firstLetter = sender.substring(0, 1).uppercase()
-            
-            val textPaint = Paint().apply {
-                isAntiAlias = true
-                color = 0xFFFFFFFF.toInt() // White text
-                textSize = size * 0.6f // Larger text
-                textAlign = Paint.Align.CENTER
-                typeface = Typeface.DEFAULT_BOLD
-            }
-            
-            // Measure text to center it
-            val textBounds = Rect()
-            textPaint.getTextBounds(firstLetter, 0, firstLetter.length, textBounds)
-            
-            // Draw centered text
-            val x = size / 2f
-            val y = (size / 2f) - (textBounds.exactCenterY())
-            
-            canvas.drawText(firstLetter, x, y, textPaint)
-        }
-        
-        return bitmap
-    }
-    
-    /**
-     * Show bundled notification - groups messages by sender
-     * Using 'body' (sender name) as the grouping key temporarily (will change to username later)
-     */
-    private fun showBundledNotification(sender: String, messageBody: String) {
+
+
+
+
+    private fun showUserBundledNotification(msg: DMessage, me: String) {
+
+        val other = if (msg.mfrom == me) msg.mto else msg.mfrom
         try {
             createNotificationChannel()
-            
+
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             if (notificationManager == null) {
                 Log.e(TAG, "Failed to show notification: notificationManager is null")
                 return
             }
-            
-            Log.d(TAG, "Showing bundled notification from: $sender")
-            
+
+            Log.d(TAG, "Showing bundled notification from: $other")
+
             // Add message to persistent storage
-            addMessageToHistory(sender, messageBody)
-            
+            addMessageToHistory(msg, me)
+
             // Get all messages from this sender
-            val messages = getMessagesFromSender(sender)
+            val messages =  runBlocking {
+                db.userMessageNotificationsDao().getFromUser(other, 6)
+            }
             val messageCount = messages.size
-            
-            Log.d(TAG, "Total messages from $sender: $messageCount")
-            
+
+            Log.d(TAG, "Total messages from $other: $messageCount")
+
             // Create main intent
-            val intent = Intent(this, MainActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            intent.putExtra("sender", sender)
-            
-            val pendingIntent = PendingIntent.getActivity(
-                this, sender.hashCode(), intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            
+
+            val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
+            val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+            val pendingIntent = PendingIntent.getActivity(this, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+
             // Create reply action
             val replyIntent = Intent(this, ReplyReceiver::class.java)
-            replyIntent.putExtra("sender", sender)
+            replyIntent.putExtra("sender", other)
+            replyIntent.putExtra("conversationId", msg.conversationId)
             val replyPendingIntent = PendingIntent.getBroadcast(
                 this,
-                sender.hashCode() + 1,
+                other.hashCode() + 1,
                 replyIntent,
                 PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            
+
             val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
-                .setLabel("Reply to $sender")
+                .setLabel("Reply to $other")
                 .build()
-            
+
             val replyAction = NotificationCompat.Action.Builder(
                 android.R.drawable.ic_menu_send,
                 "Reply",
@@ -339,50 +317,81 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .addRemoteInput(remoteInput)
                 .setAllowGeneratedReplies(true)
                 .build()
-            
+
+            // Mark as Read action
+            val markAsReadIntent = Intent(this, MarkAsReadReceiver::class.java).apply {
+                putExtra("sender", other)
+                putExtra("msgId", msg.msgId)
+            }
+
+            val markAsReadPendingIntent = PendingIntent.getBroadcast(
+                this, other.hashCode() + 2, markAsReadIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val markAsReadAction = NotificationCompat.Action.Builder(
+                android.R.drawable.ic_menu_view,
+                "Mark as Read",
+                markAsReadPendingIntent
+            ).build()
+
             // Build notification with InboxStyle to show ALL messages
             val inboxStyle = NotificationCompat.InboxStyle()
-            
+
             // Add ALL messages to inbox style when expanded
             messages.forEach { msg ->
-                inboxStyle.addLine(msg)
+                val text = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+                inboxStyle.addLine(text)
             }
-            
+
+            val messageBody = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+
             // No summary text - just show sender name
-            inboxStyle.setBigContentTitle(sender)
-            
+            inboxStyle.setBigContentTitle(other)
+
             // Check for URLs in the latest message
             var deepLinkAction: NotificationCompat.Action? = null
             val urlPattern = "(https?://[^\\s]+)".toRegex()
             val urlMatch = urlPattern.find(messageBody)
-            
+
             if (urlMatch != null) {
                 val url = urlMatch.value
                 Log.d(TAG, "URL detected in message: $url")
-                
+
                 // Create deep link intent
                 val deepLinkIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
                 val deepLinkPendingIntent = PendingIntent.getActivity(
-                    this, sender.hashCode() + 3, deepLinkIntent,
+                    this, other.hashCode() + 3, deepLinkIntent,
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
-                
+
                 deepLinkAction = NotificationCompat.Action.Builder(
                     android.R.drawable.ic_menu_share,
                     "Open Link",
                     deepLinkPendingIntent
                 ).build()
             }
-            
+
             // Create large profile icon with letter
             val profileIconSize = resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
-            val profileBitmap = createProfileBitmap(sender, profileIconSize)
-            
+            val profileBitmap = createProfileBitmap(other, profileIconSize)
+
+//            GlobalScope.launch {
+//                val response = httpClient.get("${Constants.CDN_URL}/users/${other}")
+//                if (!response.status.isSuccess()) {
+//                    return@launch
+//                }
+//
+//                val bitmap = BitmapFactory.decodeStream(response.bodyAsChannel().toInputStream())
+//
+//                // TODO: notify notification with loaded image
+//            }
+
             val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(resources.getIdentifier("flower_notification_icon", "drawable", packageName))
                 .setLargeIcon(profileBitmap) // Set the profile picture with letter
                 .setColor(0xFF000000.toInt()) // Black background
-                .setContentTitle(sender)  // Just the sender name (no prefix)
+                .setContentTitle(other)  // Just the sender name (no prefix)
                 .setContentText(messageBody)  // Latest message preview
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
@@ -391,27 +400,37 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
                 .setStyle(inboxStyle)  // Shows ALL messages when expanded
                 .addAction(replyAction)
+                .addAction(markAsReadAction)
                 .setGroup(GROUP_KEY_MESSAGES)
                 .setOnlyAlertOnce(false)  // Alert for each new message
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Ensure content is visible
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setShowWhen(true)
-            
+
             // Add deep link action if URL detected
             if (deepLinkAction != null) {
                 notificationBuilder.addAction(deepLinkAction)
             }
-            
+
             // Use sender's hashCode as notification ID to update the same notification
-            val notificationId = sender.hashCode()
+            val notificationId = other.hashCode()
             Log.d(TAG, "Showing bundled notification with ID: $notificationId")
             notificationManager.notify(notificationId, notificationBuilder.build())
-            Log.d(TAG, "Bundled notification shown for $sender with $messageCount messages")
+            Log.d(TAG, "Bundled notification shown for $other with $messageCount messages")
         } catch (e: Exception) {
             Log.e(TAG, "Error showing bundled notification", e)
         }
     }
-    
+
+
+    /**
+     * Show bundled notification - groups messages by sender
+     * Using 'body' (sender name) as the grouping key temporarily (will change to username later)
+     */
+//    private fun showBundledNotification(sender: String, messageBody: String) {
+//
+//    }
+//
     /**
      * Show call notification with full-screen intent
      */
@@ -494,53 +513,27 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     /**
      * Add message to persistent history using SharedPreferences
      */
-    private fun addMessageToHistory(sender: String, message: String) {
+    private fun addMessageToHistory(msg: DMessage, me: String) {
         try {
-            val messagesJson = notificationPrefs.getString(sender, "[]")
-            val messagesArray = JSONArray(messagesJson)
-            
-            // Add new message with timestamp
-            val messageObj = JSONObject()
-            messageObj.put("text", message)
-            messageObj.put("timestamp", System.currentTimeMillis())
-            messagesArray.put(messageObj)
-            
-            // Save back to preferences
-            notificationPrefs.edit().putString(sender, messagesArray.toString()).apply()
-            
-            Log.d(TAG, "Message added to history for $sender. Total: ${messagesArray.length()}")
+            runBlocking {
+                db.userMessageNotificationsDao().put(
+                    DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, msg.text, msg.mfrom == me)
+                )
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error adding message to history", e)
         }
     }
-    
-    /**
-     * Get all messages from a specific sender
-     */
-    private fun getMessagesFromSender(sender: String): List<String> {
-        try {
-            val messagesJson = notificationPrefs.getString(sender, "[]")
-            val messagesArray = JSONArray(messagesJson)
-            val messagesList = mutableListOf<String>()
-            
-            for (i in 0 until messagesArray.length()) {
-                val messageObj = messagesArray.getJSONObject(i)
-                messagesList.add(messageObj.getString("text"))
-            }
-            
-            return messagesList
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting messages from sender", e)
-            return emptyList()
-        }
-    }
+
     
     /**
      * Clear message history for a sender
      */
     private fun clearMessageHistory(sender: String) {
         try {
-            notificationPrefs.edit().remove(sender).apply()
+            runBlocking {
+                db.userMessageNotificationsDao().deleteAll()
+            }
             Log.d(TAG, "Message history cleared for $sender")
         } catch (e: Exception) {
             Log.e(TAG, "Error clearing message history", e)
@@ -595,6 +588,177 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 }
 
+fun createProfileBitmap(sender: String, size: Int): Bitmap {
+    // Create a bitmap with the specified size
+    val bitmap = createBitmap(size, size)
+    val canvas = Canvas(bitmap)
+
+    // Create paint for background circle
+    val paint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.FILL
+        color = 0xFF4CAF50.toInt() // Green color similar to WhatsApp
+    }
+
+    // Draw background circle
+    val radius = size / 2f
+    canvas.drawCircle(radius, radius, radius, paint)
+
+    // Draw the first letter
+    if (sender.isNotEmpty()) {
+        val firstLetter = sender.substring(0, 1).uppercase()
+
+        val textPaint = Paint().apply {
+            isAntiAlias = true
+            color = 0xFFFFFFFF.toInt() // White text
+            textSize = size * 0.6f // Larger text
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+        }
+
+        // Measure text to center it
+        val textBounds = Rect()
+        textPaint.getTextBounds(firstLetter, 0, firstLetter.length, textBounds)
+
+        // Draw centered text
+        val x = size / 2f
+        val y = (size / 2f) - (textBounds.exactCenterY())
+
+        canvas.drawText(firstLetter, x, y, textPaint)
+    }
+
+    return bitmap
+}
+
+suspend fun buildUserNotification(ctx: Context, other: String): Notification {
+    val profileIconSize = ctx.resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
+
+    val profileBitmap = createProfileBitmap(other, profileIconSize)
+
+    val db = getDatabase(ctx)
+    val messages =
+        db.userMessageNotificationsDao().getFromUser(other, 6)
+
+    val messageCount = messages.size
+
+    val lastMessage = messages.last()
+
+    Log.d(MyFirebaseMessagingService.Companion.TAG, "Total messages from $other: $messageCount")
+
+    // Create main intent
+
+    val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
+    val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+
+    val pendingIntent = PendingIntent.getActivity(ctx, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+
+    // Create reply action
+    val replyIntent = Intent(ctx, ReplyReceiver::class.java)
+    replyIntent.putExtra("sender", other)
+    replyIntent.putExtra("conversationId", lastMessage.conversationId)
+    val replyPendingIntent = PendingIntent.getBroadcast(
+        ctx,
+        other.hashCode() + 1,
+        replyIntent,
+        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
+
+    val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+        .setLabel("Reply to $other")
+        .build()
+
+    val replyAction = NotificationCompat.Action.Builder(
+        android.R.drawable.ic_menu_send,
+        "Reply",
+        replyPendingIntent
+    )
+        .addRemoteInput(remoteInput)
+        .setAllowGeneratedReplies(true)
+        .build()
+
+    // Mark as Read action
+    val markAsReadIntent = Intent(ctx, MarkAsReadReceiver::class.java).apply {
+        putExtra("sender", other)
+        putExtra("msgId", lastMessage.msgId)
+    }
+
+    val markAsReadPendingIntent = PendingIntent.getBroadcast(
+        ctx, other.hashCode() + 2, markAsReadIntent,
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+    )
+
+    val markAsReadAction = NotificationCompat.Action.Builder(
+        android.R.drawable.ic_menu_view,
+        "Mark as Read",
+        markAsReadPendingIntent
+    ).build()
+
+    // Build notification with InboxStyle to show ALL messages
+    val inboxStyle = NotificationCompat.InboxStyle()
+
+    // Add ALL messages to inbox style when expanded
+    messages.forEach { msg ->
+        val text = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+        inboxStyle.addLine(text)
+    }
+
+    val messageBody = Message.UserMessageInner.parseFrom(lastMessage.text).messagePayload.text
+
+    // No summary text - just show sender name
+    inboxStyle.setBigContentTitle(other)
+
+    // Check for URLs in the latest message
+    var deepLinkAction: NotificationCompat.Action? = null
+    val urlPattern = "(https?://[^\\s]+)".toRegex()
+    val urlMatch = urlPattern.find(messageBody)
+
+    if (urlMatch != null) {
+        val url = urlMatch.value
+        Log.d(MyFirebaseMessagingService.Companion.TAG, "URL detected in message: $url")
+
+        // Create deep link intent
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, url.toUri())
+        val deepLinkPendingIntent = PendingIntent.getActivity(
+            ctx, other.hashCode() + 3, deepLinkIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        deepLinkAction = NotificationCompat.Action.Builder(
+            android.R.drawable.ic_menu_share,
+            "Open Link",
+            deepLinkPendingIntent
+        ).build()
+    }
+
+
+
+    val notificationBuilder = NotificationCompat.Builder(ctx, CHANNEL_ID)
+        .setSmallIcon(ctx.resources.getIdentifier("flower_notification_icon", "drawable", ctx.packageName))
+        .setLargeIcon(profileBitmap) // Set the profile picture with letter
+        .setColor(0xFF000000.toInt()) // Black background
+        .setContentTitle(other)  // Just the sender name (no prefix)
+        .setContentText(messageBody)  // Latest message preview
+        .setAutoCancel(true)
+        .setContentIntent(pendingIntent)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setVibrate(longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400))
+        .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
+        .setStyle(inboxStyle)  // Shows ALL messages when expanded
+        .addAction(replyAction)
+        .addAction(markAsReadAction)
+        .setGroup(GROUP_KEY_MESSAGES)
+        .setOnlyAlertOnce(false)  // Alert for each new message
+        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Ensure content is visible
+        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+        .setShowWhen(true)
+
+
+    return notificationBuilder.build()
+}
+
 /**
  * BroadcastReceiver to handle inline reply actions
  */
@@ -604,52 +768,58 @@ class ReplyReceiver : BroadcastReceiver() {
         
         try {
             val sender = intent.getStringExtra("sender") ?: return
+            val conversationId = intent.getLongExtra("conversationId", 0L)
+
             val remoteInput = RemoteInput.getResultsFromIntent(intent)
-            val replyText = remoteInput?.getCharSequence(KEY_TEXT_REPLY)
-            
+            val replyText = remoteInput?.getCharSequence(KEY_TEXT_REPLY)?.toString()
+
+            val db = getDatabase(context)
+            val encryptionWrapper = EncryptionWrapper(db)
+
             if (replyText != null) {
                 Log.d(TAG, "Reply received for $sender: $replyText")
-                
-                // TODO: Send the reply message through the encryption system
-                // This will require access to the database and encryption wrapper
-                // For now, we'll just log it
-                
-                // Add reply to message history using shared preferences directly
-                val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
-                try {
-                    val messagesJson = prefs.getString(sender, "[]")
-                    val messagesArray = JSONArray(messagesJson)
-                    
-                    val messageObj = JSONObject().apply {
-                        put("text", "You: $replyText")
-                        put("timestamp", System.currentTimeMillis())
+
+                val failedToSend = runBlocking{
+                    try {
+                        Log.i(TAG, "Getting access token ${sender} ${conversationId}")
+                        val token = encryptionWrapper.getAccessToken()
+                        Log.i(TAG, "Encrypting reply for ${sender} ${conversationId}")
+                        val payload = Message.UserMessageInner.newBuilder().setMessagePayload(
+                            Message.MessagePayload.newBuilder().setText(replyText).build()
+                        ).build().toByteArray()
+                        val msg = encryptionWrapper.encryptAndSend(sender, conversationId, payload, token)
+
+                        db.userMessageNotificationsDao().put(DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, msg.text, true))
+
+                        Log.i(TAG, "Encrypted reply sent for ${sender} ${msg}")
+
+                        return@runBlocking false
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to send reply", e)
+                        return@runBlocking true
                     }
-                    messagesArray.put(messageObj)
-                    
-                    prefs.edit().putString(sender, messagesArray.toString()).apply()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error adding reply to history", e)
                 }
-                
+
+                if (failedToSend) {
+                    return
+                }
+
+                runBlocking {
+                    val notification = buildUserNotification(context, sender)
+
+                }
                 // Update notification to show reply but keep it visible with reply action
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                
-                // Get updated messages
-                val messages = try {
-                    val messagesJson = prefs.getString(sender, "[]")
-                    val messagesArray = JSONArray(messagesJson)
-                    (0 until messagesArray.length()).map {
-                        messagesArray.getJSONObject(it).getString("text")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error getting messages", e)
-                    emptyList<String>()
+
+                val messages = runBlocking {
+                    db.userMessageNotificationsDao().getFromUser(sender, 6)
                 }
                 
                 // Create updated inbox style
                 val inboxStyle = NotificationCompat.InboxStyle()
                 messages.forEach { msg ->
-                    inboxStyle.addLine(msg)
+                    val text = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+                    inboxStyle.addLine(text)
                 }
                 inboxStyle.setBigContentTitle(sender)
                 
@@ -692,7 +862,7 @@ class ReplyReceiver : BroadcastReceiver() {
                     .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
                     .setColor(0xFF000000.toInt()) // Black background
                     .setContentTitle(sender)
-                    .setContentText("You: $replyText")
+                    .setContentText(replyText)
                     .setAutoCancel(false) // Keep notification visible
                     .setContentIntent(contentPendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

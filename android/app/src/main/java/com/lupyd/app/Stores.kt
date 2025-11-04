@@ -3,11 +3,16 @@ package com.lupyd.app
 
 import android.content.Context
 import android.util.Log
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import org.signal.libsignal.protocol.SignalProtocolAddress
 
 
 
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.runBlocking
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
@@ -21,6 +26,8 @@ import org.signal.libsignal.protocol.state.SessionRecord
 import org.signal.libsignal.protocol.state.SessionStore
 import org.signal.libsignal.protocol.state.SignedPreKeyRecord
 import org.signal.libsignal.protocol.state.SignedPreKeyStore
+
+val TAG = "lupyd-store"
 
 @Entity(tableName = "pre_keys")
 class PreKeyEntry (
@@ -181,7 +188,9 @@ interface LastSeenTimestampDao {
     SessionEntry::class,
     IdentityEntry::class,
     TrustedKeyEntry::class,
-    LastSeenTimestamp::class], version = 2)
+    LastSeenTimestamp::class,
+    DMessageNotification::class,
+                     ], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun preKeysDao(): PreKeysDao
     abstract fun signedPreKeysDao(): SignedPreKeysDao
@@ -191,13 +200,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun trustedKeysDao(): TrustedKeysDao
     abstract fun keyValueDao(): KeyValueDao
     abstract fun messagesDao(): DMessagesDao
-
     abstract fun lastSeenTimestampDao(): LastSeenTimestampDao
-}
 
+    abstract fun userMessageNotificationsDao(): UserMessageNotificationsDao
+}
 
 fun getDatabase(context: Context): AppDatabase {
     val db = Room.databaseBuilder(context, AppDatabase::class.java, "app.db")
+        .fallbackToDestructiveMigration(true)
         .build()
     return db
 }
@@ -209,6 +219,7 @@ public class SqlPreKeyStore (val db: AppDatabase) : PreKeyStore {
         val value = runBlocking {
             db.preKeysDao().get(preKeyId)
         }
+        Log.d(TAG, "loadPreKey $preKeyId ${value != null}")
         if (value == null) {
             return null
         }
@@ -219,6 +230,7 @@ public class SqlPreKeyStore (val db: AppDatabase) : PreKeyStore {
         preKeyId: Int,
         record: PreKeyRecord?
     ) {
+        Log.d(TAG, "storePreKey $preKeyId")
         if (record == null) {
             return
         }
@@ -228,10 +240,13 @@ public class SqlPreKeyStore (val db: AppDatabase) : PreKeyStore {
     }
 
     override fun containsPreKey(preKeyId: Int): Boolean {
-        return loadPreKey(preKeyId) != null
+        val result = loadPreKey(preKeyId) != null
+        Log.d(TAG, "containsPreKey $preKeyId $result")
+        return result
     }
 
     override fun removePreKey(preKeyId: Int) {
+        Log.d(TAG, "removePreKey $preKeyId")
         runBlocking {
             db.preKeysDao().delete(preKeyId)
         }
@@ -246,6 +261,7 @@ public class SqlSessionStore(val db: AppDatabase) : SessionStore {
         val value = runBlocking {
             db.sessionsDao().get(address.name, address.deviceId)
         }
+        Log.d(TAG, "loadSession ${address.name}:${address.deviceId} ${value != null}")
         if (value == null) {
             return null
         }
@@ -256,16 +272,20 @@ public class SqlSessionStore(val db: AppDatabase) : SessionStore {
         if (addresses == null) {
             return emptyList()
         }
-        return addresses.mapNotNull { loadSession(it) }
+        val result = addresses.mapNotNull { loadSession(it) }
+        Log.d(TAG, "loadExistingSessions ${addresses.size} $result")
+        return result
     }
 
     override fun getSubDeviceSessions(name: String?): List<Int> {
         if (name == null) {
             return emptyList()
         }
-        return runBlocking {
+        val result = runBlocking {
             db.sessionsDao().getSubDeviceSessions(name)
         }
+        Log.d(TAG, "getSubDeviceSessions $name $result")
+        return result
     }
 
     override fun storeSession(
@@ -275,19 +295,23 @@ public class SqlSessionStore(val db: AppDatabase) : SessionStore {
         if (address == null || record == null) {
             return
         }
+        Log.d(TAG, "storeSession ${address.name}:${address.deviceId}")
         runBlocking {
             db.sessionsDao().put(SessionEntry(address.name, address.deviceId, record.serialize()))
         }
     }
 
     override fun containsSession(address: SignalProtocolAddress?): Boolean {
-        return loadSession(address) != null
+        val result = loadSession(address) != null
+        Log.d(TAG, "containsSession ${address?.name}:${address?.deviceId} $result")
+        return result
     }
 
     override fun deleteSession(address: SignalProtocolAddress?) {
         if (address == null) {
             return
         }
+        Log.d(TAG, "deleteSession ${address.name}:${address.deviceId}")
         runBlocking {
             db.sessionsDao().delete(address.name, address.deviceId)
         }
@@ -297,6 +321,7 @@ public class SqlSessionStore(val db: AppDatabase) : SessionStore {
         if (name == null) {
             return
         }
+        Log.d(TAG, "deleteAllSessions $name")
         runBlocking {
             db.sessionsDao().deleteAll(name)
         }
@@ -310,7 +335,6 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
                 val entry = db.identitiesDao().get()
                 if (entry == null) {
                     val newKey = IdentityKeyPair.generate()
-                    Log.i("lupyd-ec", "Created a new IdentityKeyPair");
                     db.identitiesDao().put(IdentityEntry(0, newKey.serialize(), 1));
                     newKey
                 } else {
@@ -318,7 +342,7 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
                 }
             }
         }
-
+        Log.d(TAG, "getIdentityKeyPair null ${key != null}")
         return key
     }
 
@@ -326,7 +350,9 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
         val value = runBlocking {
             db.identitiesDao().get()
         }
-        return value?.registrationId ?: 1
+        val result = value?.registrationId ?: 1
+        Log.d(TAG, "getLocalRegistrationId null $result")
+        return result
     }
 
     override fun saveIdentity(
@@ -336,6 +362,7 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
         if (address == null || identityKey == null) {
             return null
         }
+        Log.d(TAG, "saveIdentity ${address.name}:${address.deviceId}")
         val existing = getIdentity(address)
         runBlocking {
             db.trustedKeysDao().put(TrustedKeyEntry(address.name, address.deviceId, identityKey.serialize()))
@@ -351,13 +378,11 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
         identityKey: IdentityKey?,
         direction: IdentityKeyStore.Direction?
     ): Boolean {
-        if (address == null || identityKey == null) {
-            return false
-        }
 //        val trusted = getIdentity(address)
-//        return trusted == null || trusted == identityKey
-
-        return true
+//        val result = trusted == null || trusted == identityKey
+        val result = true
+        Log.d(TAG, "isTrustedIdentity ${address?.name}:${address?.deviceId} $result")
+        return result
     }
 
     override fun getIdentity(address: SignalProtocolAddress?): IdentityKey? {
@@ -366,7 +391,11 @@ public class SqlIdentityKeyStore(val db: AppDatabase): IdentityKeyStore {
         }
         val value = runBlocking {
             db.trustedKeysDao().get(address.name, address.deviceId)
-        } ?: return null
+        }
+        Log.d(TAG, "getIdentity ${address.name}:${address.deviceId} ${value != null}")
+        if (value == null) {
+            return null
+        }
         return IdentityKey(value, 0)
     }
 
@@ -377,6 +406,7 @@ public class SqlSignedPreKeyStore(val db: AppDatabase): SignedPreKeyStore {
         val value = runBlocking {
             db.signedPreKeysDao().get(signedPreKeyId)
         }
+        Log.d(TAG, "loadSignedPreKey $signedPreKeyId ${value != null}")
         if (value == null) {
             return null
         }
@@ -387,6 +417,7 @@ public class SqlSignedPreKeyStore(val db: AppDatabase): SignedPreKeyStore {
         val values = runBlocking {
             db.signedPreKeysDao().getAll()
         }
+        Log.d(TAG, "loadSignedPreKeys null ${values.size}")
         return values.map { SignedPreKeyRecord(it) }
     }
 
@@ -397,16 +428,20 @@ public class SqlSignedPreKeyStore(val db: AppDatabase): SignedPreKeyStore {
         if (record == null) {
             return
         }
+        Log.d(TAG, "storeSignedPreKey $signedPreKeyId")
         runBlocking {
             db.signedPreKeysDao().put(SignedPreKeyEntry(signedPreKeyId, record.serialize()))
         }
     }
 
     override fun containsSignedPreKey(signedPreKeyId: Int): Boolean {
-        return loadSignedPreKey(signedPreKeyId) != null
+        val result = loadSignedPreKey(signedPreKeyId) != null
+        Log.d(TAG, "containsSignedPreKey $signedPreKeyId $result")
+        return result
     }
 
     override fun removeSignedPreKey(signedPreKeyId: Int) {
+        Log.d(TAG, "removeSignedPreKey $signedPreKeyId")
         runBlocking {
             db.signedPreKeysDao().delete(signedPreKeyId)
         }
@@ -419,6 +454,7 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
         val value = runBlocking {
             db.kyberPreKeysDao().get(kyberPreKeyId)
         }
+        Log.d(TAG, "loadKyberPreKey $kyberPreKeyId ${value != null}")
         if (value == null) {
             return null
         }
@@ -429,6 +465,7 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
         val values = runBlocking {
             db.kyberPreKeysDao().getAll()
         }
+        Log.d(TAG, "loadKyberPreKeys null ${values.size}")
         return values.map { KyberPreKeyRecord(it) }
     }
 
@@ -439,13 +476,16 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
         if (record == null) {
             return
         }
+        Log.d(TAG, "storeKyberPreKey $kyberPreKeyId")
         runBlocking {
             db.kyberPreKeysDao().put(KyberPreKeyEntry(kyberPreKeyId, record.serialize()))
         }
     }
 
     override fun containsKyberPreKey(kyberPreKeyId: Int): Boolean {
-        return loadKyberPreKey(kyberPreKeyId) != null
+        val result = loadKyberPreKey(kyberPreKeyId) != null
+        Log.d(TAG, "containsKyberPreKey $kyberPreKeyId $result")
+        return result
     }
 
     override fun markKyberPreKeyUsed(
@@ -453,6 +493,7 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
         signedPreKeyId: Int,
         baseKey: ECPublicKey?
     ) {
+        Log.d(TAG, "markKyberPreKeyUsed $kyberPreKeyId")
 //        super.markKyberPreKeyUsed(kyberPreKeyId, signedPreKeyId, baseKey)
     }
 
@@ -460,18 +501,22 @@ public class SqlKyberPreKeyStore(val db: AppDatabase): KyberPreKeyStore {
 
 class SqlKeyValueStore(private val db: AppDatabase) {
     fun put(key: String, value: String) {
+        Log.d(TAG, "put $key")
         runBlocking {
             db.keyValueDao().put(KeyValueEntry(key, value))
         }
     }
 
     fun get(key: String): String? {
-        return runBlocking {
+        val value = runBlocking {
             db.keyValueDao().get(key)
         }
+        Log.d(TAG, "get $key ${value != null}")
+        return value
     }
 
     fun delete(key: String) {
+        Log.d(TAG, "delete $key")
         runBlocking {
             db.keyValueDao().delete(key)
         }

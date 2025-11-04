@@ -13,7 +13,11 @@ class DMessage(
     val mfrom: String,
     val mto: String,
     val text: ByteArray
-)
+) {
+    override fun toString(): String {
+        return "DMessage(msgId=$msgId, conversationId=$conversationId, mfrom='$mfrom', mto='$mto', text=${text})"
+    }
+}
 
 
 @Dao
