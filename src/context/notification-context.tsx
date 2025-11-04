@@ -5,8 +5,6 @@ import { Capacitor } from '@capacitor/core'
 import NativeNotification from '../plugins/native-notification'
 
 interface NotificationContextType {
-  pushToken: string | null
-  initializeNotifications: () => Promise<void>
   showBundledNotification: (sender: string, message: string) => Promise<void>
   showCallNotification: (caller: string, conversationId: number) => Promise<void>
 }
@@ -14,39 +12,38 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [pushToken, setPushToken] = useState<string | null>(null)
 
-  useEffect(() => {
-    initializeNotifications()
-  }, [])
+  // useEffect(() => {
+  //   initializeNotifications()
+  // }, [])
 
-  const initializeNotifications = async () => {
-    try {
-      console.log('=== INITIALIZING NATIVE NOTIFICATIONS ===')
-      console.log('Platform:', Capacitor.getPlatform())
+  // const initializeNotifications = async () => {
+  //   try {
+  //     console.log('=== INITIALIZING NATIVE NOTIFICATIONS ===')
+  //     console.log('Platform:', Capacitor.getPlatform())
       
-      if (!Capacitor.isNativePlatform()) {
-        console.log('Not running on native platform - notifications disabled')
-        return
-      }
+  //     if (!Capacitor.isNativePlatform()) {
+  //       console.log('Not running on native platform - notifications disabled')
+  //       return
+  //     }
 
-      console.log('Initializing FCM via native plugin...')
+  //     console.log('Initializing FCM via native plugin...')
       
-      // Initialize native plugin and get FCM token
-      const result = await NativeNotification.initialize()
+  //     // Initialize native plugin and get FCM token
+  //     const result = await NativeNotification.initialize()
       
-      if (result.success && result.token) {
-        console.log('✓ FCM Token received:', result.token)
-        setPushToken(result.token)
-      } else {
-        console.error('✗ Failed to initialize FCM')
-      }
+  //     if (result.success && result.token) {
+  //       console.log('✓ FCM Token received:', result.token)
+  //       setPushToken(result.token)
+  //     } else {
+  //       console.error('✗ Failed to initialize FCM')
+  //     }
       
-      console.log('=== NATIVE NOTIFICATION INITIALIZATION COMPLETE ===')
-    } catch (error) {
-      console.error('✗ Error initializing native notifications:', error)
-    }
-  }
+  //     console.log('=== NATIVE NOTIFICATION INITIALIZATION COMPLETE ===')
+  //   } catch (error) {
+  //     console.error('✗ Error initializing native notifications:', error)
+  //   }
+  // }
 
   const showBundledNotification = async (sender: string, message: string) => {
     try {
@@ -83,8 +80,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   return (
     <NotificationContext.Provider
       value={{
-        pushToken,
-        initializeNotifications,
         showBundledNotification,
         showCallNotification,
       }}

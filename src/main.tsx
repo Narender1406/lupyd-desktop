@@ -50,27 +50,30 @@ configureStatusBar();
 
 import { ApiServiceProvider } from "@/context/apiService"
 import { BrowserRouter } from 'react-router-dom'
+import { NotificationProvider } from './context/notification-context.tsx'
 
 
 createRoot(document.getElementById('root')!).render(
 
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
     <DialogProvider>
-      <LupydAuth0Provider>
-        <BrowserRouter>
-          <AuthProvider>
-            <ApiServiceProvider>
-              <UserImageProvider>
-                <UserDataProvider>
-                  <div className="flex min-h-screen flex-col">
-                    <App />
-                  </div>
-                </UserDataProvider>
-              </UserImageProvider>
-            </ApiServiceProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </LupydAuth0Provider>
+      <NotificationProvider>
+        <LupydAuth0Provider>
+          <BrowserRouter>
+            <AuthProvider>
+              <ApiServiceProvider>
+                <UserImageProvider>
+                  <UserDataProvider>
+                    <div className="flex min-h-screen flex-col">
+                      <App />
+                    </div>
+                  </UserDataProvider>
+                </UserImageProvider>
+              </ApiServiceProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </LupydAuth0Provider>
+      </NotificationProvider>
     </DialogProvider>
   </ThemeProvider>
 

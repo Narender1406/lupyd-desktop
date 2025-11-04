@@ -1,6 +1,6 @@
 import './App.css'
 import { lazy, Suspense, useEffect } from 'react'
-import {  Route, Routes } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
@@ -90,57 +90,77 @@ function App() {
   }, [handleRedirectCallback]);
 
 
+  const navigate = useNavigate()
+  useEffect(() => {
+
+    (async () => {
+      const url = await CapApp.getLaunchUrl()
+      if (!url) {
+        return
+      }
+
+      if (url.url.startsWith("lupyd://m.lupyd.com")) {
+        const link = new URL(url.url)
+        navigate({
+          pathname: link.pathname,
+          search: link.search
+        })
+      }
+    })()
+  }, [])
+
+
 
 
   return (
-        <Suspense fallback={<LoadingPage />}>
-          <Routes>
-            <Route path="/about/" element={<LandingPage />} />
-            <Route path="/about/community" element={<CommunityPage />} />
-            <Route path="/about/features" element={<FeaturesPage />} />
-            <Route path="/about/experience" element={<ExperiencePage />} />
-            <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
-            <Route path="/about/privacy" element={<PrivacyPage />} />
-            <Route path="/signin" element={<AssignUsernamePage />} />
-            {/*        <Route path="/signin" element={<SignupPage />} />
+    <Suspense fallback={<LoadingPage />}>
+      <Routes>
+        <Route path="/about/" element={<LandingPage />} />
+        <Route path="/about/community" element={<CommunityPage />} />
+        <Route path="/about/features" element={<FeaturesPage />} />
+        <Route path="/about/experience" element={<ExperiencePage />} />
+        <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
+        <Route path="/about/privacy" element={<PrivacyPage />} />
+        <Route path="/signin" element={<AssignUsernamePage />} />
+        {/*        <Route path="/signin" element={<SignupPage />} />
 */}
-            <Route path="/" element={<DashboardPage />} />
-            {/*        <Route path="/action" element={<ActionHandler />} />
+        <Route path="/" element={<DashboardPage />} />
+        {/*        <Route path="/action" element={<ActionHandler />} />
 */}
 
-            <Route path="/saved-posts" element={<SavedPostsPage />} />
-            <Route path="/create-post" element={<CreatePostPage />} />
-            <Route path="/connections" element={<ConnectionsPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/activity" element={<ActivityPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/groups/create" element={<CreateGroupPage />} />
-            <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
-            <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
-            <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
-            <Route path="/subscription" element={<SubscriptionPage />} />
-            <Route path="/subscription/checkout" element={<CheckoutPage />} />
-            <Route path="/discover" element={<DiscoverPage />} />
-            <Route path="/post/:postId" element={<PostPage />} />
-            <Route path="/user/:username" element={<ProfilePage />} />
-            <Route path="/notification-test" element={<NotificationTestPage />} />
-            <Route element={<FireflyProvider />}>
-              <Route path="/messages" element={<MessagesPage />} />
-              <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
-            <Route path="/notification" element={<NotificationsPage />} />
-            <Route path="/terms-of-use" element={<TermsOfUse />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/business" element={<OverviewPage />} />
-            <Route path="/business/clients-page" element={<ClientsPage />} />
-            <Route path="/business/services-page" element={<ServicesPage />} />
-            <Route path="/business/add-client-page" element={<AddClientPage />} />
-            <Route path="/business/edit-client-page" element={<EditClientPage />} />
-            <Route path="/business/api-key-page" element={<ApiKeyPage />} />
-            <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
-            <Route path="/business/add-service-page" element={<AddServicePage />} />
-          </Routes>
-        </Suspense>
+        <Route path="/saved-posts" element={<SavedPostsPage />} />
+        <Route path="/create-post" element={<CreatePostPage />} />
+        <Route path="/connections" element={<ConnectionsPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/create" element={<CreateGroupPage />} />
+        <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
+        <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
+        <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
+        <Route path="/subscription/checkout" element={<CheckoutPage />} />
+        <Route path="/discover" element={<DiscoverPage />} />
+        <Route path="/post/:postId" element={<PostPage />} />
+        <Route path="/user/:username" element={<ProfilePage />} />
+        <Route path="/notification-test" element={<NotificationTestPage />} />
+        <Route element={<FireflyProvider />}>
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
+        <Route path="/notification" element={<NotificationsPage />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/business" element={<OverviewPage />} />
+        <Route path="/business/clients-page" element={<ClientsPage />} />
+        <Route path="/business/services-page" element={<ServicesPage />} />
+        <Route path="/business/add-client-page" element={<AddClientPage />} />
+        <Route path="/business/edit-client-page" element={<EditClientPage />} />
+        <Route path="/business/api-key-page" element={<ApiKeyPage />} />
+        <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
+        <Route path="/business/add-service-page" element={<AddServicePage />} />
+      </Routes>
+    </Suspense>
   )
 }
 

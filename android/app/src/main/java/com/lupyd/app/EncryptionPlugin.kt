@@ -272,7 +272,7 @@ class EncryptionPlugin : Plugin() {
                     call.resolve()
                 } else {
                     val ts = db.lastSeenTimestampDao().get(username)
-                        call.resolve(JSObject().put("ts", ts))
+                    call.resolve(JSObject().put("ts", ts))
                 }
             } catch (e: Exception) {
                 call.reject(e.toString())
