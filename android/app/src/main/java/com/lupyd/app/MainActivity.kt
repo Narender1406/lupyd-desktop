@@ -10,8 +10,10 @@ class MainActivity : BridgeActivity() {
         System.setProperty("kotlinx.coroutines.debug", "on")
 
         registerPlugin(EncryptionPlugin::class.java)
+        registerPlugin(NativeNotificationPlugin::class.java)
 
         Log.i("lupyd-cap", "Encryption Plugin registered")
+        Log.i("lupyd-cap", "NativeNotification Plugin registered")
 
         super.onCreate(savedInstanceState)
     }
