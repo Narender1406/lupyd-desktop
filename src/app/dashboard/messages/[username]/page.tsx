@@ -40,7 +40,7 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
-import { encryptBlob } from "@/lib/utils";
+import { encryptBlobV1 } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -196,7 +196,7 @@ export default function UserMessagePage() {
 
       const encryptedFiles = FireflyProtos.EncryptedFiles.create()
       for (const file of files) {
-        const { reader, key } = encryptBlob(file)
+        const { reader, key } = encryptBlobV1(file)
         const objectKey = await api.uploadFile(file.name, file.type, reader)
 
         encryptedFiles.files.push(FireflyProtos.EncryptedFile.create({

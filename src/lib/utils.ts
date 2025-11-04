@@ -59,7 +59,7 @@ export function asyncGenToReadableStream(gen: AsyncGenerator<Uint8Array>) {
   });
 }
 
-export function encryptBlob(blob: Blob) {
+export function encryptBlobV1(blob: Blob) {
   const keyBytes = crypto.getRandomValues(new Uint8Array(32));
   const counter = crypto.getRandomValues(new Uint8Array(16));
 
@@ -68,15 +68,20 @@ export function encryptBlob(blob: Blob) {
   );
 
   const key = new Uint8Array(keyBytes.length + counter.length);
-  key.set(keyBytes, 0);
-  key.set(counter, keyBytes.length);
+  key.set([1], 0);
+  key.set(keyBytes, 1);
+  key.set(counter, 1 + keyBytes.length);
 
   return { reader, key };
 }
 
-export function decryptBlob(blob: Blob, key: Uint8Array) {
-  const keyBytes = key.slice(0, 32);
-  const counter = key.slice(32);
+export function decryptBlobV1(blob: Blob, key: Uint8Array) {
+  const version = key[0];
+  if (version != 1) {
+    throw Error(`unexpected key version: ${version}`);
+  }
+  const keyBytes = key.slice(1, 32 + 1);
+  const counter = key.slice(32 + 1);
 
   const reader = asyncGenToReadableStream(
     decryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter),
