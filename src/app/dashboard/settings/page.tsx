@@ -54,15 +54,11 @@ export default function SettingsPage() {
 
   const auth = useAuth()
   const { api } = useApiService()
-  const getUser = api.getUser
-  const updateUser = api.updateUser
-  const updateUserProfilePicture = api.updateUserProfilePicture
 
 
   useEffect(() => {
     if (auth.username) {
-      getUser(auth.username).then((user: UserProtos.User | null) => {
-
+      api.getUser(auth.username).then((user) => {
         if (!user) throw Error("User not found")
         if ((user.settings & 16) == 16) {
           setPfpSrc(`${CDN_STORAGE}/users/${auth.username}`)
@@ -104,7 +100,7 @@ export default function SettingsPage() {
     if (isPfpChanged) {
       const pfp = await fetch(pfpSrc)
       const blob = await pfp.blob()
-      await updateUserProfilePicture(blob)
+      await api.updateUserProfilePicture(blob)
     }
 
     let settings = initialUserData?.settings ?? 0;
@@ -127,7 +123,7 @@ export default function SettingsPage() {
     })
 
 
-    await updateUser(info)
+    await api.updateUser(info)
     setInitialUserData(UserProtos.User.create({
       uname: initialUserData!.uname,
       bio: isBioChanged ? PostProtos.PostBody.encode(PostProtos.PostBody.create({ plainText: bio })).finish() : initialUserData!.bio,
