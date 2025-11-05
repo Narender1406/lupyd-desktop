@@ -320,19 +320,81 @@ export default function SettingsPage() {
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
-            <TabsContent value="about"   className="mt-0 flex flex-col items-start space-y-4 
-                 bg-white text-black dark:bg-black dark:text-white 
-                 p-6 rounded-lg">
-              <Link to="/privacy"  className="inline-block px-5 py-2 rounded-md 
-                   bg-black text-white hover:bg-gray-800 
-                   dark:bg-white dark:text-black dark:hover:bg-gray-200 
-                   transition text-sm font-medium">Privacy policy</Link>
-              
-              <Link to="/terms-of-use"  className="inline-block px-5 py-2 rounded-md 
-                   bg-black text-white hover:bg-gray-800 
-                   dark:bg-white dark:text-black dark:hover:bg-gray-200 
-                   transition text-sm font-medium">Terms Of Use</Link>
-            </TabsContent>
+            <TabsContent value="about"  className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
+            <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
+                  bg-white text-black dark:bg-black dark:text-white rounded-lg space-y-8">
+
+               {/* Header */}
+                <div>
+              <h1 className="text-4xl font-extrabold text-black dark:text-white">Privacy Center</h1>
+               <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">
+                Your privacy matters to us more.
+          </p>
+          </div>
+
+           {/* PrivacySection */}
+            <div className="max-w-2xl">
+          <h2 className="text-xl font-semibold mb-2">Privacy at Lupyd</h2>
+           <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            At Lupyd, we value your trust and are committed to keeping your personal data safe.  
+            We never share your information without consent and use secure systems to protect your identity.  
+              Your privacy is at the heart of everything we build.
+            </p>
+
+          {/* Privacy Button (Round Black/White) */}
+            <Link to="/privacy"className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+        >
+        Privacy Policy
+        
+          </Link>
+        </div>
+
+    {/* Terms Section */}
+        <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+        <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+        By using Lupyd, you agree to follow our community standards and respect others’ rights.  
+        Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.  
+        We encourage you to read and understand them carefully.
+         </p>
+
+      {/* Terms Button (Round Black/White) */}
+      <Link to="/terms-of-use"
+          className="inline-block px-5 py-2 rounded-md 
+             bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+            >
+          Terms Of Use
+          </Link>
+          </div>
+          {/* Terms Section */}
+<div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+  <h2 className="text-xl font-semibold mb-2">Terms of Service</h2>
+  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+    By using Lupyd, you agree to comply with our Terms of Service, which outline your rights and responsibilities when using our platform.  
+    These terms ensure transparency, fairness, and a safe community for all users.  
+    Please take a moment to review them before continuing to use Lupyd.
+  </p>
+
+  {/* Terms of Service Button */}
+  <Link 
+    to="/terms-of-service"
+    className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+               dark:bg-white dark:text-black dark:hover:bg-gray-200 
+               transition text-sm font-medium"
+  >
+    Terms of Service
+  </Link>
+</div>
+
+          </div>
+          </TabsContent>
+
             
           </div>
         </Tabs>
