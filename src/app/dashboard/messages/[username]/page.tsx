@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { FireflyWsClient, protos as FireflyProtos } from "firefly-client-js"
 
 import { useAuth } from '@/context/auth-context';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -33,6 +33,7 @@ import {
   Smile,
   Video,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { useFirefly } from "@/context/firefly-context";
 import { dateToRelativeString } from "lupyd-js";
@@ -49,6 +50,9 @@ export default function UserMessagePage() {
   const receiver = params.username?.toString();
   const auth = useAuth()
   const navigate = useNavigate();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
 
   const [messages, setMessages] = useState<DMessage[]>([])
 
@@ -78,8 +82,37 @@ export default function UserMessagePage() {
     }
   }
 
+  // Check if user is at bottom of messages
+  const checkIfAtBottom = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px threshold
+      setIsAtBottom(isBottom);
+      
+      // Reset new messages count when user scrolls to bottom
+      if (isBottom) {
+        setNewMessagesCount(0);
+      }
+    }
+  };
 
-  useEffect(() => { getOlderMessages() }, [])
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      setNewMessagesCount(0);
+    }
+  };
+
+  useEffect(() => { 
+    getOlderMessages() 
+    // Add scroll listener
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkIfAtBottom);
+      return () => container.removeEventListener('scroll', checkIfAtBottom);
+    }
+  }, [])
 
   const getOlderMessages = async () => {
     const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].id
@@ -122,6 +155,11 @@ export default function UserMessagePage() {
 
       setMessages(prev => addMessage(prev, msg))
 
+      // Increment new messages counter if not at bottom
+      if (!isAtBottom) {
+        setNewMessagesCount(prev => prev + 1);
+      }
+
       const other = msg.from == sender ? msg.to : msg.from
 
       EncryptionPlugin.markAsReadUntil({ username: other, ts: msg.id })
@@ -131,7 +169,7 @@ export default function UserMessagePage() {
     firefly.addEventListener(callback)
 
     return () => firefly.removeEventListener(callback)
-  }, [auth])
+  }, [auth, isAtBottom])
 
 
   useEffect(() => {
@@ -143,9 +181,10 @@ export default function UserMessagePage() {
   const [messageText, setMessageText] = useState("")
   const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
 
-  const [endOfOlderMessages, setEndOfOlderMessages] = useState(false)
-  function handleReaction(msg: DMessage, emoji: string): void {
-    throw new Error('Function not implemented.');
+  const [endOfOlderMessages] = useState(false)
+  function handleReaction(_msg: DMessage, _emoji: string): void {
+    // TODO: Implement reaction functionality
+    console.log('Adding reaction', _emoji, 'to message', _msg);
   }
 
   function handleReply(message: DMessage): void {
@@ -168,8 +207,9 @@ export default function UserMessagePage() {
 
   const sender = useMemo(() => auth.username, [auth])
 
-  function addEmoji(emoji: string) {
-    throw new Error('Function not implemented.');
+  function addEmoji(_emoji: string) {
+    // TODO: Implement emoji functionality
+    console.log('Adding emoji', _emoji);
   }
 
   async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
@@ -231,10 +271,12 @@ export default function UserMessagePage() {
 
   }
 
+// Fake conversation functionality removed
+
   return (
     <div className="flex-1 flex flex-col h-full relative overflow-hidden">
-      {/* Chat Header is now sticky */}
-      <div className="sticky top-0 z-30 bg-white border-b p-2 sm:p-4 flex items-center justify-between shadow-sm">
+      {/* Chat Header - Fixed at top with safe area padding */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-white border-b p-2 sm:p-4 pt-6 sm:pt-8 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)]">
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Back button on mobile */}
           <Button
@@ -272,8 +314,9 @@ export default function UserMessagePage() {
       </div>
 
       {/* Messages container with fixed height */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-hidden pt-16">
         <div
+          ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 lupyd-message-container"
           style={{
             height: "auto", // Will be set dynamically by JS
@@ -300,82 +343,98 @@ export default function UserMessagePage() {
           <div />
         </div>
 
-        {/* Message Input Area - Fixed at bottom */}
-        <div
-          className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)]"
-          style={{ transform: "translateZ(0)" }} /* Force hardware acceleration */
-        >
-          {replyingTo && (
-            <div className="px-2 sm:px-4 py-2 bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center flex-1 overflow-hidden">
-                <div className="w-1 h-6 bg-black mr-2 flex-shrink-0"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium">
-                    Replying to {replyingTo.from === sender ? "yourself" : sender}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.text}></MessageBody></p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+        {/* Scroll to bottom button - only show when not at bottom and there are new messages */}
+        {!isAtBottom && newMessagesCount > 0 && (
+          <Button
+            className="absolute bottom-24 right-4 rounded-full bg-black text-white hover:bg-gray-800 z-40 shadow-lg"
+            size="icon"
+            onClick={scrollToBottom}
+          >
+            <ChevronDown className="h-5 w-5" />
+            {newMessagesCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {newMessagesCount > 99 ? "99+" : newMessagesCount}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
 
-          <div className="p-2 sm:p-4">
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="hidden sm:flex space-x-1">
-                <Button variant="ghost" size="icon">
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <ImageIcon className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Mic className="h-5 w-5" />
-                </Button>
+      {/* Message Input Area - Fixed at bottom */}
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)]"
+        style={{ transform: "translateZ(0)" }} /* Force hardware acceleration */
+      >
+        {replyingTo && (
+          <div className="px-2 sm:px-4 py-2 bg-gray-50 flex items-center justify-between">
+            <div className="flex items-center flex-1 overflow-hidden">
+              <div className="w-1 h-6 bg-black mr-2 flex-shrink-0"></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">
+                  Replying to {replyingTo.from === sender ? "yourself" : sender}
+                </p>
+                <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.text}></MessageBody></p>
               </div>
-              <Button variant="ghost" size="icon" className="sm:hidden">
+            </div>
+            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        <div className="p-2 sm:p-4">
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <div className="hidden sm:flex space-x-1">
+              <Button variant="ghost" size="icon">
                 <Paperclip className="h-5 w-5" />
               </Button>
-              <Input
-                placeholder="Type a message..."
-                className="bg-gray-100 border-none text-sm sm:text-base"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Smile className="h-5 w-5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2" align="end" sideOffset={5}>
-                  <div className="grid grid-cols-5 gap-2">
-                    {emojiOptions.map((emoji) => (
-                      <button
-                        key={emoji}
-                        className="text-2xl hover:bg-gray-100 p-2 rounded"
-                        onClick={() => {
-                          addEmoji(emoji)
-                        }}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Button
-                size="icon"
-                className="bg-black text-white hover:bg-gray-800"
-                onClick={handleSendMessage}
-                disabled={!messageText.trim()}
-              >
-                <Send className="h-5 w-5" />
+              <Button variant="ghost" size="icon">
+                <ImageIcon className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Mic className="h-5 w-5" />
               </Button>
             </div>
+            <Button variant="ghost" size="icon" className="sm:hidden">
+              <Paperclip className="h-5 w-5" />
+            </Button>
+            <Input
+              placeholder="Type a message..."
+              className="bg-gray-100 border-none text-sm sm:text-base"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Smile className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="end" sideOffset={5}>
+                <div className="grid grid-cols-5 gap-2">
+                  {emojiOptions.map((emoji) => (
+                    <button
+                      key={emoji}
+                      className="text-2xl hover:bg-gray-100 p-2 rounded"
+                      onClick={() => {
+                        addEmoji(emoji)
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              size="icon"
+              className="bg-black text-white hover:bg-gray-800"
+              onClick={handleSendMessage}
+              disabled={!messageText.trim()}
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -417,7 +476,7 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
           {/* Message content */}
           <div
             className={`${isMine ? "bg-black text-white" : "bg-gray-100"
-              } ${false ? "rounded-b-lg rounded-r-lg" : "rounded-lg"} p-2 sm:p-3 relative group overflow-hidden`}
+              } rounded-lg p-2 sm:p-3 relative group overflow-hidden`}
           >
             <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
               <MessageBody inner={message.text}></MessageBody>

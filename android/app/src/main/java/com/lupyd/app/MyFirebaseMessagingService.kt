@@ -340,6 +340,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 .setAllowGeneratedReplies(true)
                 .build()
             
+
+             //Reply reciever
+             
             // Build notification with InboxStyle to show ALL messages
             val inboxStyle = NotificationCompat.InboxStyle()
             
