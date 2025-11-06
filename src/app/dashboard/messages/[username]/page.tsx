@@ -362,130 +362,58 @@ export default function UserMessagePage() {
       (viewportMeta as HTMLMetaElement).name = 'viewport';
       document.head.appendChild(viewportMeta);
     }
-    (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+    (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
   }, []);
   
-  // Prevent page from scrolling upward when keyboard appears
+  // Prevent page jump on keyboard open
   useEffect(() => {
-    // Add CSS to handle keyboard appearance
-    const style = document.createElement('style');
-    style.innerHTML = `
-      @media screen and (max-width: 768px) {
-        /* Keep header fixed at top */
-        .fixed-header.keyboard-visible {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          z-index: 9999 !important;
-        }
-        
-        /* Reduce space between messages and input and maintain scrollability */
-        .lupyd-message-container.keyboard-visible {
-          padding-bottom: 40px !important; /* Minimal padding */
-          overflow-y: auto !important;
-          -webkit-overflow-scrolling: touch;
-        }
-        
-        /* Keep input area fixed at bottom */
-        .message-input-container.keyboard-visible {
-          position: fixed !important;
-          bottom: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Variables to track keyboard state
-    const initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    
-    // Function to handle keyboard visibility
-    const handleKeyboardVisibility = (visible: boolean) => {
-      const header = document.querySelector('.fixed-header');
-      const messageContainer = messagesContainerRef.current;
-      const inputContainer = document.querySelector('.message-input-container');
-      
-      if (visible) {
-        // Keyboard is visible
-        // Keep header fixed and allow message container scrolling
-        if (header) {
-          header.classList.add('keyboard-visible');
-        }
-        if (messageContainer) {
-          messageContainer.classList.add('keyboard-visible');
-          messageContainer.style.paddingBottom = '40px';
-          // Ensure message container remains scrollable
-          messageContainer.style.overflowY = 'auto';
+    if (!window.visualViewport) return;
+
+    const handleResize = () => {
+      const container = messagesContainerRef.current;
+      const inputContainer = document.querySelector('.message-input-container') as HTMLElement;
+
+      // Get viewport and keyboard height
+      const viewport = window.visualViewport!;
+      const keyboardHeight = window.innerHeight - viewport.height - viewport.offsetTop;
+
+      // When keyboard is visible
+      if (keyboardHeight > 100) {
+        // Keep chat content visible
+        if (container) {
+          container.style.height = `calc(100vh - ${keyboardHeight + 60}px)`; // adjust for input height
+          container.scrollTop = container.scrollHeight; // keep at bottom
         }
         if (inputContainer) {
-          inputContainer.classList.add('keyboard-visible');
+          inputContainer.style.bottom = `${keyboardHeight}px`;
         }
-        
-        // Scroll to bottom to show latest messages
-        setTimeout(() => {
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-          }
-        }, 10);
+        document.body.style.overflow = "hidden";
       } else {
-        // Keyboard is hidden
-        if (header) {
-          header.classList.remove('keyboard-visible');
-        }
-        if (messageContainer) {
-          messageContainer.classList.remove('keyboard-visible');
-          messageContainer.style.paddingBottom = replyingTo ? '100px' : '60px';
-          messageContainer.style.overflowY = 'auto';
+        // Reset after keyboard closes
+        if (container) {
+          container.style.height = "calc(100vh - 120px)";
         }
         if (inputContainer) {
-          inputContainer.classList.remove('keyboard-visible');
+          inputContainer.style.bottom = "0px";
         }
+        document.body.style.overflow = "";
       }
     };
-    
-    // Use visualViewport if available (better for mobile)
-    if (window.visualViewport) {
-      const handleResize = () => {
-        const currentHeight = window.visualViewport!.height;
-        const heightDifference = Math.abs(initialViewportHeight - currentHeight);
-        
-        // If height changed significantly, keyboard state likely changed
-        if (heightDifference > 100) {
-          handleKeyboardVisibility(currentHeight < initialViewportHeight);
-        }
-      };
-      
-      window.visualViewport.addEventListener('resize', handleResize);
-      return () => {
-        window.visualViewport!.removeEventListener('resize', handleResize);
-        document.head.removeChild(style);
-      };
-    } else {
-      // Fallback to window resize events
-      const handleResize = () => {
-        const currentHeight = window.innerHeight;
-        const heightDifference = Math.abs(initialViewportHeight - currentHeight);
-        
-        // If height changed significantly, keyboard state likely changed
-        if (heightDifference > 100) {
-          handleKeyboardVisibility(currentHeight < initialViewportHeight);
-        }
-      };
-      
-      window.addEventListener('resize', handleResize);
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        document.head.removeChild(style);
-      };
-    }
-  }, [replyingTo]);
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    return () => window.visualViewport!.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+    <div
+      className="flex-1 flex flex-col h-full relative overflow-hidden"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
       {/* Chat Header - Fixed at top with safe area padding */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b p-2 sm:p-4 pt-6 sm:pt-8 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)] fixed-header">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b px-2 sm:px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)] fixed-header">
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Back button on mobile */}
           <Button
@@ -528,11 +456,11 @@ export default function UserMessagePage() {
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3 lupyd-message-container"
           style={{
-            height: "auto", // Will be set dynamically by JS
-            maxHeight: "100%",
-            paddingBottom: replyingTo ? "100px" : "60px", // Further reduced padding
+            height: "calc(100vh - 130px)", // keeps consistent spacing
+            paddingBottom: replyingTo ? "90px" : "75px", // reduced to close the gap
             overflowX: "hidden",
-            WebkitOverflowScrolling: "touch", // Improve smooth scrolling on iOS
+            WebkitOverflowScrolling: "touch",
+            scrollBehavior: "smooth",
           }}
         >
 
@@ -571,8 +499,11 @@ export default function UserMessagePage() {
 
       {/* Message Input Area - Fixed at bottom */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)] message-input-container"
-        style={{ transform: "translateZ(0)" }} /* Force hardware acceleration */
+        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)] message-input-container shadow-[0_-1px_4px_rgba(0,0,0,0.08)]"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          transform: 'translateZ(0)',
+        }}
       >
         {replyingTo && (
           <div className="px-2 sm:px-4 py-2 bg-gray-50 flex items-center justify-between">
