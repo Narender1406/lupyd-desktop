@@ -19,6 +19,8 @@ import {
 import { UserAvatar } from '@/components/user-avatar';
 import {
   ArrowLeft,
+  Camera,
+  File,
   Forward,
   ImageIcon,
   Info,
@@ -112,10 +114,22 @@ export default function UserMessagePage() {
     }
   };
 
-  // Handle photo capture
-  const handleTakePhoto = () => {
+  // Show attachment options
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+
+  const handleCameraSelect = () => {
+    setShowAttachmentMenu(false);
     // TODO: Implement photo capture functionality
     console.log('Taking photo');
+    // For now, we'll just show an alert
+    alert('Camera functionality would open here');
+    
+
+  };
+
+  const handleFilesSelect = () => {
+    setShowAttachmentMenu(false);
+    handleFileSelect();
   };
 
   // Handle file input change
@@ -339,10 +353,139 @@ export default function UserMessagePage() {
     setMessages(fakeMessages.reverse());
   };
 
+  // Set viewport meta tag for mobile optimization
+  useEffect(() => {
+    // Ensure proper viewport settings
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      (viewportMeta as HTMLMetaElement).name = 'viewport';
+      document.head.appendChild(viewportMeta);
+    }
+    (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+  }, []);
+  
+  // Prevent page from scrolling upward when keyboard appears
+  useEffect(() => {
+    // Add CSS to handle keyboard appearance
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media screen and (max-width: 768px) {
+        /* Keep header fixed at top */
+        .fixed-header.keyboard-visible {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 9999 !important;
+        }
+        
+        /* Reduce space between messages and input and maintain scrollability */
+        .lupyd-message-container.keyboard-visible {
+          padding-bottom: 40px !important; /* Minimal padding */
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Keep input area fixed at bottom */
+        .message-input-container.keyboard-visible {
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Variables to track keyboard state
+    const initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    
+    // Function to handle keyboard visibility
+    const handleKeyboardVisibility = (visible: boolean) => {
+      const header = document.querySelector('.fixed-header');
+      const messageContainer = messagesContainerRef.current;
+      const inputContainer = document.querySelector('.message-input-container');
+      
+      if (visible) {
+        // Keyboard is visible
+        // Keep header fixed and allow message container scrolling
+        if (header) {
+          header.classList.add('keyboard-visible');
+        }
+        if (messageContainer) {
+          messageContainer.classList.add('keyboard-visible');
+          messageContainer.style.paddingBottom = '40px';
+          // Ensure message container remains scrollable
+          messageContainer.style.overflowY = 'auto';
+        }
+        if (inputContainer) {
+          inputContainer.classList.add('keyboard-visible');
+        }
+        
+        // Scroll to bottom to show latest messages
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 10);
+      } else {
+        // Keyboard is hidden
+        if (header) {
+          header.classList.remove('keyboard-visible');
+        }
+        if (messageContainer) {
+          messageContainer.classList.remove('keyboard-visible');
+          messageContainer.style.paddingBottom = replyingTo ? '100px' : '60px';
+          messageContainer.style.overflowY = 'auto';
+        }
+        if (inputContainer) {
+          inputContainer.classList.remove('keyboard-visible');
+        }
+      }
+    };
+    
+    // Use visualViewport if available (better for mobile)
+    if (window.visualViewport) {
+      const handleResize = () => {
+        const currentHeight = window.visualViewport!.height;
+        const heightDifference = Math.abs(initialViewportHeight - currentHeight);
+        
+        // If height changed significantly, keyboard state likely changed
+        if (heightDifference > 100) {
+          handleKeyboardVisibility(currentHeight < initialViewportHeight);
+        }
+      };
+      
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => {
+        window.visualViewport!.removeEventListener('resize', handleResize);
+        document.head.removeChild(style);
+      };
+    } else {
+      // Fallback to window resize events
+      const handleResize = () => {
+        const currentHeight = window.innerHeight;
+        const heightDifference = Math.abs(initialViewportHeight - currentHeight);
+        
+        // If height changed significantly, keyboard state likely changed
+        if (heightDifference > 100) {
+          handleKeyboardVisibility(currentHeight < initialViewportHeight);
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        document.head.removeChild(style);
+      };
+    }
+  }, [replyingTo]);
+
   return (
     <div className="flex-1 flex flex-col h-full relative overflow-hidden">
       {/* Chat Header - Fixed at top with safe area padding */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-white border-b p-2 sm:p-4 pt-6 sm:pt-8 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)]">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b p-2 sm:p-4 pt-6 sm:pt-8 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)] fixed-header">
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Back button on mobile */}
           <Button
@@ -387,7 +530,7 @@ export default function UserMessagePage() {
           style={{
             height: "auto", // Will be set dynamically by JS
             maxHeight: "100%",
-            paddingBottom: replyingTo ? "140px" : "100px",
+            paddingBottom: replyingTo ? "100px" : "60px", // Further reduced padding
             overflowX: "hidden",
             WebkitOverflowScrolling: "touch", // Improve smooth scrolling on iOS
           }}
@@ -428,7 +571,7 @@ export default function UserMessagePage() {
 
       {/* Message Input Area - Fixed at bottom */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)]"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)] message-input-container"
         style={{ transform: "translateZ(0)" }} /* Force hardware acceleration */
       >
         {replyingTo && (
@@ -448,22 +591,64 @@ export default function UserMessagePage() {
           </div>
         )}
 
-        <div className="p-2 sm:p-4 pb-6">
+        <div className="p-2 sm:p-4 pb-4">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <div className="hidden sm:flex space-x-1">
-              <Button variant="ghost" size="icon" onClick={handleFileSelect}>
-                <Paperclip className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleTakePhoto}>
-                <ImageIcon className="h-5 w-5" />
-              </Button>
+              <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={5}>
+                  <DropdownMenuItem onClick={handleCameraSelect}>
+                    <Camera className="h-4 w-4 mr-2" />
+                    Camera
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleFilesSelect}>
+                    <File className="h-4 w-4 mr-2" />
+                    Files
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <ImageIcon className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={5}>
+                  <DropdownMenuItem onClick={handleCameraSelect}>
+                    <Camera className="h-4 w-4 mr-2" />
+                    Take Photo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleFilesSelect}>
+                    <File className="h-4 w-4 mr-2" />
+                    Choose from Files
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon">
                 <Mic className="h-5 w-5" />
               </Button>
             </div>
-            <Button variant="ghost" size="icon" className="sm:hidden" onClick={handleFileSelect}>
-              <Paperclip className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="sm:hidden">
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={5}>
+                <DropdownMenuItem onClick={handleCameraSelect}>
+                  <Camera className="h-4 w-4 mr-2" />
+                  Camera
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleFilesSelect}>
+                  <File className="h-4 w-4 mr-2" />
+                  Files
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Input
               placeholder="Type a message..."
               className="bg-gray-100 border-none text-sm sm:text-base"
