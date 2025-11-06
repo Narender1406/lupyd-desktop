@@ -57,6 +57,7 @@ export default function UserMessagePage() {
   const [messages, setMessages] = useState<DMessage[]>([])
 
   const [files, setFiles] = useState<File[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const firefly = useFirefly()
 
@@ -101,6 +102,31 @@ export default function UserMessagePage() {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
       setNewMessagesCount(0);
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle photo capture
+  const handleTakePhoto = () => {
+    // TODO: Implement photo capture functionality
+    console.log('Taking photo');
+  };
+
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+    // Reset input value to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -271,7 +297,47 @@ export default function UserMessagePage() {
 
   }
 
-// Fake conversation functionality removed
+  // Create fake conversation for testing
+  const createFakeConversation = () => {
+    const fakeMessages: DMessage[] = [];
+    const now = Date.now() * 1000;
+    
+    // Create different types of messages
+    const messageTypes = [
+      'Hello there! 👋 How are you doing today? I hope you are having a great day!',
+      'Check out this image [image]',
+      'Here\'s a video for you [video]',
+      'I\'ve attached the project requirements document [file]',
+      'This is a longer message to test how the text wrapping works in our chat interface. It should wrap properly without breaking words too early.',
+      'This is another image [image]',
+      'Meeting notes from our discussion today [file]',
+      'Tutorial video showing how to use the new features [video]',
+      'Quick update: We\'ve made some changes to the design and functionality.',
+      'Can you review this quarterly_report_final_v3.pdf when you have a chance? [file]'
+    ];
+    
+    for (let i = 0; i < 20; i++) {
+      const isSender = i % 2 === 0;
+      const messageType = messageTypes[i % messageTypes.length];
+      
+      const fakeMessage: DMessage = {
+        id: now - (i * 1000000),
+        convoId: 1,
+        from: isSender ? sender! : receiver!,
+        to: isSender ? receiver! : sender!,
+        text: FireflyProtos.UserMessageInner.encode(
+          FireflyProtos.UserMessageInner.create({
+            messagePayload: FireflyProtos.MessagePayload.create({
+              text: messageType
+            })
+          })
+        ).finish()
+      };
+      fakeMessages.push(fakeMessage);
+    }
+    
+    setMessages(fakeMessages.reverse());
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full relative overflow-hidden">
@@ -307,7 +373,7 @@ export default function UserMessagePage() {
           <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
             <Info className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={createFakeConversation}>
             <MoreVertical className="h-5 w-5" />
           </Button>
         </div>
@@ -317,7 +383,7 @@ export default function UserMessagePage() {
       <div className="flex-1 relative overflow-hidden pt-16">
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 lupyd-message-container"
+          className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3 lupyd-message-container"
           style={{
             height: "auto", // Will be set dynamically by JS
             maxHeight: "100%",
@@ -334,7 +400,7 @@ export default function UserMessagePage() {
             inverse={true}
           >
             {messages.map((message) =>
-              <MessageElement key={message.id.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} receiver={receiver!} />
+              <MessageElement key={message.id.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} />
             )}
           </InfiniteScroll>
 
@@ -382,20 +448,20 @@ export default function UserMessagePage() {
           </div>
         )}
 
-        <div className="p-2 sm:p-4">
+        <div className="p-2 sm:p-4 pb-6">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <div className="hidden sm:flex space-x-1">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={handleFileSelect}>
                 <Paperclip className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={handleTakePhoto}>
                 <ImageIcon className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon">
                 <Mic className="h-5 w-5" />
               </Button>
             </div>
-            <Button variant="ghost" size="icon" className="sm:hidden">
+            <Button variant="ghost" size="icon" className="sm:hidden" onClick={handleFileSelect}>
               <Paperclip className="h-5 w-5" />
             </Button>
             <Input
@@ -436,6 +502,13 @@ export default function UserMessagePage() {
               <Send className="h-5 w-5" />
             </Button>
           </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            multiple 
+          />
         </div>
       </div>
     </div>
@@ -446,8 +519,8 @@ export default function UserMessagePage() {
 }
 
 
-export function MessageElement(props: { message: DMessage, sender: string, receiver: string, handleReply?: (message: DMessage) => void, handleReaction?: (message: DMessage, emoji: string) => void }) {
-  const { message, sender, receiver, handleReaction, handleReply } = props;
+export function MessageElement(props: { message: DMessage, sender: string, handleReply?: (message: DMessage) => void, handleReaction?: (message: DMessage, emoji: string) => void }) {
+  const { message, sender, handleReaction, handleReply } = props;
   const isMine = message.from === sender;
 
   const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
@@ -463,24 +536,18 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
   return (
     <div
       key={message.id}
-      className={`m-4 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
+      className={`px-4 py-2 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
     >
-      <div
-        className={`flex items-end ${isMine ? "flex-row-reverse" : ""} space-x-2 ${isMine ? "space-x-reverse" : ""}`}
-      >
-        {!isMine && (
-          <UserAvatar username={receiver || ""} />
-        )}
-
-        <div className="max-w-[75%] sm:max-w-[70%] w-auto">
+      <div className={`flex items-end space-x-2 max-w-full ${isMine ? "flex-row-reverse space-x-reverse" : ""}`}>
+        <div className="max-w-[75%] sm:max-w-[80%] md:max-w-[85%] w-auto min-w-[100px]">
           {/* Message content */}
           <div
             className={`${isMine ? "bg-black text-white" : "bg-gray-100"
               } rounded-lg p-2 sm:p-3 relative group overflow-hidden`}
           >
-            <p className="text-xs sm:text-sm break-words whitespace-pre-wrap overflow-hidden text-ellipsis">
+            <div className="text-xs sm:text-sm break-words whitespace-normal overflow-hidden min-w-[40px]">
               <MessageBody inner={message.text}></MessageBody>
-            </p>
+            </div>
             <p
               className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
             >
@@ -566,10 +633,6 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
                     )}
                     */}
         </div>
-
-        {isMine && (
-          <UserAvatar username={sender} />
-        )}
       </div>
     </div>
   )
@@ -578,15 +641,70 @@ export function MessageElement(props: { message: DMessage, sender: string, recei
 
 export function MessageBody(props: { inner: Uint8Array }) {
   const message = FireflyProtos.UserMessageInner.decode(props.inner);
+  
+  // Handle plain text messages
   if (message.plainText) {
     const text = new TextDecoder().decode(message.plainText);
-    return <div>{text}</div>
+    return <div className="whitespace-pre-wrap">{text}</div>
   }
 
+  // Handle message payload with text and files
   if (message.messagePayload) {
-    return <div>{message.messagePayload.text}</div>
+    const cleanText = message.messagePayload.text
+      ? message.messagePayload.text.replace(/\[image\]/g, '').replace(/\[video\]/g, '').replace(/\[file\]/g, '').trim()
+      : '';
+      
+    return (
+      <div className="space-y-2">
+        {cleanText && <div className="whitespace-pre-wrap">{cleanText}</div>}
+        
+        {/* Dummy images */}
+        {message.messagePayload.text && message.messagePayload.text.includes('[image]') && (
+          <div className="mt-2">
+            <img 
+              src="https://placehold.co/300x200?text=Image" 
+              alt="Shared content" 
+              className="rounded-lg max-w-full h-auto object-contain"
+              style={{ aspectRatio: '3/2', maxHeight: '200px' }}
+            />
+          </div>
+        )}
+        
+        {/* Dummy videos */}
+        {message.messagePayload.text && message.messagePayload.text.includes('[video]') && (
+          <div className="mt-2 relative" style={{ aspectRatio: '3/2', maxHeight: '200px' }}>
+            <img 
+              src="https://placehold.co/300x200?text=Video+Preview" 
+              alt="Video preview" 
+              className="rounded-lg w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black bg-opacity-50 rounded-full p-3">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Dummy files */}
+        {message.messagePayload.text && message.messagePayload.text.includes('[file]') && (
+          <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
+            <div className="flex-shrink-0 w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-900 whitespace-normal">document.pdf</p>
+              <p className="text-xs text-gray-500">1.2 MB</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
-
 
   return <div></div>
 }
