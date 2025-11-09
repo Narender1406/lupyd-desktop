@@ -1,7 +1,7 @@
 "use client"
 
 import * as fireflyClientJs from "firefly-client-js"
-import { createContext, useContext, useRef, useEffect, useState, useMemo } from "react"
+import { createContext, useContext, useRef, useEffect, useMemo } from "react"
 
 import { useAuth } from "./auth-context"
 import { Outlet } from "react-router-dom";

@@ -51,7 +51,7 @@ export class CallSession extends EventTarget {
     payload["from"] = this.username;
     payload["sessionId"] = this.sessionId;
     const data = JSON.stringify(payload);
-    this.emit("callMessage", data)
+    this.emit("callMessage", new TextEncoder().encode(data))
   }
 
   private _currentRetryDuration = 0;
@@ -163,6 +163,8 @@ export class CallSession extends EventTarget {
     this._sendCallMessage({
       type: "end"
     })
+
+    this.dispose(true, false)
   }
 
   toggleMic(enable: boolean) {

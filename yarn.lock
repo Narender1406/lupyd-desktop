@@ -15,7 +15,7 @@
 
 "@auth0/auth0-spa-js@github:ash-hashtag/auth0-spa-js":
   version "2.8.0"
-  resolved "https://codeload.github.com/ash-hashtag/auth0-spa-js/tar.gz/f7b0e569a6a76dce362df60b919f4f815a4783ea"
+  resolved "https://codeload.github.com/ash-hashtag/auth0-spa-js/tar.gz/7324699564e3f80eca766d99bd58c70da8be30f3"
   dependencies:
     browser-tabs-lock "^1.2.15"
     dpop "^2.1.1"

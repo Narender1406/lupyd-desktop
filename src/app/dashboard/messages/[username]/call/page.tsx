@@ -327,7 +327,7 @@ export default function UserCallPage() {
   const handleEndCall = (): void => {
     // callHandler.dispose()
 
-    session.current.dispose(true, false)
+    session.current.endCall()
     navigate(-1)
   };
 
