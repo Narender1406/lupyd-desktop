@@ -9,7 +9,7 @@
 
 "@auth0/auth0-react@https://github.com/ash-hashtag/auth0-react.git":
   version "2.8.0"
-  resolved "https://github.com/ash-hashtag/auth0-react.git#c810203ad2132179540b4e171b4e9f4f3f615a97"
+  resolved "https://github.com/ash-hashtag/auth0-react.git#66fdee1101575dd0ef2b57b9a76a264faac91d01"
   dependencies:
     "@auth0/auth0-spa-js" "github:ash-hashtag/auth0-spa-js"
 
@@ -3196,7 +3196,7 @@ find-up@^5.0.0:
 
 "firefly-client-js@https://github.com/lupyd/firefly-client-js":
   version "1.0.0"
-  resolved "https://github.com/lupyd/firefly-client-js#bfa22192406794bec47443bd41978de13e6d0206"
+  resolved "https://github.com/lupyd/firefly-client-js#2c3afb697421107a09f23483dec6d254e891ce45"
   dependencies:
     "@signalapp/libsignal-client" "^0.78.3"
     firefly-mls "https://github.com/lupyd/firefly-mls-js.git"

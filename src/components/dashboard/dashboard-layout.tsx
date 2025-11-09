@@ -91,12 +91,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (username) {
       auth.logout()
     } else {
-      if (auth.user) {
-        if (!auth.username) {
-          router.push("/signin")
-        }
-      } else {
-        auth.login()
+      if (!auth.username) {
+        router.push("/signin")
       }
     }
   }
@@ -234,9 +230,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       <Link
                         key={`${item.path}-${index}`}
                         to={item.path}
-                        className={`flex items-center px-3 py-2 rounded-md ${
-                          isActive ? "bg-gray-100" : "hover:bg-gray-100"
-                        }`}
+                        className={`flex items-center px-3 py-2 rounded-md ${isActive ? "bg-gray-100" : "hover:bg-gray-100"
+                          }`}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Icon className="mr-3 h-5 w-5" />

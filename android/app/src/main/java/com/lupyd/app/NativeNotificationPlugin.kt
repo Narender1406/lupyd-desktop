@@ -525,7 +525,7 @@ class ReplyReceiverNative : BroadcastReceiver() {
             Log.d("lupyd-ReplyReceiver", "Reply received for $sender: $replyText")
 
             val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(db)
+            val encryptionWrapper = EncryptionWrapper(context)
 
             runBlocking {
                 try {
@@ -693,7 +693,7 @@ class MarkAsReadReceiver : BroadcastReceiver() {
 //        notificationManager.notify(-sender.hashCode(), builder.build())
 
         val db = getDatabase(context)
-        val encryptionWrapper = EncryptionWrapper(db)
+        val encryptionWrapper = EncryptionWrapper(context)
 
         runBlocking {
             encryptionWrapper.markAsReadUntil(sender, msgId)

@@ -1,5 +1,6 @@
 package com.lupyd.app
 
+import android.content.Context
 import android.util.Log
 import androidx.room.withTransaction
 import com.google.protobuf.ByteString
@@ -35,10 +36,11 @@ val httpClient = HttpClient(CIO) {
     install(HttpCache)
 }
 
-class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Unit)? = null) {
+class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Unit)? = null) {
 
     val tag = "lupyd-ec"
 
+    val db = getDatabase(context)
     val sessionStore = SqlSessionStore(db)
     val identityStore = SqlIdentityKeyStore(db)
     val preKeyStore = SqlPreKeyStore(db)
@@ -62,6 +64,13 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
             Log.i(tag, "decrypted message from ${from} to ${to}")
             val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
+
+
+            if (isACallRequest(dmsg.mfrom, dmsg.conversationId, dmsg.text)) {
+                Log.i(tag, "Call Received from ${dmsg.mfrom}")
+            }
+
+
             handleMessage(dmsg)
 
             return dmsg
@@ -69,6 +78,28 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
             Log.e(tag, e.toString())
         }
         return null
+    }
+
+    fun isACallRequest(from: String, convoId: Long, text: ByteArray): Boolean {
+        val msg = Message.UserMessageInner.parseFrom(text)
+        if (msg.callMessage.equals(Message.CallMessage.getDefaultInstance())) {
+            return false
+        }
+
+        val obj = JSONObject(msg.callMessage.message.toStringUtf8())
+
+        Log.i(tag, "Call Message from $from: $obj")
+        if (obj.has("type") && obj.get("type") == "request") {
+            val sessionId = obj.getLong("sessionId")
+            val expiry = obj.getLong("exp")
+            if (expiry > System.currentTimeMillis()) {
+                NotificationHandler(context).showCallNotification(from, convoId,sessionId)
+                return true
+            }
+        }
+
+        return false
+
     }
 
 
@@ -155,7 +186,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
 
         var conversationId = convoId
         if (conversationId == 0L) {
-            Log.i(tag, "Creating conversatoin because conversationId is 0")
+            Log.i(tag, "Creating conversation because conversationId is 0")
             val convo = createConversation(to, token)
             processPreKeyBundle(convo.bundle!!, to)
 
@@ -219,6 +250,7 @@ class EncryptionWrapper(val db: AppDatabase, val onMessageCb: ((DMessage) -> Uni
         }
         throw Exception("Unable to encrypt and send message")
     }
+
 
     fun getUsernameFromToken(token: String): String? {
         try {

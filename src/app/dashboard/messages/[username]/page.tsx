@@ -34,13 +34,13 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { useFirefly } from "@/context/firefly-context";
+import {  useFirefly } from "@/context/firefly-context";
 import { dateToRelativeString } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
-import { encryptBlobV1 } from "@/lib/utils";
+import { encryptBlobV1, toBase64 } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -57,6 +57,10 @@ export default function UserMessagePage() {
   const firefly = useFirefly()
 
   function addMessage(prev: DMessage[], msg: DMessage) {
+    const message = FireflyProtos.UserMessageInner.decode(msg.text)
+    if (message.callMessage) {
+      return prev;
+    }
 
     if (prev.length > 0) {
       if (prev[prev.length - 1].id < msg.id) {
@@ -110,8 +114,41 @@ export default function UserMessagePage() {
   // })
 
   useEffect(() => {
-    const callback = async (_: FireflyWsClient, msg: DMessage) => {
-      if (!(msg.from == receiver || msg.to == receiver)) {
+    const callback = async (_: FireflyWsClient, message: DMessage) => {
+
+
+      // if (msg.callMessage) {
+      //   const obj = JSON.parse(new TextDecoder().decode(msg.callMessage.message))
+
+      //   if (isCallRequestMessage(obj)) {
+      //     if (obj.exp > Date.now()) {
+      //       console.log(`Call expired ${JSON.stringify(obj)}`)
+      //       return
+      //     }
+      //     EncryptionPlugin.showCallNotification({
+      //       caller: message.from,
+      //       sessionId: obj.sessionId,
+      //       conversationId: message.convoId
+      //     })
+      //   }
+      //   return
+      // }
+
+
+      if (!(message.from == receiver || message.to == receiver)) {
+        const msg = FireflyProtos.UserMessageInner.decode(message.text)
+        if (msg.messagePayload && msg.messagePayload.text.length > 0) {
+          EncryptionPlugin.showUserNotification({
+            from: message.from,
+            to: message.to,
+            me: auth.username!,
+            textB64:
+              toBase64(message.text),
+            conversationId: message.convoId,
+            id: message.id
+          })
+
+        }
         return
       }
       // const decryptedMessage = FireflyProtos.UserMessageInner.decode(msg.text)
@@ -120,11 +157,11 @@ export default function UserMessagePage() {
       //   myCallSession.handleCallMessage(decryptedMessage.callMessage)
       // }
 
-      setMessages(prev => addMessage(prev, msg))
+      setMessages(prev => addMessage(prev, message))
 
-      const other = msg.from == sender ? msg.to : msg.from
+      const other = message.from == sender ? message.to : message.from
 
-      EncryptionPlugin.markAsReadUntil({ username: other, ts: msg.id })
+      EncryptionPlugin.markAsReadUntil({ username: other, ts: message.id })
 
     }
 
@@ -231,6 +268,10 @@ export default function UserMessagePage() {
 
   }
 
+  function startCall() {
+    navigate(`/messages/${receiver}/call?requested=true&convoId=${currentConvoId}&sessionId=${Math.floor(Math.random() * 99999)}`)
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full relative overflow-hidden">
       {/* Chat Header is now sticky */}
@@ -256,14 +297,8 @@ export default function UserMessagePage() {
           </div>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2">
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
+          <Button variant="ghost" size="icon" onClick={startCall}>
             <Phone className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Video className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-            <Info className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon">
             <MoreVertical className="h-5 w-5" />

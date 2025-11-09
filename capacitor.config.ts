@@ -26,10 +26,10 @@ const config: CapacitorConfig = {
 
     EncryptionPlugin: {},
   },
-  server: {
-    androidScheme: "http",
-    cleartext: true,
-  },
+  // server: {
+  //   androidScheme: "http",
+  //   cleartext: true,
+  // },
   android: {
     allowMixedContent: true,
   },

@@ -64,9 +64,9 @@ createRoot(document.getElementById('root')!).render(
               <ApiServiceProvider>
                 <UserImageProvider>
                   <UserDataProvider>
-                    <div className="flex min-h-screen flex-col">
-                      <App />
-                    </div>
+                      <div className="flex min-h-screen flex-col">
+                        <App />
+                      </div>
                   </UserDataProvider>
                 </UserImageProvider>
               </ApiServiceProvider>

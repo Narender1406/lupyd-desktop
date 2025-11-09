@@ -6,6 +6,9 @@ import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from './context/auth-context';
+import FireflyProvider from './context/firefly-context';
+import { EncryptionPlugin } from './context/encryption-plugin';
+
 
 
 
@@ -26,7 +29,7 @@ const TermsOfUse = lazy(() => import('./components/TermsOfUse'));
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 
 
-const FireflyProvider = lazy(() => import("./context/firefly-context"));
+// const FireflyProvider = lazy(() => import("./context/firefly-context"));
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
@@ -58,7 +61,7 @@ const CreateGroupPage = lazy(() => import('./app/dashboard/groups/create/page'))
 const GroupSettingsPage = lazy(() => import('./app/dashboard/groups/[id]/settings/page'))
 const GroupInfoPage = lazy(() => import('./app/dashboard/groups/[id]/info/page'))
 const UserMessagePage = lazy(() => import('./app/dashboard/messages/[username]/page'))
-
+const UserCallPage = lazy(() => import('./app/dashboard/messages/[username]/call/page'))
 
 
 function LoadingPage() {
@@ -71,11 +74,15 @@ function App() {
   const { handleRedirectCallback } = useAuth0();
   const auth = useAuth();
 
+
+
+
   useEffect(() => {
+    EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic"] })
 
     const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
 
-    CapApp.addListener("appUrlOpen", async ({ url }) => {
+    const listener = CapApp.addListener("appUrlOpen", async ({ url }) => {
       console.log(`RECEIVED A DEEPLINK ${url}`)
       if (url.startsWith(redirectUrl)) {
         if (
@@ -85,14 +92,23 @@ function App() {
         }
 
         await Browser.close();
-      }
+      } else if (url.startsWith("lupyd://m.lupyd.com")) {
+          const link = new URL(url)
+          navigate({
+            pathname: link.pathname,
+            search: link.search
+          })
+        }
     });
+
+    return () => {
+      listener.then((_) => _.remove())
+    }
   }, [handleRedirectCallback]);
 
 
   const navigate = useNavigate()
   useEffect(() => {
-
     (async () => {
       const url = await CapApp.getLaunchUrl()
       if (!url) {
@@ -110,7 +126,7 @@ function App() {
   }, [])
 
 
-
+  console.log(`App redrew`)
 
   return (
     <Suspense fallback={<LoadingPage />}>
@@ -147,7 +163,9 @@ function App() {
         <Route path="/notification-test" element={<NotificationTestPage />} />
         <Route element={<FireflyProvider />}>
           <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
+          <Route path="/messages/:username" element={<UserMessagePage />} />
+          <Route path="/messages/:username/call" element={<UserCallPage />} />
+        </Route>
         <Route path="/notification" element={<NotificationsPage />} />
         <Route path="/terms-of-use" element={<TermsOfUse />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />

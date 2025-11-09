@@ -1,5 +1,6 @@
 package com.lupyd.app
 
+import android.Manifest
 import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
@@ -10,6 +11,8 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.getcapacitor.annotation.Permission
+import firefly.Message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,12 +20,25 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
-@CapacitorPlugin(name = "EncryptionPlugin")
+
+@CapacitorPlugin(name = "EncryptionPlugin",
+    permissions = [
+        Permission(
+            alias = "camera",
+            strings = [Manifest.permission.CAMERA]
+        ),
+        Permission(
+            alias = "mic",
+            strings = [ Manifest.permission.RECORD_AUDIO ]
+        )
+    ]
+    )
 class EncryptionPlugin : Plugin() {
 
     lateinit var db: AppDatabase
     lateinit var encryptionWrapper: EncryptionWrapper
 
+    lateinit var notificationHandler: NotificationHandler
     lateinit var testJob: Job
 
     val tag = "lupyd-ep"
@@ -31,7 +47,9 @@ class EncryptionPlugin : Plugin() {
         super.load()
 
         db = getDatabase(context)
-        encryptionWrapper = EncryptionWrapper(db, this::sendUserMessage)
+        encryptionWrapper = EncryptionWrapper(context, this::sendUserMessage)
+        notificationHandler = NotificationHandler(context)
+
 
         testJob = startInterval(10000) {
 //            notifyListeners("testPing", JSObject().put("result", "ping").put("time", System.currentTimeMillis()))
@@ -139,7 +157,39 @@ class EncryptionPlugin : Plugin() {
                 Log.e(tag, e.toString())
                 call.reject(e.toString())
             }
+        }
+    }
 
+
+    @PluginMethod
+    fun encrypt(call: PluginCall) {
+            try {
+                val payloadB64 = call.data.getString("textB64")!!
+                val to = call.data.getString("to")!!
+                val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
+                val cipherTextMessage = encryptionWrapper.encrypt(to, payload)
+                call.resolve(JSObject()
+                    .put("messageType", cipherTextMessage.type)
+                    .put("cipherTextB64", Base64.encodeToString(cipherTextMessage.serialize(), Base64.NO_WRAP))
+                )
+            } catch (e: Exception) {
+                Log.e(tag, e.toString())
+                call.reject(e.toString())
+            }
+    }
+
+    @PluginMethod
+    fun processPreKeyBundle(call: PluginCall) {
+        try {
+            val preKeyBundleB64 = call.data.getString("preKeyBundleB64")!!
+            val owner = call.data.getString("owner")!!
+            val preKeyBundleProto = Base64.decode(preKeyBundleB64, Base64.NO_WRAP)
+            encryptionWrapper.processPreKeyBundle(Message.PreKeyBundle.parseFrom(preKeyBundleProto), owner)
+            call.resolve()
+
+        } catch (e: Exception) {
+            Log.e(tag, e.toString())
+            call.reject(e.toString())
         }
     }
 
@@ -312,6 +362,58 @@ class EncryptionPlugin : Plugin() {
             } catch (e: Exception) {
                 call.reject(e.toString())
             }
+        }
+    }
+
+    @PluginMethod
+    fun clearNotifications(call: PluginCall) {
+        notificationHandler.clearAll()
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun showUserNotification(call: PluginCall) {
+        try {
+            val from = call.data.getString("from")!!
+            val to = call.data.getString("to")!!
+            val me = call.data.getString("me")!!
+            val textB64 = call.data.getString("textB64")!!
+            val text = Base64.decode(textB64, Base64.NO_WRAP)
+            val convoId = call.data.getLong("conversationId")
+            val msgId = call.data.getLong("id")
+            val msgNotification = DMessage(msgId, convoId,from, to, text)
+
+            notificationHandler.showUserBundledNotification(msgNotification, me)
+
+            call.resolve()
+        } catch (e: Exception) {
+            Log.e(tag, e.toString())
+            call.reject(e.toString())
+        }
+
+    }
+
+    @PluginMethod
+    fun showCallNotification(call: PluginCall) {
+        try {
+            val caller = call.data.getString("caller")!!
+            val sessionId = call.data.getLong("sessionId")
+            val convoId = call.data.getLong("conversationId")
+            notificationHandler.showCallNotification(caller, sessionId, convoId)
+
+        } catch (e: Exception) {
+            Log.e(tag, e.toString())
+            call.reject(e.toString())
+        }
+    }
+
+    @PluginMethod
+    fun requestAllPermissions(call: PluginCall) {
+        try {
+            requestPermissions(call)
+            call.resolve()
+        } catch (e: Exception) {
+            call.reject(e.toString())
         }
     }
 }

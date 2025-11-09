@@ -1,7 +1,7 @@
 "use client"
 
 import { UserRelationsState } from "lupyd-js"
-import { createContext, type ReactNode, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, type ReactNode, useContext, useEffect, useState, useCallback, useMemo } from "react"
 import { useAuth } from "./auth-context"
 
 
@@ -18,7 +18,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
   const [state, setState] = useState<{ follows: string[], blocked: string[] }>({ follows: [], blocked: [] })
 
-  const [relationState, setRelationState] = useState<UserRelationsState | null>(null)
+  // const [relationState, setRelationState] = useState<UserRelationsState | null>(null)
+
+
 
   const auth = useAuth()
 
@@ -26,31 +28,26 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   if (!apiUrl) {
     throw Error(`NEXT_PUBLIC_JS_ENV_API_URL env var not set`)
   }
-
-  useEffect(() => {
-    if (auth.username != null) {
-
-      const getToken = async () => {
-        if (!auth.username) {
-          throw Error("user not authenticated")
-        }
-        const token = await auth.getToken()
-        if (!token)
-          throw Error("user not authenticated")
-        return token
+  const relationState = useMemo(() => {
+    const getToken = async () => {
+      if (!auth.username) {
+        throw Error("user not authenticated")
       }
-
-
-      setRelationState(new UserRelationsState((follows, blocked) => {
-        setState({ follows, blocked })
-      }, apiUrl, getToken))
+      const token = await auth.getToken()
+      if (!token)
+        throw Error("user not authenticated")
+      return token
     }
+
+    return new UserRelationsState((follows, blocked) => {
+      setState({ follows, blocked })
+    }, apiUrl, getToken)
   }, [auth])
 
 
   useEffect(() => {
     if (auth.username) {
-      relationState?.refresh()
+      relationState.refresh()
     }
   }, [auth])
 

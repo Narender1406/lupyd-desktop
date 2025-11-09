@@ -4,14 +4,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react"
-import { type DecodedToken, getPayloadFromAccessToken } from "lupyd-js"
+import {  getPayloadFromAccessToken } from "lupyd-js"
 import { Browser } from "@capacitor/browser"
 import { EncryptionPlugin } from "./encryption-plugin"
 import { useNavigate } from "react-router-dom"
 
 
 type AuthContextType = {
-  user: DecodedToken | null
+  // user: DecodedToken | null
   username: string | null
   isAuthenticated: boolean
   logout: () => Promise<void>
@@ -29,73 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
 
 
-  // Default to logged in for development
-  const [user, setUser] = useState<DecodedToken | null>(null)
+  // const [user, setUser] = useState<DecodedToken | null>(null)
   const [username, setUsername] = useState<string | null>(null)
 
   const isReady = useMemo(() => !auth0.isLoading, [auth0])
 
 
-  // useEffect(() => {
-  //   const listener = EncryptionPlugin.addListener("testPing", (data) => {
-  //     console.log({ data });
-
-  //     EncryptionPlugin.testMethod({
-  //       a: Math.random().toString(),
-  //       b: Math.random()
-  //     }).then(result => {
-  //       console.log({ result })
-  //     }).catch(err => console.error(err))
-  //   })
-
-  //   return () => { listener.then(_ => _.remove() )}
-    
-  // }, [])
-
-  // useEffect(() => {
-  //   if (typeof window !== "undefined") {
-
-  //     const domain = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_DOMAIN
-
-  //     if (!domain) {
-  //       throw new Error("Missing DOMAIN env var")
-  //     }
-
-  //     const clientId = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_CLIENT_ID
-
-  //     if (!clientId) {
-  //       throw new Error("Missing CLIENT_ID env var")
-  //     }
-  //     const audience = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_AUDIENCE
-  //     if (!audience) {
-  //       throw new Error("Missing AUDIENCE env var")
-  //     }
-
-  //     const redirectUrl = `${window.location.origin}/signin`
-
-  //     Auth0Handler.initialize(domain, clientId, audience, redirectUrl, (user) => {
-  //       setUser(user || null)
-  //       if (user) {
-  //         setUsername(user.uname || null)
-  //       } else {
-  //         setUsername(null)
-  //       }
-  //       console.log({ user });
-  //     }).then(() => setIsReady(true)).catch(console.error)
-
-  //   }
-
-  // }, [])
-
-
-
   const onUpdateUser = (token: string | null) => {
     if (!token) {
-      setUser(null)
+      // setUser(null)
       setUsername(null)
     } else {
       const user = getPayloadFromAccessToken(token!)
-      setUser(user)
+      // setUser(user)
       setUsername(user?.uname ?? null)
       if (user.uname) {
         EncryptionPlugin.checkSetup()
@@ -109,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await auth0.logout({ logoutParams: { returnTo: returnToUrl } })
     onUpdateUser(null)
   }, [auth0])
-  // const login = () => getAuthHandler()!.login({ targetPath: window.location.toString().slice(window.location.origin.length) })
 
 
   const login = useCallback(() => {
@@ -153,20 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log(`Redirect handled `, result)
     navigate("/signin")
     
-    // const token = await getToken()
-    // onUpdateUser(token ?? null)
-
-    // console.log({ token })
-
-    // if (token) {
-    //   const payload = getPayloadFromAccessToken(token!)
-    //   console.log({ payload })
-    //   if (!payload.uname) {
-    //     console.log(`Navigating to signin for username assignment`)
-    //   } else {
-    //     console.log(`user has username`)
-    //   }
-    // }
   }, [auth0])
 
 
@@ -193,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{  isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
   )
 }
 

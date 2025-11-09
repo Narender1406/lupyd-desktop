@@ -2,12 +2,11 @@
 
 
 import react, { useEffect, useMemo, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Link } from "react-router-dom"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { useFirefly } from "@/context/firefly-context"
-import { CDN_STORAGE, dateToRelativeString, getTimestampFromUlid } from "lupyd-js"
+import { isCallRequestMessage, useFirefly } from "@/context/firefly-context"
+import { dateToRelativeString } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { protos as FireflyProtos, FireflyWsClient } from "firefly-client-js"
 import { UserAvatar } from "@/components/user-avatar"
@@ -75,6 +74,22 @@ export default function MessagesPage() {
 
 
   const onMessageCallback = (_: FireflyWsClient, message: DMessage) => {
+
+    const inner = FireflyProtos.UserMessageInner.decode(message.text)
+    if (inner.callMessage && message.from != auth.username) {
+      const obj = JSON.parse(new TextDecoder().decode(inner.callMessage.message))
+      if (isCallRequestMessage(obj)) {
+        EncryptionPlugin.showCallNotification({
+          caller: message.from,
+          sessionId: obj.sessionId,
+          conversationId: message.convoId
+        })
+      }
+
+      return
+    }
+
+
     setLastConversations(lastMessages => {
       const newLastMessages: DMessage[] = []
       const newOther = message!.from == auth.username ? message!.to : message!.from
@@ -224,15 +239,18 @@ function ConversationElement(props: { conversation: DMessage, sender: string, in
 
     (async () => {
 
-      const { ts } = await EncryptionPlugin.getLastSeenUserMessageTimestamp({ username })
+      const result = await EncryptionPlugin.getLastSeenUserMessageTimestamp({ username })
+      if (result) {
+        const { count } = await EncryptionPlugin.getNumberOfMessagesInBetweenSince({
+          from: conversation.from,
+          to: conversation.to,
+          since: result.ts
+        })
 
-      const { count } = await EncryptionPlugin.getNumberOfMessagesInBetweenSince({
-        from: conversation.from,
-        to: conversation.to,
-        since: ts
-      })
+        setUnreadMessagesCount(count)
 
-      setUnreadMessagesCount(count)
+      }
+
     })()
   }, [])
 

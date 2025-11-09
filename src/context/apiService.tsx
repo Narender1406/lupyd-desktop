@@ -34,22 +34,15 @@ export function ApiServiceProvider({ children }: { children: ReactNode }) {
     throw Error(`NEXT_PUBLIC_JS_ENV_CDN_STORAGE env var not set`)
   }
 
-  const getToken = useCallback(async () => {
-    const token = await auth.getToken()
-    if (!token) {
-      throw new Error("User not authenticated")
-    }
-    return token
-  }, [auth])
 
-
-  const api = useMemo(() => new ApiService(apiUrl, apiCdnUrl, getToken), [getToken])
-
-
-  useEffect(() => {
-    console.log({ apiUrl, apiCdnUrl })
-
-  }, [])
+  const api = useMemo(() => new ApiService(apiUrl, apiCdnUrl,
+    async () => {
+      const token = await auth.getToken()
+      if (!token) {
+        throw new Error("User not authenticated")
+      }
+      return token
+    }), [auth])
 
 
   return <ApiServiceContext.Provider value={{ api, apiCdnUrl, apiUrl, cdnUrl }}>{children}</ApiServiceContext.Provider>

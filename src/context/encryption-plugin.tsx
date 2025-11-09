@@ -86,6 +86,31 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
 
   getNumberOfMessagesInBetweenSince(options: { from: string, to: string, since: number }): Promise<{ count: number }>
+
+
+  showUserNotification(options: {
+    from: string,
+    to: string,
+    me: string,
+    textB64: string,
+    conversationId: number,
+    id: number,
+  }): Promise<void>
+
+  showCallNotification(options: {
+    caller: string,
+    sessionId: number,
+    conversationId: number,
+  }): Promise<void>
+
+
+  requestAllPermissions(options: { permissions: string[] }): Promise<any>
+
+  encrypt(options: { to: string, textB64: string, }): Promise<{ messageType: number, cipherTextB64: string }>
+
+
+
+  processPreKeyBundle(options: { owner: string, preKeyBundleB64: string }): Promise<void>
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")

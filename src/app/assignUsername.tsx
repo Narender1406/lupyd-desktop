@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
-import { ConflictStatusError, isValidUsername, NotAuthorizedError, ServerInternalError } from "lupyd-js";
+import { ConflictStatusError, getPayloadFromAccessToken, isValidUsername, NotAuthorizedError, ServerInternalError } from "lupyd-js";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
@@ -31,18 +31,18 @@ export default function AssignUsernamePage() {
   }
 
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
 
     if (usernameBeingAssigned) {
       return
     }
 
-    if (!auth.user) {
+    const token = await auth.getToken()
+
+    if (!token) {
       auth.login()
-      setBottomText("Signin Attempt Failed")
       return
     }
-
 
     if (!isValidUsername(username)) {
       setBottomText("Invalid username, should be greater than 2 characters and less than 30 characters and should only contain a-zA-Z0-9_")
@@ -72,9 +72,6 @@ export default function AssignUsernamePage() {
       }
     }).finally(() => setUsernameBeingAssigned(false))
   }
-
-  const [params, _setParams] = useSearchParams()
-
   const [targetPath, setTargetPath] = useState<string>("")
 
 
