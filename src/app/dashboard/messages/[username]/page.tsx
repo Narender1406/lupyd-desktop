@@ -37,15 +37,26 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import {  useFirefly } from "@/context/firefly-context";
+import { useFirefly } from "@/context/firefly-context";
 import { dateToRelativeString } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
-import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin";
+import { bMessageToDMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type DMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
-import { encryptBlobV1, toBase64 } from "@/lib/utils";
+import { decryptBlobV1, encryptBlobV1, toBase64 } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
+
+
+
+enum ContentType {
+  Unknown = 0,
+  Image = 1,
+  Video = 2,
+}
+
+
+
 
 export default function UserMessagePage() {
   const params = useParams();
@@ -95,7 +106,7 @@ export default function UserMessagePage() {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
       const isBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px threshold
       setIsAtBottom(isBottom);
-      
+
       // Reset new messages count when user scrolls to bottom
       if (isBottom) {
         setNewMessagesCount(0);
@@ -127,7 +138,7 @@ export default function UserMessagePage() {
     console.log('Taking photo');
     // For now, we'll just show an alert
     alert('Camera functionality would open here');
-    
+
 
   };
 
@@ -148,8 +159,8 @@ export default function UserMessagePage() {
     }
   };
 
-  useEffect(() => { 
-    getOlderMessages() 
+  useEffect(() => {
+    getOlderMessages()
     // Add scroll listener
     const container = messagesContainerRef.current;
     if (container) {
@@ -207,8 +218,8 @@ export default function UserMessagePage() {
       //   return
       // }
 
-
       if (!(message.from == receiver || message.to == receiver)) {
+
         const msg = FireflyProtos.UserMessageInner.decode(message.text)
         if (msg.messagePayload && msg.messagePayload.text.length > 0) {
           EncryptionPlugin.showUserNotification({
@@ -237,7 +248,7 @@ export default function UserMessagePage() {
         setNewMessagesCount(prev => prev + 1);
       }
 
-      const other = msg.from == sender ? msg.to : msg.from
+      const other = message.from == sender ? message.to : message.from
 
       EncryptionPlugin.markAsReadUntil({ username: other, ts: message.id })
 
@@ -292,7 +303,9 @@ export default function UserMessagePage() {
   async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
 
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
-    const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
+    // const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
+
+    const msg = await firefly.encryptAndSendViaWebSocket(BigInt(currentConvoId), receiver!, payload)
 
     setMessages(prev => addMessage(prev, msg))
   }
@@ -316,13 +329,21 @@ export default function UserMessagePage() {
         const { reader, key } = encryptBlobV1(file)
         const objectKey = await api.uploadFile(file.name, file.type, reader)
 
+        let contentType = ContentType.Unknown
+        if (file.type.startsWith("image/")) {
+          contentType = ContentType.Image
+        } else if (file.type.startsWith("video/")) {
+          contentType = ContentType.Video
+        }
+
         encryptedFiles.files.push(FireflyProtos.EncryptedFile.create({
           url: `${cdnUrl}/${objectKey}`,
           secretKey: key,
-          secretKeyType: 1
+          contentType
         }))
       }
 
+      // TODO: can just send files away immediately individually, instead of sending all of them at once
 
       const userMessage =
         FireflyProtos.UserMessageInner.create({
@@ -355,7 +376,7 @@ export default function UserMessagePage() {
   const createFakeConversation = () => {
     const fakeMessages: DMessage[] = [];
     const now = Date.now() * 1000;
-    
+
     // Create different types of messages
     const messageTypes = [
       'Hello there! 👋 How are you doing today? I hope you are having a great day!',
@@ -369,11 +390,11 @@ export default function UserMessagePage() {
       'Quick update: We\'ve made some changes to the design and functionality.',
       'Can you review this quarterly_report_final_v3.pdf when you have a chance? [file]'
     ];
-    
+
     for (let i = 0; i < 20; i++) {
       const isSender = i % 2 === 0;
       const messageType = messageTypes[i % messageTypes.length];
-      
+
       const fakeMessage: DMessage = {
         id: now - (i * 1000000),
         convoId: 1,
@@ -389,7 +410,7 @@ export default function UserMessagePage() {
       };
       fakeMessages.push(fakeMessage);
     }
-    
+
     setMessages(fakeMessages.reverse());
   };
 
@@ -404,7 +425,7 @@ export default function UserMessagePage() {
     }
     (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
   }, []);
-  
+
   // Prevent page jump on keyboard open
   useEffect(() => {
     if (!window.visualViewport) return;
@@ -658,12 +679,12 @@ export default function UserMessagePage() {
               <Send className="h-5 w-5" />
             </Button>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            className="hidden" 
-            multiple 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            multiple
           />
         </div>
       </div>
@@ -679,15 +700,19 @@ export function MessageElement(props: { message: DMessage, sender: string, handl
   const { message, sender, handleReaction, handleReply } = props;
   const isMine = message.from === sender;
 
-  const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
+  // const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRelativeTimestamp(dateToRelativeString(new Date(Number(message.id / 1000))))
-    }, 1000)
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setRelativeTimestamp(dateToRelativeString(new Date(Number(message.id / 1000))))
+  //   }, 1000)
 
-    return () => { clearInterval(interval) }
-  }, [])
+  //   return () => { clearInterval(interval) }
+  // }, [])
+
+
+  const date = new Date(message.id / 1000)
+  const timestamp = `${date.getHours() % 12}:${date.getMinutes()}`
 
   return (
     <div
@@ -707,7 +732,7 @@ export function MessageElement(props: { message: DMessage, sender: string, handl
             <p
               className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
             >
-              {relativeTimestamp}
+              {timestamp}
             </p>
 
             {/* Message actions - Fixed position for better visibility */}
@@ -797,70 +822,144 @@ export function MessageElement(props: { message: DMessage, sender: string, handl
 
 export function MessageBody(props: { inner: Uint8Array }) {
   const message = FireflyProtos.UserMessageInner.decode(props.inner);
-  
+
   // Handle plain text messages
   if (message.plainText) {
     const text = new TextDecoder().decode(message.plainText);
     return <div className="whitespace-pre-wrap">{text}</div>
   }
 
-  // Handle message payload with text and files
+
+
+
+
   if (message.messagePayload) {
     const cleanText = message.messagePayload.text
-      ? message.messagePayload.text.replace(/\[image\]/g, '').replace(/\[video\]/g, '').replace(/\[file\]/g, '').trim()
-      : '';
-      
+    const files = message.messagePayload.files?.files ?? []
+
     return (
       <div className="space-y-2">
         {cleanText && <div className="whitespace-pre-wrap">{cleanText}</div>}
-        
-        {/* Dummy images */}
-        {message.messagePayload.text && message.messagePayload.text.includes('[image]') && (
-          <div className="mt-2">
-            <img 
-              src="https://placehold.co/300x200?text=Image" 
-              alt="Shared content" 
-              className="rounded-lg max-w-full h-auto object-contain"
-              style={{ aspectRatio: '3/2', maxHeight: '200px' }}
-            />
-          </div>
-        )}
-        
-        {/* Dummy videos */}
-        {message.messagePayload.text && message.messagePayload.text.includes('[video]') && (
-          <div className="mt-2 relative" style={{ aspectRatio: '3/2', maxHeight: '200px' }}>
-            <img 
-              src="https://placehold.co/300x200?text=Video+Preview" 
-              alt="Video preview" 
-              className="rounded-lg w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-black bg-opacity-50 rounded-full p-3">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Dummy files */}
-        {message.messagePayload.text && message.messagePayload.text.includes('[file]') && (
-          <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
-            <div className="flex-shrink-0 w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900 whitespace-normal">document.pdf</p>
-              <p className="text-xs text-gray-500">1.2 MB</p>
-            </div>
-          </div>
-        )}
+        {
+          files.map(file => <MessageFileElement file={file} />
+          )
+        }
       </div>
     );
   }
 
   return <div></div>
+}
+
+
+
+
+export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile }) {
+  const { file } = props
+
+  const isImage = (file.contentType & ContentType.Image) == ContentType.Image
+  const isVideo = (file.contentType & ContentType.Video) == ContentType.Video
+
+
+  // TODO: cache after unencrypting, so no need to decrypt every time
+
+
+  enum Status {
+    uninit,
+    downloading,
+    downloaded,
+    error,
+  }
+
+  const [status, setStatus] = useState(Status.uninit)
+  const [src, setSrc] = useState("")
+
+  useEffect(() => {
+
+    (async () => {
+      if (status == Status.uninit) {
+        if (await checkIfFileExists(file)) {
+          setSrc(await getFileUrl(file.url))
+          setStatus(Status.downloaded)
+        } else {
+          setStatus(Status.downloading)
+          try {
+            await decryptStreamAndSave(file)
+            setSrc(await getFileUrl(file.url))
+            setStatus(Status.downloaded)
+          } catch (err) {
+            setStatus(Status.error)
+            console.error(err)
+          }
+        }
+      }
+    }
+
+    )()
+
+  }, [])
+
+
+  if (status == Status.downloading) {
+    //TODO: make it pretty
+    return <div>Downloading...</div>
+  }
+
+  if (status == Status.error) {
+    //TODO: make it pretty, maybe retry?
+    return <div>Something went wrong</div>
+  }
+
+
+  if (isImage) {
+
+    return (<div className="mt-2">
+      <img
+        src={src}
+        alt="Shared content"
+        className="rounded-lg max-w-full h-auto object-contain"
+        style={{ aspectRatio: '3/2', maxHeight: '200px' }}
+      />
+    </div>
+
+    )
+  }
+
+  if (isVideo) {
+    return (
+      <div className="mt-2 relative" style={{ aspectRatio: '3/2', maxHeight: '200px' }}>
+        <video
+          src={src}
+          className="rounded-lg w-full h-full object-cover"
+          controls
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-black bg-opacity-50 rounded-full p-3">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+
+
+
+
+
+  return (
+    <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
+      <div className="flex-shrink-0 w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
+        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div className="ml-3">
+        <p className="text-sm font-medium text-gray-900 whitespace-normal">document.pdf</p>
+        <p className="text-xs text-gray-500">1.2 MB</p>
+      </div>
+    </div>
+  )
 }

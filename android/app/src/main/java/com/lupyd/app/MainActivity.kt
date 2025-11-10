@@ -8,6 +8,8 @@ import com.getcapacitor.BridgeActivity
 
 
 class MainActivity : BridgeActivity() {
+    lateinit var server: FileServer
+    lateinit var serverThread: Thread
     override fun onCreate(savedInstanceState: Bundle?) {
 
 //        bridge.getWebView().getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
@@ -29,6 +31,18 @@ class MainActivity : BridgeActivity() {
                 request.grant(request.getResources())
             }
         })
+        server = FileServer(rootDir = application.filesDir)
+
+        serverThread = Thread {
+            server.startServer()
+        }
+        serverThread.start()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        server.closeServer()
+        serverThread.interrupt()
 
     }
 }

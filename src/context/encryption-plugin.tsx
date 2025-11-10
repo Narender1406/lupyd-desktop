@@ -1,6 +1,8 @@
 import { fromBase64 } from "@/lib/utils";
 
 import { type Plugin as CapacitorPlugin, registerPlugin, type PluginCallback, type PluginListenerHandle } from '@capacitor/core'
+import { protos as FireflyProtos } from "firefly-client-js";
+import { decryptBlobV1 } from "@/lib/utils";
 
 export interface BMessage {
   id: number,
@@ -111,7 +113,56 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
 
   processPreKeyBundle(options: { owner: string, preKeyBundleB64: string }): Promise<void>
+
+
+  handleMessage(msg: BMessage): Promise<void>,
+
+
+  getFileServerUrl(): Promise<{ url: string }>,
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 
+
+export const getFileUrl = async (fileUrl: string) => {
+  const { url } = await EncryptionPlugin.getFileServerUrl()
+  const pathname = new URL(fileUrl).pathname
+  const filename = pathname
+  return `${url}/decrypted/${filename}`
+  
+}
+
+export const decryptStreamAndSave = async (
+  file: FireflyProtos.EncryptedFile,
+) => {
+  const response = await fetch(file.url);
+
+  if (!response.ok) {
+    throw new Error(`failed to download file`);
+  }
+
+  const blob = await response.blob();
+
+  const stream = decryptBlobV1(blob, file.secretKey);
+  {
+    const response = await fetch(await getFileUrl(file.url), {
+      method: "PUT",
+      body: stream
+    })
+
+    if (!response.ok) {
+      throw new Error("failed to save file")
+    }
+  }
+}
+
+
+export const checkIfFileExists = async (file: FireflyProtos.EncryptedFile) => {
+
+  const response = await fetch(await getFileUrl(file.url), { method: "HEAD"})
+  if (response.ok) {
+    return true
+  }
+  
+  return false
+}

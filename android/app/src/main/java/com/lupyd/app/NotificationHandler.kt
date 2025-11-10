@@ -18,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
+import com.lupyd.app.MyFirebaseMessagingService.Companion.CALL_NOTIFICATION_ID_BASE
 import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID
 import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID_CALL
 import com.lupyd.app.MyFirebaseMessagingService.Companion.GROUP_KEY_MESSAGES
@@ -52,11 +53,11 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun showCallNotification(caller: String, conversationId: Long, sessionId: Long) {
+    fun showCallNotification(caller: String, conversationId: Long, sessionId: Int) {
         try {
             createCallNotificationChannel()
 
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
+            val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
             if (notificationManager == null) {
                 Log.e(TAG, "Failed to show call notification: notificationManager is null")
                 return
@@ -121,7 +122,8 @@ class NotificationHandler(private val context: Context) {
                 .addAction(android.R.drawable.ic_menu_call, "Accept", acceptPendingIntent)
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", declinePendingIntent)
 
-            val notificationId = MyFirebaseMessagingService.CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+            val notificationId = CALL_NOTIFICATION_ID_BASE + sessionId
+
             Log.d(TAG, "Showing call notification with ID: $notificationId")
             notificationManager.notify(notificationId, notificationBuilder.build())
             Log.d(TAG, "Call notification shown for $caller")
@@ -505,7 +507,7 @@ class NotificationHandler(private val context: Context) {
             .setStyle(inboxStyle)
             .addAction(replyAction)
             .addAction(markAsReadAction)
-            .setGroup(MyFirebaseMessagingService.GROUP_KEY_MESSAGES)
+            .setGroup(GROUP_KEY_MESSAGES)
             .setOnlyAlertOnce(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setCategory(Notification.CATEGORY_MESSAGE)
@@ -516,6 +518,11 @@ class NotificationHandler(private val context: Context) {
         }
 
         return notificationBuilder.build()
+    }
+
+    fun cancelCallNotification(sessionId: Int) {
+        (context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancel(
+            CALL_NOTIFICATION_ID_BASE + sessionId)
     }
 
     companion object {

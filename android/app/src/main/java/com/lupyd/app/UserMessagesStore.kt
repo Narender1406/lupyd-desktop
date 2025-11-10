@@ -37,4 +37,9 @@ interface DMessagesDao {
 
     @Query("SELECT COUNT(msgId) FROM user_messages WHERE ((mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from)) AND msgId > :since")
     suspend fun getNumberOfMessagesInBetweenSince(from: String, to: String, since: Long): Int
+
+
+    @Query("DELETE FROM user_messages WHERE ((mfrom = :from AND mto = :to) OR (mfrom = :to AND mto = :from)) AND msgId = :msgId")
+    suspend fun deleteMessageInBetween(from: String, to: String, msgId: Long)
+
 }

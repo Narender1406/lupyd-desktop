@@ -397,9 +397,10 @@ class EncryptionPlugin : Plugin() {
     fun showCallNotification(call: PluginCall) {
         try {
             val caller = call.data.getString("caller")!!
-            val sessionId = call.data.getLong("sessionId")
+            val sessionId = call.data.getInteger("sessionId")!!
             val convoId = call.data.getLong("conversationId")
-            notificationHandler.showCallNotification(caller, sessionId, convoId)
+
+            notificationHandler.showCallNotification(caller, convoId, sessionId)
 
         } catch (e: Exception) {
             Log.e(tag, e.toString())
@@ -415,5 +416,31 @@ class EncryptionPlugin : Plugin() {
         } catch (e: Exception) {
             call.reject(e.toString())
         }
+    }
+
+    @PluginMethod
+    fun handleMessage(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val textB64 = call.data.getString("textB64")
+                val convoId = call.data.getLong("convoId")
+                val msgId = call.data.getLong("id")
+                val from = call.data.getString("from")
+                val to = call.data.getString("to")
+                val msg = DMessage(msgId, convoId, from!!, to!!, Base64.decode(textB64, Base64.NO_WRAP))
+
+                encryptionWrapper.handleMessage(msg)
+
+                call.resolve()
+            } catch (e: Exception) {
+                call.reject(e.toString())
+            }
+        }
+    }
+
+
+    @PluginMethod
+    fun getFileServerUrl(call: PluginCall) {
+        call.resolve(JSObject().put("url", "http://localhost:51414"))
     }
 }

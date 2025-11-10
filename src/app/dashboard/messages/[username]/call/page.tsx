@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/auth-context"
 import * as fireflyContext from "@/context/firefly-context"
 import { CallSession } from "@/context/user-call-context"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { protos as FireflyProtos } from "firefly-client-js"
 import { Maximize2, Mic, MicOff, Minimize2, MoreVertical, PhoneOff, RefreshCw, Video, VideoOff, Volume2, VolumeX } from "lucide-react"
@@ -25,23 +25,25 @@ export default function UserCallPage() {
 
   const firefly = fireflyContext.useFirefly()
 
-  const convoId = (() => {
+  const convoId = useMemo(() => {
     const val = Number.parseInt(searchParams.get("convoId") ?? searchParams.get("conversationId") ?? '0')
     if (Number.isNaN(val)) {
       return 0
     } else {
       return val
     }
-  })()
+  }, [searchParams])
 
 
-  const getSessionId = () => {
+  const sessionId = useMemo(() => {
     const sessionId = Number.parseInt(searchParams.get("sessionId") ?? "")
     if (Number.isNaN(sessionId)) {
       return Math.floor(Math.random() * 99999)
     }
     return sessionId
-  }
+
+  }, [searchParams])
+
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isVideoOn, setIsVideoOn] = useState<boolean>(searchParams.get("video") == "true");
   const [isSpeakerOn, setIsSpeakerOn] = useState<boolean>(true);
@@ -72,7 +74,7 @@ export default function UserCallPage() {
 
   const session = useRef(new CallSession(
     getConfiguration(),
-    auth.username!, other, 1000, getSessionId(), true, isVideoOn),
+    auth.username!, other, 1000, sessionId, true, isVideoOn),
   )
 
 
@@ -108,9 +110,8 @@ export default function UserCallPage() {
 
   useEffect(() => {
     const onCallMessage = (ev: Event) => {
-      const message = (ev as CustomEvent).detail as Uint8Array
+      const callMessage = (ev as CustomEvent).detail as FireflyProtos.CallMessage
 
-      const callMessage = FireflyProtos.CallMessage.create({ message })
       const userMessageInner = FireflyProtos.UserMessageInner.create({ callMessage })
 
       const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish()
@@ -185,18 +186,11 @@ export default function UserCallPage() {
 
 
       if (msg.callMessage) {
-        const obj = JSON.parse(new TextDecoder().decode(msg.callMessage.message))
-
-        if ("type" in obj && typeof obj.type === "string") {
-          if (obj.type == "reject") {
-            session.current.dispose(true, false)
-            navigate(-1)
-          } else if (obj.type == "end") {
-            session.current.dispose(true, false)
-            navigate(-1)
-          } else {
-            session.current.onCallMessage(msg.callMessage.message)
-          }
+        if (msg.callMessage.type == FireflyProtos.CallMessageType.reject || msg.callMessage.type == FireflyProtos.CallMessageType.end) {
+          session.current.dispose(true, false)
+          navigate(-1)
+        } else {
+          session.current.onCallMessage(msg.callMessage)
         }
 
       } else {
@@ -208,104 +202,6 @@ export default function UserCallPage() {
     return () => firefly.removeEventListener(cb)
 
   }, [firefly])
-
-
-  // useEffect(() => {
-  //   const cb: MessageCallbackType = (_, message) => {
-  //     const msg = FireflyProtos.UserMessageInner.decode(message.text)
-  //     if (msg.messagePayload && msg.messagePayload!.text.length > 0) {
-  //       EncryptionPlugin.showUserNotification({
-  //         from: message.from,
-  //         to: message.to,
-  //         me: auth.username!,
-  //         textB64:
-  //           toBase64(message.text),
-  //         conversationId: message.convoId,
-  //         id: message.id
-  //       })
-
-  //       return
-  //     }
-
-  //     if (message.from != other) {
-  //       return
-  //     }
-  //     if (msg.callMessage) {
-  //       const obj = JSON.parse(new TextDecoder().decode(msg.callMessage.message))
-  //       console.log(`Call Message ${JSON.stringify(obj)}`)
-  //       if (isCallRejectedMessage(obj)) {
-  //         if (obj.sessionId == callHandler.session?.getSessionId()) {
-  //           callHandler.dispose()
-  //           console.log(`Call rejected`)
-  //           navigate(-1)
-  //         }
-  //         return;
-  //       }
-
-  //       if (isCallEndedMessage(obj)) {
-  //         if (obj.sessionId == callHandler.session?.getSessionId()) {
-  //           console.log(`Call ended`)
-  //           navigate(-1)
-  //         }
-  //       }
-  //       if (callHandler.session == undefined) {
-  //         throw Error('Session is undefined')
-  //       }
-  //       callHandler.session!.onCallMessage(msg.callMessage.message)
-  //     }
-  //     setConvoId(message.convoId)
-  //   }
-  //   firefly.addEventListener(cb)
-  //   return () => firefly.removeEventListener(cb)
-  // }, [callHandler])
-
-  // useEffect(() => {
-  //   const accepted = searchParams.get("accepted") == "true"
-  //   const requested = searchParams.get("requested") == "true"
-  //   const sessionId = Number.parseInt(searchParams.get("sessionId")!)
-  //   if (Number.isNaN(sessionId)) {
-  //     console.error("No sessionId provided")
-  //     return
-  //   }
-
-  //   if (convoId == undefined) {
-  //     console.error("No convoId provided")
-  //     return
-  //   }
-
-  //   if (accepted || requested) {
-  //     callHandler.init(auth.username!, other!, async (data) => {
-  //       const text = FireflyProtos.UserMessageInner.create({
-  //         callMessage: FireflyProtos.CallMessage.create({
-  //           message: data,
-  //         })
-  //       })
-  //       await firefly.encryptAndSendViaWebSocket(BigInt(convoId), other!, FireflyProtos.UserMessageInner.encode(text).finish())
-
-
-  //     }, 1000, sessionId,
-  //       !isMuted,
-  //       isVideoOn,
-  //     ).then((session) => {
-  //       console.log({ callHandler, accepted, requested })
-  //       if (accepted) {
-  //         session.startCall().then(_ => console.log(`Call Started`)).catch(console.error);
-  //       } else {
-  //         const expiry = Date.now() + 60 * 1000
-  //         session.requestCall(expiry).then(_ => console.log(`Call Requested`)).catch(console.error);
-  //         setTimeout(() => {
-  //         }, expiry)
-  //       }
-  //     })
-  //   } else {
-  //     navigate(-1)
-  //   }
-
-  //   return () => {
-  //     callHandler.dispose()
-  //   }
-  // }, [])
-
 
 
   // Call timer
@@ -504,7 +400,7 @@ export default function UserCallPage() {
   function onFlipCamera(): void {
   }
 
-return (
+  return (
     <div className="fixed inset-0 z-50 bg-black overflow-hidden">
       <div className="relative w-full h-full flex items-center justify-center">
 
@@ -565,6 +461,6 @@ return (
       </div>
     </div>
   )
-  
+
 
 }

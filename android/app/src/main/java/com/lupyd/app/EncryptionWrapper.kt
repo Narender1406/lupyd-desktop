@@ -62,13 +62,13 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
 
             val decrypted = decrypt(from, text, messageType)
 
-            Log.i(tag, "decrypted message from ${from} to ${to}")
+//            Log.i(tag, "decrypted message from ${from} to ${to}")
             val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
-
-
-            if (isACallRequest(dmsg.mfrom, dmsg.conversationId, dmsg.text)) {
-                Log.i(tag, "Call Received from ${dmsg.mfrom}")
-            }
+//
+//
+//            if (isACallRequest(dmsg.mfrom, dmsg.conversationId, dmsg.text)) {
+//                Log.i(tag, "Call Received from ${dmsg.mfrom}")
+//            }
 
 
             handleMessage(dmsg)
@@ -80,27 +80,27 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
         return null
     }
 
-    fun isACallRequest(from: String, convoId: Long, text: ByteArray): Boolean {
-        val msg = Message.UserMessageInner.parseFrom(text)
-        if (msg.callMessage.equals(Message.CallMessage.getDefaultInstance())) {
-            return false
-        }
-
-        val obj = JSONObject(msg.callMessage.message.toStringUtf8())
-
-        Log.i(tag, "Call Message from $from: $obj")
-        if (obj.has("type") && obj.get("type") == "request") {
-            val sessionId = obj.getLong("sessionId")
-            val expiry = obj.getLong("exp")
-            if (expiry > System.currentTimeMillis()) {
-                NotificationHandler(context).showCallNotification(from, convoId,sessionId)
-                return true
-            }
-        }
-
-        return false
-
-    }
+//    fun isACallRequest(from: String, convoId: Long, text: ByteArray): Boolean {
+//        val msg = Message.UserMessageInner.parseFrom(text)
+//        if (msg.callMessage.equals(Message.CallMessage.getDefaultInstance())) {
+//            return false
+//        }
+//
+//        val obj = JSONObject(msg.callMessage.message.toStringUtf8())
+//
+//        Log.i(tag, "Call Message from $from: $obj")
+//        if (obj.has("type") && obj.get("type") == "request") {
+//            val sessionId = obj.getInt("sessionId")
+//            val expiry = obj.getLong("exp")
+//            if (expiry > System.currentTimeMillis()) {
+//                NotificationHandler(context).showCallNotification(from, convoId, sessionId)
+//                return true
+//            }
+//        }
+//
+//        return false
+//
+//    }
 
 
     fun decrypt(from: String, payload: ByteArray, messageType: Int): ByteArray {
@@ -458,7 +458,86 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
             }
         }
 
-        Log.i(tag, "Saving message ${msg.toString()}")
+        val msgInner = Message.UserMessageInner.parseFrom(msg.text)
+
+        if (msgInner.hasCallMessage()) {
+            val callMsg = msgInner.callMessage
+
+            if (callMsg.type == Message.CallMessageType.candidate
+                || callMsg.type == Message.CallMessageType.offer
+                || callMsg.type == Message.CallMessageType.answer) {
+
+                if (onMessageCb != null) {
+                    onMessageCb(msg)
+                }
+                return
+            }
+
+
+            if (callMsg.type == Message.CallMessageType.end || callMsg.type == Message.CallMessageType.reject) {
+                val maxLimit = 1000
+                val limit = 100
+                var cursor = msg.msgId
+                var msgsProcessed = 0
+
+                NotificationHandler(context).cancelCallNotification(callMsg.sessionId)
+
+                while (msgsProcessed < maxLimit) {
+                    val messages = db.messagesDao().getLastMessagesInBetween(msg.mfrom, msg.mto, cursor, limit)
+
+                    if (messages.isEmpty()) {
+                        break
+                    }
+
+                    msgsProcessed += messages.size
+                    cursor = messages.last().msgId
+
+                    val startMessage = messages.find {
+                        val curInner = Message.UserMessageInner.parseFrom(it.text)
+                        if (curInner.hasCallMessage()) {
+                            val curCallMessage = curInner.callMessage
+                            if (curCallMessage.sessionId == callMsg.sessionId && curCallMessage.type == Message.CallMessageType.request) {
+                                return@find true
+                            }
+                        }
+                        false
+                    }
+
+                    if (startMessage != null) {
+                        db.messagesDao().deleteMessageInBetween(startMessage.mfrom, startMessage.mto, startMessage.msgId)
+
+                        val newCallMessage = Message.CallMessage.newBuilder(callMsg)
+                            .setType(Message.CallMessageType.ended)
+                            .setJsonBody(JSONObject()
+                                .put("duration", msg.msgId - startMessage.msgId)
+                                .toString())
+                            .build()
+
+                        val newInner = Message.UserMessageInner.newBuilder(msgInner)
+                            .setCallMessage(newCallMessage).build()
+
+                        val newMsg = DMessage(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, newInner.toByteArray())
+
+                        if (onMessageCb != null) {
+                            onMessageCb(msg)
+                            onMessageCb(newMsg)
+                        }
+                        db.messagesDao().put(newMsg)
+                        return
+                    }
+                }
+            }
+
+            if (callMsg.type == Message.CallMessageType.request) {
+                val me = getUsernameFromToken(getAccessToken())
+
+                if (msg.mfrom != me) {
+                    NotificationHandler(context).showCallNotification(msg.mfrom, msg.conversationId, callMsg.sessionId)
+                }
+            }
+        }
+
+        Log.i(tag, "Saving message ${msg}")
         db.messagesDao().put(msg)
 
         if (onMessageCb != null) {

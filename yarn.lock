@@ -266,10 +266,29 @@
   dependencies:
     tslib "^2.1.0"
 
+"@capacitor/file-transfer@^1.0.6":
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@capacitor/file-transfer/-/file-transfer-1.0.6.tgz#78da6975b4309b4e8c0d7e84664d919e2988e66f"
+  integrity sha512-R4aGcolmn77hfGPA3+RGhH9YBX1xTR7H43WOcoQx56whWnIUTlQ3B6SQkd8912JPFHvnPhOJ4lC0yNCDY1TjrQ==
+  dependencies:
+    "@capacitor/synapse" "^1.0.3"
+
+"@capacitor/filesystem@^7.1.4":
+  version "7.1.4"
+  resolved "https://registry.yarnpkg.com/@capacitor/filesystem/-/filesystem-7.1.4.tgz#b728831f15af00d7d5c0779c683da142cba3b366"
+  integrity sha512-BdUnOVulHAtruW2GeC9o7e9LO5aFcVYqNn3dLypJSOck/WipUFNfI0QWoUS0FVGeqBbDJgFGi3zjXJx0lzbDkA==
+  dependencies:
+    "@capacitor/synapse" "^1.0.3"
+
 "@capacitor/status-bar@^7.0.3":
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/@capacitor/status-bar/-/status-bar-7.0.3.tgz#4e8c1ac49cf928576cfac1c78cc3f9886088ebfe"
   integrity sha512-JyRpVnKwHij9hgPWolF6PK+HT3e2HSPjN11/h2OmKxq8GAdPGARFLv+97eZl0pvuvm0Kka/LpiLb5whXISBg7Q==
+
+"@capacitor/synapse@^1.0.3":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@capacitor/synapse/-/synapse-1.0.4.tgz#c6beb33119d9656b1f04cb7783989fb78933ef6d"
+  integrity sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==
 
 "@date-fns/tz@^1.4.1":
   version "1.4.1"
@@ -2111,6 +2130,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/js-md5@^0.4.2":
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/@types/js-md5/-/js-md5-0.4.3.tgz#c134cbb71c75018876181f886a12a2f9962a312a"
+  integrity sha512-BIga/WEqTi35ccnGysOuO4RmwVnpajv9oDB/sDQSY2b7/Ac7RyYR30bv7otZwByMvOJV9Vqq6/O1DFAnOzE4Pg==
+
 "@types/json-schema@^7.0.15":
   version "7.0.15"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.15.tgz#596a1747233694d50f6ad8a7869fcb6f56cf5841"
@@ -3201,7 +3225,7 @@ find-up@^5.0.0:
 
 "firefly-client-js@https://github.com/lupyd/firefly-client-js":
   version "1.0.0"
-  resolved "https://github.com/lupyd/firefly-client-js#2c3afb697421107a09f23483dec6d254e891ce45"
+  resolved "https://github.com/lupyd/firefly-client-js#a9e82954a90fcf8979c3437821b05778f095289e"
   dependencies:
     "@signalapp/libsignal-client" "^0.78.3"
     firefly-mls "https://github.com/lupyd/firefly-mls-js.git"
@@ -3398,6 +3422,13 @@ he@1.2.0:
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
 
+hoist-non-react-statics@^3.3.0:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/hoist-non-react-statics/-/hoist-non-react-statics-3.3.2.tgz#ece0acaf71d62c2969c2ec59feff42a4b1a85b45"
+  integrity sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==
+  dependencies:
+    react-is "^16.7.0"
+
 id128@^1.6.6:
   version "1.6.6"
   resolved "https://registry.yarnpkg.com/id128/-/id128-1.6.6.tgz#cfbbf2c7569071694c7e55323dde40e457ae14e3"
@@ -3555,6 +3586,11 @@ jiti@^1.21.7:
   version "1.21.7"
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.21.7.tgz#9dd81043424a3d28458b193d965f0d18a2300ba9"
   integrity sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==
+
+js-md5@^0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/js-md5/-/js-md5-0.7.3.tgz#b4f2fbb0b327455f598d6727e38ec272cd09c3f2"
+  integrity sha512-ZC41vPSTLKGwIRjqDh8DfXoCrdQIyBgspJVPXHBGu4nZlAEvG3nf+jO9avM9RmLiGakg7vz974ms99nEV0tmTQ==
 
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
@@ -4499,7 +4535,7 @@ react-infinite-scroll-component@^6.1.0:
   dependencies:
     throttle-debounce "^2.1.0"
 
-react-is@^16.13.1:
+react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
@@ -4508,6 +4544,15 @@ react-is@^19.1.1:
   version "19.2.0"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-19.2.0.tgz#ddc3b4a4e0f3336c3847f18b806506388d7b9973"
   integrity sha512-x3Ax3kNSMIIkyVYhWPyO09bu0uttcAIoecO/um/rKGQ4EltYWVYtyiGkS/3xMynrbVQdS69Jhlv8FXUEZehlzA==
+
+react-keep-alive@^2.5.2:
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/react-keep-alive/-/react-keep-alive-2.5.2.tgz#c0b8118f3dd6743323d1662b8368e6ebd649e81a"
+  integrity sha512-CoEsY5xE6rT31Z4p4UGZ/Crp0nZN+CY61ZflKzBGKB3D315jQMe2l8G5OrSEJ86V4stua7lSeFDIeG3DCuY2Rg==
+  dependencies:
+    "@types/js-md5" "^0.4.2"
+    hoist-non-react-statics "^3.3.0"
+    js-md5 "^0.7.3"
 
 react-lazyload@^3.2.1:
   version "3.2.1"
@@ -5003,7 +5048,16 @@ store2@^2.14.4:
   resolved "https://registry.yarnpkg.com/store2/-/store2-2.14.4.tgz#81b313abaddade4dcd7570c5cc0e3264a8f7a242"
   integrity sha512-srTItn1GOvyvOycgxjAnPA63FZNwy0PTyUBFMHRM+hVFltAeoh0LmNBz9SZqUS9mMqGk8rfyWyXn3GH5ReJ8Zw==
 
-"string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
+"string-width-cjs@npm:string-width@^4.2.0":
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
+  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
+  dependencies:
+    emoji-regex "^8.0.0"
+    is-fullwidth-code-point "^3.0.0"
+    strip-ansi "^6.0.1"
+
+string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -5028,7 +5082,14 @@ string_decoder@^1.1.1:
   dependencies:
     safe-buffer "~5.2.0"
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
+  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
+  dependencies:
+    ansi-regex "^5.0.1"
+
+strip-ansi@^6.0.0, strip-ansi@^6.0.1:
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -5438,7 +5499,16 @@ word-wrap@^1.2.5:
   resolved "https://registry.yarnpkg.com/word-wrap/-/word-wrap-1.2.5.tgz#d2c45c6dd4fbce621a66f136cbe328afd0410b34"
   integrity sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
+  integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
+  dependencies:
+    ansi-styles "^4.0.0"
+    string-width "^4.1.0"
+    strip-ansi "^6.0.0"
+
+wrap-ansi@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==

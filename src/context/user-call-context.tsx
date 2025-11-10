@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+
+import { protos as FireflyProtos } from "firefly-client-js"
+
 
 type CallEvent = "localStream" | "remoteStream" | "connectionState" | "callMessage";
 
@@ -47,11 +49,15 @@ export class CallSession extends EventTarget {
     this.rtcConfiguration = rtcConfiguration
   }
 
-  private _sendCallMessage(payload: any) {
-    payload["from"] = this.username;
-    payload["sessionId"] = this.sessionId;
-    const data = JSON.stringify(payload);
-    this.emit("callMessage", new TextEncoder().encode(data))
+  private _sendCallMessage(type: FireflyProtos.CallMessageType, jsonBody: string) {
+
+    const msg = FireflyProtos.CallMessage.create({
+      type,
+      jsonBody,
+      sessionId: this.sessionId,
+    })
+
+    this.emit("callMessage", msg)
   }
 
   private _currentRetryDuration = 0;
@@ -85,10 +91,10 @@ export class CallSession extends EventTarget {
 
     this.pc.onicecandidate = (e) => {
       if (e.candidate) {
-        this._sendCallMessage({
-          type: "candidate",
-          candidate: e.candidate,
-        });
+        this._sendCallMessage(
+          FireflyProtos.CallMessageType.candidate,
+          JSON.stringify(e.candidate.toJSON()),
+        );
       }
     };
 
@@ -120,49 +126,43 @@ export class CallSession extends EventTarget {
       .forEach((track) => this.pc?.addTrack(track, this.localStream!));
   }
 
-  async onCallMessage(data: Uint8Array) {
+  async onCallMessage(msg: FireflyProtos.CallMessage) {
 
-    const msg = JSON.parse(new TextDecoder().decode(data));
+    // const msg = JSON.parse(new TextDecoder().decode(data));
 
-    if (msg.from !== this.remoteUser) return;
+    // if (msg.from !== this.remoteUser) return;
     if (msg.sessionId !== this.sessionId) return;
 
     switch (msg.type) {
-      case "offer":
-        await this.pc!.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      case FireflyProtos.CallMessageType.offer:
+        await this.pc!.setRemoteDescription(new RTCSessionDescription(JSON.parse(msg.jsonBody)));
         const answer = await this.pc!.createAnswer();
         await this.pc!.setLocalDescription(answer);
-        this._sendCallMessage({ type: "answer", sdp: answer });
+        this._sendCallMessage(FireflyProtos.CallMessageType.answer, JSON.stringify(answer));
         break;
 
-      case "answer":
-        await this.pc!.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      case FireflyProtos.CallMessageType.answer:
+        await this.pc!.setRemoteDescription(new RTCSessionDescription(JSON.parse(msg.jsonBody)));
         break;
 
-      case "candidate":
-        await this.pc?.addIceCandidate(msg.candidate);
+      case FireflyProtos.CallMessageType.candidate:
+        await this.pc?.addIceCandidate(JSON.parse(msg.jsonBody));
         break;
-
-      case "request":
-      case "reject":
-      case "end":
     }
   }
 
   async startCall() {
     const offer = await this.pc!.createOffer();
     await this.pc!.setLocalDescription(offer);
-    this._sendCallMessage({ type: "offer", sdp: offer });
+    this._sendCallMessage(FireflyProtos.CallMessageType.offer, JSON.stringify(offer));
   }
 
   async requestCall(exp: number) {
-    this._sendCallMessage({ type: "request", exp })
+    this._sendCallMessage(FireflyProtos.CallMessageType.request, JSON.stringify({ exp }))
   }
 
   async endCall() {
-    this._sendCallMessage({
-      type: "end"
-    })
+    this._sendCallMessage(FireflyProtos.CallMessageType.end, "")
 
     this.dispose(true, false)
   }

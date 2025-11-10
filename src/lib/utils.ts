@@ -87,7 +87,7 @@ export function decryptBlobV1(blob: Blob, key: Uint8Array) {
     decryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter),
   );
 
-  return { reader };
+  return reader;
 }
 
 export async function* encryptStream(

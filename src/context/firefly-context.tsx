@@ -170,36 +170,85 @@ export default function FireflyProvider() {
     return bMessageToDMessage(msg)
   }
 
+  async function sendMessageViaWebsocket(convoId: bigint, text: Uint8Array, type: number) {
+    const request = fireflyClientJs.protos.Request.create({
+      createUserMessage: fireflyClientJs.protos.UserMessage.create({
+        conversationId: convoId,
+        text: text,
+        type
+      })
+    })
 
-  async function encryptAndSendViaWebSocket(convoId: bigint, other: string, text: Uint8Array) {
-    const textB64 = toBase64(text)
-    const encrypted = await EncryptionPlugin.encrypt({ to: other, textB64 })
-    const response = await client.current.sendRequest(
-      fireflyClientJs.protos.Request.create({
-        createUserMessage: fireflyClientJs.protos.UserMessage.create({
-          conversationId: convoId,
-          text: fromBase64(encrypted.cipherTextB64),
-          type: encrypted.messageType
-        })
-      }),
-      5_000
-    )
+    const response = await client.current.sendRequest(request, 5000)
 
     if (response.error) {
-      throw Error(`Server Responded with ${response.error.errorCode} ${response.error.error}`)
+      throw new fireflyClientJs.HttpError(response.error.errorCode, response.error.error)
     }
 
-    if (!response.createdUserMessage) {
-      throw Error(`Server sent no response back`)
+    const result = response.createdUserMessage!;
+    result.text = text;
+    return result;
+  }
+
+  async function encryptAndSendViaWebSocket(convoId: bigint, other: string, text: Uint8Array) {
+
+    if (convoId === 0n) {
+      const convoStart = await service.createConversation(other)
+      convoId = convoStart.conversationId
+
+      await EncryptionPlugin.processPreKeyBundle({ owner: other, preKeyBundleB64: toBase64(fireflyClientJs.protos.PreKeyBundle.encode(convoStart.bundle!).finish()) })
     }
+
+    const textB64 = toBase64(text)
+    let encrypted: { cipherTextB64: string, messageType: number }
+    try {
+      encrypted = await EncryptionPlugin.encrypt({ to: other, textB64 })
+    } catch (err) {
+      const convoStart = await service.createConversation(other)
+      convoId = convoStart.conversationId
+
+      await EncryptionPlugin.processPreKeyBundle({ owner: other, preKeyBundleB64: toBase64(fireflyClientJs.protos.PreKeyBundle.encode(convoStart.bundle!).finish()) })
+
+      encrypted = await EncryptionPlugin.encrypt({ to: other, textB64 })
+    }
+
+    const cipherText = fromBase64(encrypted.cipherTextB64)
+    const result = await sendMessageViaWebsocket(convoId, cipherText, encrypted.messageType)
+
+    // const response = await client.current.sendRequest(
+    //   fireflyClientJs.protos.Request.create({
+    //     createUserMessage: fireflyClientJs.protos.UserMessage.create({
+    //       conversationId: convoId,
+    //       text: fromBase64(encrypted.cipherTextB64),
+    //       type: encrypted.messageType
+    //     })
+    //   }),
+    //   5_000
+    // )
+
+    // if (response.error) {
+    //   throw Error(`Server Responded with ${response.error.errorCode} ${response.error.error}`)
+    // }
+
+    // if (!response.createdUserMessage) {
+    //   throw Error(`Server sent no response back`)
+    // }
 
     const msg: DMessage = {
       convoId: Number(convoId),
       text,
       from: auth.username!,
       to: other,
-      id: Number(response.createdUserMessage!.id),
+      id: Number(result!.id),
     }
+
+    EncryptionPlugin.handleMessage({
+      id: msg.id,
+      to: msg.to,
+      from: msg.from,
+      textB64: toBase64(text),
+      convoId: msg.convoId,
+    })
 
     return msg
 
@@ -267,7 +316,7 @@ export function isCallRequestMessage(obj: any): obj is { type: "request", sessio
     return false
   }
 }
-export function isCallRejectedMessage(obj: any): obj is { type: "rejected", sessionId: number  } {
+export function isCallRejectedMessage(obj: any): obj is { type: "rejected", sessionId: number } {
   if ("type" in obj && obj["type"] == "rejected" && typeof obj["sessionId"] === "number") {
     return true
   } else {
@@ -282,3 +331,4 @@ export function isCallEndedMessage(obj: any): obj is { type: "end", sessionId: n
     return false
   }
 }
+
