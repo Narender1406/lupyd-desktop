@@ -10,11 +10,10 @@ export class CallSession extends EventTarget {
   private remoteStream: MediaStream | null = null;
   private isMicEnabled = true;
   private isVideoEnabled = true;
-  private currentCamera: string | null = null;
   private username: string;
   private remoteUser: string;
   private initialRetryDuration: number;
-  readonly rtcConfiguration: RTCConfiguration
+  readonly rtcConfiguration: () => Promise<RTCConfiguration>
 
   // sendCallMessage: (data: Uint8Array) => Promise<void>;
 
@@ -30,8 +29,11 @@ export class CallSession extends EventTarget {
     return this.isVideoEnabled;
   }
 
+  maxRetries = 4
+  retriesLeft = this.maxRetries
+
   constructor(
-    rtcConfiguration: RTCConfiguration,
+    rtcConfiguration: () => Promise<RTCConfiguration>,
     username: string,
     remoteUser: string,
     initialRetryDuration: number,
@@ -67,10 +69,11 @@ export class CallSession extends EventTarget {
   }
   resetRetryDuration() {
     this._currentRetryDuration = this.initialRetryDuration;
+    this.retriesLeft = this.maxRetries;
   }
 
   async init() {
-    this.pc = new RTCPeerConnection(this.rtcConfiguration);
+    this.pc = new RTCPeerConnection(await this.rtcConfiguration());
 
     this.pc.onconnectionstatechange = () => {
       this.emit("connectionState", this.pc!.connectionState);
@@ -78,9 +81,13 @@ export class CallSession extends EventTarget {
         this.pc!.connectionState === "failed" ||
         this.pc!.connectionState === "disconnected"
       ) {
+        if (this.retriesLeft <= 0) {
+          return;
+        }
         // this.silentReconnect();
         setTimeout(() => {
           this.reconnect();
+          this.retriesLeft -= 1;
         }, this.retryDuration());
       }
 
@@ -100,38 +107,58 @@ export class CallSession extends EventTarget {
 
     this.pc.ontrack = (e) => {
       if (!this.remoteStream) this.remoteStream = new MediaStream();
+      console.log(`Remote Track: ${e.track.id} ${e.track.kind}`)
       this.remoteStream.addTrack(e.track);
       this.emit("remoteStream", this.remoteStream);
     };
 
+    this.pc.onnegotiationneeded = async _ => {
+      const offer = await this.pc!.createOffer()
+      this.pc!.setLocalDescription(offer)
+
+      this._sendCallMessage(FireflyProtos.CallMessageType.offer, JSON.stringify(offer));
+    }
+
     if (!this.localStream) {
       await this.setupLocalMedia();
-    } else {
-      this.localStream
-        .getTracks()
-        .forEach((track) => this.pc?.addTrack(track, this.localStream!));
     }
+    this.localStream!
+      .getTracks()
+      .forEach((track) => {
+
+        console.log(`Adding track to RTCPeerConnection ${track.id} ${track.kind} ${this.pc !== undefined}`)
+
+        this.pc?.addTrack(track, this.localStream!)
+
+      });
   }
 
+
   private async setupLocalMedia() {
+
     this.localStream = await navigator.mediaDevices.getUserMedia({
-      video: this.isVideoEnabled,
+      video: !this.isVideoEnabled ? false : {
+        facingMode: this.facingMode
+      },
       audio: this.isMicEnabled,
     });
 
-    this.emit("localStream", this.localStream);
+    console.log({
+      video: this.isVideoEnabled,
+      audio: this.isMicEnabled,
+    })
 
-    this.localStream
-      .getTracks()
-      .forEach((track) => this.pc?.addTrack(track, this.localStream!));
+    if (this.isVideoEnabled) {
+      this.facingMode = "user";
+    }
+
+    this.emit("localStream", this.localStream);
   }
 
   async onCallMessage(msg: FireflyProtos.CallMessage) {
-
-    // const msg = JSON.parse(new TextDecoder().decode(data));
-
-    // if (msg.from !== this.remoteUser) return;
     if (msg.sessionId !== this.sessionId) return;
+
+    console.log(`Received Message of Type: ${msg.type}`)
 
     switch (msg.type) {
       case FireflyProtos.CallMessageType.offer:
@@ -172,26 +199,57 @@ export class CallSession extends EventTarget {
     this.isMicEnabled = enable;
   }
 
-  toggleVideo(enable: boolean) {
-    this.localStream?.getVideoTracks().forEach((t) => (t.enabled = enable));
+  facingMode: string | undefined
+
+  async toggleVideo(enable: boolean) {
     this.isVideoEnabled = enable;
+    if (this.facingMode) {
+      console.log(`toggling video ${this.facingMode} ${enable}`)
+
+      this.localStream?.getVideoTracks().forEach((t) => (t.enabled = enable));
+      return
+    }
+
+    if (!enable) {
+      return
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+      }
+    })
+
+    this.facingMode = "user"
+    const newTrack = stream.getVideoTracks()[0]
+    {
+      const oldTrack = this.pc?.getSenders().find((s) => s.track?.kind == "video")
+      if (oldTrack) {
+        oldTrack.replaceTrack(newTrack)
+      } else {
+        this.pc?.addTrack(newTrack);
+      }
+    }
+    {
+      const oldTrack = this.localStream?.getVideoTracks()[0]
+
+      if (oldTrack)
+        this.localStream?.removeTrack(oldTrack)
+      this.localStream?.addTrack(newTrack)
+    }
+    console.log(`Replaced old video track`)
   }
 
   async flipCamera() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cameras = devices.filter((d) => d.kind === "videoinput");
-    if (cameras.length < 2) return;
-
-    const currentIndex = cameras.findIndex(
-      (c) => c.deviceId === this.currentCamera,
-    );
-    const next = cameras[(currentIndex + 1) % cameras.length];
-    this.currentCamera = next.deviceId;
-
+    if (!this.facingMode) {
+      return
+    }
+    const newFacingMode = this.facingMode === "user" ? "environment" : "user"
     const newStream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: next.deviceId },
-      audio: this.isMicEnabled,
+      video: { facingMode: newFacingMode },
     });
+
+    this.facingMode = newFacingMode;
 
     const newTrack = newStream.getVideoTracks()[0];
     this.pc
@@ -199,8 +257,12 @@ export class CallSession extends EventTarget {
       .find((s) => s.track?.kind === "video")
       ?.replaceTrack(newTrack);
 
-    this.localStream = newStream;
-    this.emit("localStream", this.localStream);
+    const oldTrack = this.localStream?.getVideoTracks()[0]
+    if (oldTrack) {
+      this.localStream!.removeTrack(oldTrack)
+    }
+    this.localStream!.addTrack(newTrack);
+    console.log(`Replaced old track`);
   }
 
   private shouldReconnect = true;

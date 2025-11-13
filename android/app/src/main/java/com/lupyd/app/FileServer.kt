@@ -131,18 +131,18 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
                 val rel = call.parameters.getAll("...")?.joinToString("/") ?: ""
                 Log.d(TAG, "PUT request for: $rel")
                 val file = File(rootDir, rel).canonicalFile
-                val contentLength = call.request.headers[HttpHeaders.ContentLength]?.toLong()
-
-                if (contentLength == null) {
-                    Log.d(TAG, "Bad request, Content-Length header is missing")
-                    call.respond(HttpStatusCode.BadRequest)
-                    return@put
-                }
+//                val contentLength = call.request.headers[HttpHeaders.ContentLength]?.toLong()
+//
+//                if (contentLength == null) {
+//                    Log.d(TAG, "Bad request, Content-Length header is missing")
+//                    call.respond(HttpStatusCode.BadRequest)
+//                    return@put
+//                }
 
                 Log.d(TAG, "Saving file: ${file.path}")
                 val stream = FileOutputStream(file, false)
 
-                call.request.receiveChannel().copyTo(stream, contentLength)
+                call.request.receiveChannel().copyTo(stream)
 
                 stream.flush()
                 stream.close()

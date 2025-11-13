@@ -3225,7 +3225,7 @@ find-up@^5.0.0:
 
 "firefly-client-js@https://github.com/lupyd/firefly-client-js":
   version "1.0.0"
-  resolved "https://github.com/lupyd/firefly-client-js#a9e82954a90fcf8979c3437821b05778f095289e"
+  resolved "https://github.com/lupyd/firefly-client-js#ace839e28beb33ae2ae63748dec22c5efc99982a"
   dependencies:
     "@signalapp/libsignal-client" "^0.78.3"
     firefly-mls "https://github.com/lupyd/firefly-mls-js.git"

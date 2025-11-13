@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "145450540517",
+    "firebase_url": "https://lupyd-fb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "lupyd-fb",
+    "storage_bucket": "lupyd-fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:145450540517:android:0820e8309a50e5ae2fe30c",
+        "android_client_info": {
+          "package_name": "com.lupyd.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUbUpJmWSBUZ1D0lk-3sv9-ZTjpvZM3Fs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

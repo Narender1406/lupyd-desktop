@@ -62,7 +62,7 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
 
             val decrypted = decrypt(from, text, messageType)
 
-//            Log.i(tag, "decrypted message from ${from} to ${to}")
+            Log.i(tag, "decrypted message from ${from} to ${to}")
             val dmsg = DMessage(msgId, conversationId, from, to, decrypted)
 //
 //
@@ -411,13 +411,13 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
             if (response.status.isSuccess()) {
                 val body = response.bodyAsBytes()
                 Message.UserMessages.parseFrom(body).messagesList.forEach {
-                    val dMsg = DMessage(
-                        it.id,
-                        it.conversationId,
-                        it.from,
-                        it.to,
-                        it.text.toByteArray()
-                    )
+//                    val dMsg = DMessage(
+//                        it.id,
+//                        it.conversationId,
+//                        it.from,
+//                        it.to,
+//                        it.text.toByteArray()
+//                    )
 
                     onUserMessage(
                         it.from,
@@ -462,6 +462,8 @@ class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Un
 
         if (msgInner.hasCallMessage()) {
             val callMsg = msgInner.callMessage
+
+            Log.i(tag, "Received call message type: ${callMsg.type}")
 
             if (callMsg.type == Message.CallMessageType.candidate
                 || callMsg.type == Message.CallMessageType.offer

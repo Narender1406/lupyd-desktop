@@ -156,36 +156,19 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val inner = Message.UserMessageInner.parseFrom(msg.text)
 
-        Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
-        var isCallMessage = false
 
-        if (!inner.callMessage.message.isEmpty) {
-//            val payload = JSONObject(inner.callMessage.message.toStringUtf8())
-//            Log.d(TAG, "=== CALL RECEIVED === from: ${msg.mfrom} ${payload}")
-//            if (payload.getString("type") != "request") {
-//                return
-//            }
-//            val sessionId = payload.getLong("sessionId")
-//            val expiry = payload.getLong("exp")
-//
-//            if (expiry < System.currentTimeMillis()) {
-//                Log.i(TAG, "Call Expired ${payload}")
-//                return
-//            }
-////            showCallNotification(msg.mfrom, msg.conversationId, sessionId)
-//
-//            notificationHandler.showCallNotification(msg.mfrom, msg.conversationId, sessionId)
 
-            return
+
+        if (inner.hasMessagePayload()) {
+            Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
+            val me = runBlocking {
+                encryptionWrapper.getUsernameFromToken(encryptionWrapper.getAccessToken())
+            }
+
+            notificationHandler.showUserBundledNotification(msg, me!!)
         }
 
-        val me = runBlocking {
-            encryptionWrapper.getUsernameFromToken(encryptionWrapper.getAccessToken())
-        }
 
-//        showUserBundledNotification(msg, me!!)
-
-        notificationHandler.showUserBundledNotification(msg, me!!)
 
     }
 
@@ -892,7 +875,7 @@ class CallActionReceiver : BroadcastReceiver() {
             val action = intent.action
             val caller = intent.getStringExtra("caller") ?: return
             val conversationId = intent.getLongExtra("conversationId", 0L)
-            val sessionId = intent.getLongExtra("sessionId", 0L)
+            val sessionId = intent.getIntExtra("sessionId", 0)
 
             Log.d(TAG, "Call action received: $action from $caller, sessionId: $sessionId")
             val db = getDatabase(context)
@@ -914,7 +897,7 @@ class CallActionReceiver : BroadcastReceiver() {
 
                     // For now, just dismiss the notification
                     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    val notificationId = CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+                    val notificationId = CALL_NOTIFICATION_ID_BASE + sessionId
                     notificationManager.cancel(notificationId)
 
                     val deepLinkUrl = "lupyd://m.lupyd.com/messages/${caller}/call?sessionId=${sessionId}&convoId=${conversationId}&accepted=true".toUri()
@@ -939,7 +922,7 @@ class CallActionReceiver : BroadcastReceiver() {
 
                     // Dismiss the notification
                     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    val notificationId = CALL_NOTIFICATION_ID_BASE + caller.hashCode()
+                    val notificationId = CALL_NOTIFICATION_ID_BASE + sessionId
                     notificationManager.cancel(notificationId)
 
                     val payload = Message.UserMessageInner.newBuilder().setCallMessage(Message.CallMessage.newBuilder().setMessage(

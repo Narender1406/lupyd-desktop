@@ -76,7 +76,10 @@ export default function UserMessagePage() {
 
   function addMessage(prev: DMessage[], msg: DMessage) {
     const message = FireflyProtos.UserMessageInner.decode(msg.text)
-    if (message.callMessage) {
+    if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
+
+
+
       return prev;
     }
 
@@ -829,10 +832,6 @@ export function MessageBody(props: { inner: Uint8Array }) {
     return <div className="whitespace-pre-wrap">{text}</div>
   }
 
-
-
-
-
   if (message.messagePayload) {
     const cleanText = message.messagePayload.text
     const files = message.messagePayload.files?.files ?? []
@@ -847,6 +846,20 @@ export function MessageBody(props: { inner: Uint8Array }) {
       </div>
     );
   }
+  // TODO: make it pretty
+  if (message.callMessage) {
+    if (message.callMessage.type == FireflyProtos.CallMessageType.ended) {
+      const { duration } = JSON.parse(message.callMessage.jsonBody)
+      const totalSeconds = Math.floor(duration / 1_000_000)
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
+
+      return <div>Call {minutes}:{seconds} ms</div>
+    }
+    if (message.callMessage.type == FireflyProtos.CallMessageType.rejected) {
+      return <div>Call Rejected</div>
+    }
+  }
 
   return <div></div>
 }
@@ -859,10 +872,6 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
 
   const isImage = (file.contentType & ContentType.Image) == ContentType.Image
   const isVideo = (file.contentType & ContentType.Video) == ContentType.Video
-
-
-  // TODO: cache after unencrypting, so no need to decrypt every time
-
 
   enum Status {
     uninit,
@@ -945,9 +954,8 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   }
 
 
-
-
-
+  const segments = file.url.split("/")
+  const filename = segments[segments.length - 1]
 
   return (
     <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
@@ -957,7 +965,7 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
         </svg>
       </div>
       <div className="ml-3">
-        <p className="text-sm font-medium text-gray-900 whitespace-normal">document.pdf</p>
+        <p className="text-sm font-medium text-gray-900 whitespace-normal">{filename}</p>
         <p className="text-xs text-gray-500">1.2 MB</p>
       </div>
     </div>

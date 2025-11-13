@@ -14,6 +14,7 @@ import { fromBase64, toBase64 } from "@/lib/utils";
 let _fireflyClient: undefined | fireflyClientJs.FireflyWsClient = undefined
 let _refs = 0
 
+
 const acquireFireflyClient = (getAuthToken: () => Promise<string>) => {
   if (!_fireflyClient) {
     const apiUrl = process.env.NEXT_PUBLIC_JS_ENV_CHAT_API_URL
@@ -87,7 +88,7 @@ export default function FireflyProvider() {
         const isValid = isBMessage(data)
         console.log(`onUserMessage Recevied  ${isValid} ${JSON.stringify(data)}`)
         const dmsg = bMessageToDMessage(data)
-        eventListeners.current.forEach(e => e(client.current, dmsg))
+        eventListeners.current.forEach(e => e(client.current!, dmsg))
       })
 
     return () => { listener.then(_ => _.remove()) }
@@ -100,7 +101,7 @@ export default function FireflyProvider() {
   }
 
 
-  const buildClient = () => {
+  useEffect(() => {
 
     const c = acquireFireflyClient(async () => {
       if (!auth.username) throw Error(`Not authenticated`);
@@ -112,13 +113,16 @@ export default function FireflyProvider() {
     })
 
     c.addEventListener("onMessage", onMessageEventListener)
-
     c.addEventListener("onConnect", onConnectEventListener)
 
-    console.log(`Build a WS Client`)
-
-    return c;
-  }
+    client.current = c;
+    return () => {
+      c.removeEventListener("onMessage", onMessageEventListener);
+      c.removeEventListener("onConnect", onConnectEventListener);
+      disposeFireflyClient();
+    }
+    
+  }, [])
 
   const onConnectEventListener = () => {
     EncryptionPlugin.syncUserMessages()
@@ -129,7 +133,7 @@ export default function FireflyProvider() {
     onMessageCallback(event.detail)
   }
 
-  const client = useRef<fireflyClientJs.FireflyWsClient>(buildClient())
+  const client = useRef<fireflyClientJs.FireflyWsClient>(null)
 
 
   const service = useMemo(() => new fireflyClientJs.FireflyService(apiUrl, async () => {
@@ -141,20 +145,11 @@ export default function FireflyProvider() {
     }
   }), [auth])
 
-  useEffect(() => {
-    return () => {
-
-      client.current.removeEventListener("onConnect", onConnectEventListener);
-      client.current.removeEventListener("onMessage", onMessageEventListener);
-
-      disposeFireflyClient();
-    };
-  }, [])
 
   useEffect(() => {
     if (auth.username) {
-      if (client.current.isDisconnected()) {
-        client.current.initialize().then(() => console.log(`Firefly initialized`)).catch(console.error);
+      if (client.current!.isDisconnected()) {
+        client.current!.initialize().then(() => console.log(`Firefly initialized`)).catch(console.error);
       }
     }
   }, [auth])
@@ -179,7 +174,7 @@ export default function FireflyProvider() {
       })
     })
 
-    const response = await client.current.sendRequest(request, 5000)
+    const response = await client.current!.sendRequest(request, 5000)
 
     if (response.error) {
       throw new fireflyClientJs.HttpError(response.error.errorCode, response.error.error)
@@ -191,6 +186,8 @@ export default function FireflyProvider() {
   }
 
   async function encryptAndSendViaWebSocket(convoId: bigint, other: string, text: Uint8Array) {
+
+    console.log(`Sending message to ${other} ${text.byteLength}`)
 
     if (convoId === 0n) {
       const convoStart = await service.createConversation(other)
@@ -215,25 +212,6 @@ export default function FireflyProvider() {
     const cipherText = fromBase64(encrypted.cipherTextB64)
     const result = await sendMessageViaWebsocket(convoId, cipherText, encrypted.messageType)
 
-    // const response = await client.current.sendRequest(
-    //   fireflyClientJs.protos.Request.create({
-    //     createUserMessage: fireflyClientJs.protos.UserMessage.create({
-    //       conversationId: convoId,
-    //       text: fromBase64(encrypted.cipherTextB64),
-    //       type: encrypted.messageType
-    //     })
-    //   }),
-    //   5_000
-    // )
-
-    // if (response.error) {
-    //   throw Error(`Server Responded with ${response.error.errorCode} ${response.error.error}`)
-    // }
-
-    // if (!response.createdUserMessage) {
-    //   throw Error(`Server sent no response back`)
-    // }
-
     const msg: DMessage = {
       convoId: Number(convoId),
       text,
@@ -256,6 +234,7 @@ export default function FireflyProvider() {
 
   async function onMessageCallback(message: fireflyClientJs.protos.ServerMessage) {
     if (message.userMessage) {
+      console.log(`Received message from ${message.userMessage.from}`)
       await handleUserMessage(message.userMessage)
     }
   }
@@ -272,7 +251,7 @@ export default function FireflyProvider() {
 
     const dmsg = bMessageToDMessage(msg)
 
-    eventListeners.current.forEach(e => e(client.current, dmsg))
+    eventListeners.current.forEach(e => e(client.current!, dmsg))
 
     return dmsg
   }
@@ -287,10 +266,10 @@ export default function FireflyProvider() {
 
 
   return <FireflyContext.Provider value={{
-    client: client.current,
+    client: client.current!,
     addEventListener, removeEventListener,
-    initialize: client.current.initialize,
-    dispose: client.current.dispose,
+    initialize: () => client.current!.initialize(),
+    dispose: () => client.current!.dispose(),
     service,
     encryptAndSend,
 

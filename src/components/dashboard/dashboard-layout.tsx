@@ -26,6 +26,7 @@ import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
 import { NotificationsDropdown } from "./notifications-dropdown"
+import { getPayloadFromAccessToken } from "lupyd-js"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -92,7 +93,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       auth.logout()
     } else {
       if (!auth.username) {
-        router.push("/signin")
+        auth.getToken().then((value) => {
+          if (value) {
+            if (!getPayloadFromAccessToken(value).uname) {
+              router.push("/signin")
+            }
+          } else {
+            auth.login()
+          }
+        })
       }
     }
   }

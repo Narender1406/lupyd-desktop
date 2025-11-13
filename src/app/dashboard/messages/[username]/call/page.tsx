@@ -4,7 +4,7 @@ import { CallSession } from "@/context/user-call-context"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { protos as FireflyProtos } from "firefly-client-js"
-import { Maximize2, Mic, MicOff, Minimize2, MoreVertical, PhoneOff, RefreshCw, Video, VideoOff, Volume2, VolumeX } from "lucide-react"
+import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff  } from "lucide-react"
 import { UserAvatar } from "@/components/user-avatar"
 import { EncryptionPlugin } from "@/context/encryption-plugin"
 import { toBase64 } from "@/lib/utils"
@@ -44,8 +44,8 @@ export default function UserCallPage() {
 
   }, [searchParams])
 
-  const [isMuted, setIsMuted] = useState<boolean>(true);
-  const [isVideoOn, setIsVideoOn] = useState<boolean>(searchParams.get("video") == "true");
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isVideoOn, setIsVideoOn] = useState<boolean>(searchParams.get("video") == "true" || localStorage.getItem("alwaysEnableVideo") == "true");
   const [isSpeakerOn, setIsSpeakerOn] = useState<boolean>(true);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -53,28 +53,30 @@ export default function UserCallPage() {
 
   const navigate = useNavigate()
 
-  const getConfiguration = () => {
+  const getConfiguration = async () => {
 
-    const qRtcConfig = searchParams.get("rtcConfig")
-    if (qRtcConfig) {
-      return JSON.parse(qRtcConfig) as RTCConfiguration
-    }
-    const defaultConfiguratoin: RTCConfiguration = {
-      iceServers: [{
-        urls: [
-          "stun:stun.lupyd.com:3478",
-          "stun:stun.l.google.com:19302",
-        ]
-      }],
-    }
+    return firefly.service.getWebrtcConfig()
 
-    return defaultConfiguratoin
+    // const qRtcConfig = searchParams.get("rtcConfig")
+    // if (qRtcConfig) {
+    //   return JSON.parse(qRtcConfig) as RTCConfiguration
+    // }
+    // const defaultConfiguratoin: RTCConfiguration = {
+    //   iceServers: [{
+    //     urls: [
+    //       "stun:stun.lupyd.com:3478",
+    //       "stun:stun.l.google.com:19302",
+    //     ]
+    //   }],
+    // }
+
+    // return defaultConfiguratoin
   }
 
 
   const session = useRef(new CallSession(
-    getConfiguration(),
-    auth.username!, other, 1000, sessionId, true, isVideoOn),
+    getConfiguration,
+    auth.username!, other, 1000, sessionId, !isMuted, isVideoOn),
   )
 
 
@@ -285,119 +287,10 @@ export default function UserCallPage() {
 
   const localVideoElement = useRef<HTMLVideoElement>(null)
   const remoteVideoElement = useRef<HTMLVideoElement>(null)
-
-  // return (
-  //   <div className={`call-container 'video-call' `}>
-  //     {/* Header - Top Right Controls */}
-  //     <div className="call-header">
-  //       <div className="header-left">
-  //         <span className="user-name-header">{other}</span>
-  //       </div>
-  //       <div className="header-right">
-  //         <button
-  //           className="header-icon-btn"
-  //           onClick={toggleFullscreen}
-  //           aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-  //         >
-  //           {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-  //         </button>
-  //         <button
-  //           className="header-icon-btn"
-  //           onClick={() => setIsMinimized(true)}
-  //           aria-label="Minimize"
-  //         >
-  //           <Minimize2 size={20} />
-  //         </button>
-  //         <button
-  //           className="header-icon-btn"
-  //           aria-label="More options"
-  //         >
-  //           <MoreVertical size={20} />
-  //         </button>
-  //       </div>
-  //     </div>
-
-  //     {/* Main Call Area */}
-  //     <div className="call-main">
-
-  //       {/* Video Background */}
-  //       <div className="video-background">
-  //         <div className="remote-video">
-
-  //           {/* Remote user video would go here */}
-  //           <div className="video-placeholder">
-  //             <div className="user-avatar-video">
-  //               <UserAvatar username={other}></UserAvatar>
-  //             </div>
-  //           </div>
-  //           <video ref={remoteVideoElement} autoPlay></video>
-  //         </div>
-
-  //         {/* Local Video - Picture in Picture */}
-  //         <div className="local-video-pip">
-  //           <div className="local-video-placeholder">
-  //             <video ref={localVideoElement} muted={true} autoPlay></video>
-  //           </div>
-  //         </div>
-  //       </div>
-
-  //       {/* User Info Overlay for Video */}
-  //       <div className="video-info-overlay">
-  //         <h2 className="user-name-video">{other}</h2>
-  //         <div className="call-timer-video">
-  //           {formatTime(callDuration)}
-  //         </div>
-  //       </div>
-  //     </div>
-
-  //     {/* Control Panel - Bottom Center */}
-  //     <div className="control-panel-bottom">
-  //       <div className="controls-wrapper">
-  //         {/* Speaker Button */}
-  //         <button
-  //           className={`control-btn-circle ${isSpeakerOn ? 'active' : ''}`}
-  //           onClick={handleSpeakerOn}
-  //           aria-label={isSpeakerOn ? 'Speaker On' : 'Speaker Off'}
-  //         >
-  //           {isSpeakerOn ? <Volume2 size={24} /> : <VolumeX size={24} />}
-  //         </button>
-
-  //         {/* Mute Button */}
-  //         <button
-  //           className={`control-btn-circle ${isMuted ? 'muted' : ''}`}
-  //           onClick={handleMute}
-  //           aria-label={isMuted ? 'Unmute' : 'Mute'}
-  //         >
-  //           {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-  //         </button>
-
-  //         {/* Video Button - Only show for video calls or allow toggle */}
-  //         <button
-  //           className={`control-btn-circle ${!isVideoOn ? 'video-off' : ''}`}
-  //           onClick={toggleVideo}
-  //           aria-label={isVideoOn ? 'Turn Off Video' : 'Turn On Video'}
-  //         >
-  //           {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
-  //         </button>
-
-  //         {/* End Call Button */}
-  //         <button
-  //           className="control-btn-end"
-  //           onClick={handleEndCall}
-  //           aria-label="End Call"
-  //         >
-  //           <PhoneOff size={28} />
-  //         </button>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
-
-
   const [isSwapped, setIsSwapped] = useState(false)
 
-
   function onFlipCamera(): void {
+    session.current.flipCamera()
   }
 
   return (

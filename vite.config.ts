@@ -36,7 +36,7 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "NEXT_PUBLIC_");
-  console.log(env);
+  console.log({ mode, env });
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
 
@@ -69,7 +69,6 @@ export default defineConfig(({ mode }) => {
         "react-dom": "preact/compat",
       },
     },
-    mode: "development",
 
     build: {
       minify: true,

@@ -76,19 +76,10 @@ export default function MessagesPage() {
   const onMessageCallback = (_: FireflyWsClient, message: DMessage) => {
 
     const inner = FireflyProtos.UserMessageInner.decode(message.text)
-    if (inner.callMessage && message.from != auth.username) {
-      const obj = JSON.parse(new TextDecoder().decode(inner.callMessage.message))
-      if (isCallRequestMessage(obj)) {
-        EncryptionPlugin.showCallNotification({
-          caller: message.from,
-          sessionId: obj.sessionId,
-          conversationId: message.convoId
-        })
-      }
 
+    if (inner.callMessage) {
       return
     }
-
 
     setLastConversations(lastMessages => {
       const newLastMessages: DMessage[] = []
@@ -240,7 +231,7 @@ function ConversationElement(props: { conversation: DMessage, sender: string, in
     (async () => {
 
       const result = await EncryptionPlugin.getLastSeenUserMessageTimestamp({ username })
-      if (result) {
+      if (result && "ts" in result && typeof result["ts"] == "number") {
         const { count } = await EncryptionPlugin.getNumberOfMessagesInBetweenSince({
           from: conversation.from,
           to: conversation.to,
