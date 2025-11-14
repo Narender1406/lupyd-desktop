@@ -131,7 +131,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.5rem)' }}>
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)' }}>
         <div className="p-4 border-b">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
@@ -187,7 +187,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen max-w-full md:ml-64 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
         {/* Sticky Top Navigation Bar */}
-        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)' }}>
+        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.125rem)' }}>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -248,7 +248,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Mobile navigation"
-            style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.5rem)', overscrollBehavior: 'contain' }}
+            style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)', overscrollBehavior: 'contain' }}
           >
               {/* Sidebar header */}
               <div className="flex items-center justify-between p-4 border-b">
@@ -299,7 +299,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="p-4 border-t">
                   <Button
                     className="w-full"
-                    variant={username ? "destructive" : "default"}
+                    variant={username ? "outline" : "default"}
                     onClick={() => {
                       onSigninButtonClick()
                       setMobileMenuOpen(false)
