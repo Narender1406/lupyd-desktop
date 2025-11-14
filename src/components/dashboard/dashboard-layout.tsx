@@ -77,6 +77,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [mobileMenuOpen])
 
+  // Set safe area insets as CSS variables
+  useEffect(() => {
+    const setSafeArea = () => {
+      const top = getComputedStyle(document.documentElement).getPropertyValue('--sat') || getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)') || '0px';
+      document.documentElement.style.setProperty('--status-bar-height', top);
+    };
+
+    setSafeArea();
+    window.addEventListener('resize', setSafeArea);
+    return () => window.removeEventListener('resize', setSafeArea);
+  }, [])
+
+  // Prevent body scrolling
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+
   if (!isMounted) {
     return null
   }
@@ -108,9 +129,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'calc(var(--status-bar-height, 0px) + 1rem)' }}>
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.5rem)' }}>
         <div className="p-4 border-b">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
@@ -164,9 +185,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64">
+      <main className="flex-1 flex flex-col h-screen max-w-full md:ml-64 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
         {/* Sticky Top Navigation Bar */}
-        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'var(--status-bar-height, 0px)' }}>
+        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)' }}>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -227,7 +248,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Mobile navigation"
-            style={{ paddingTop: 'var(--status-bar-height, 0px)' }}
+            style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.5rem)', overscrollBehavior: 'contain' }}
           >
               {/* Sidebar header */}
               <div className="flex items-center justify-between p-4 border-b">
@@ -240,7 +261,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
 
               {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
+              <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 <nav className="flex flex-col p-4 space-y-2">
                   {dedupedNavItems.map((item, index) => {
                     const Icon = item.icon
@@ -302,7 +323,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </>
 
         {/* Page Content - only this area is scrollable */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
           <div className="container mx-auto p-4 md:p-6 max-w-full">{children}</div>
         </div>
       </main>
