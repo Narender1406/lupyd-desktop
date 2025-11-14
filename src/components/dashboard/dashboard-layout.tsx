@@ -17,6 +17,7 @@ import {
   Menu,
   MessageCircle,
   MessageSquare,
+  Plus,
   PlusSquare,
   Search,
   Settings,
@@ -34,7 +35,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation()
-  const router = { push: useNavigate() }
+  const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [searchText, setSearchText] = useState("")
@@ -85,7 +86,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     if (keyCode !== "Enter") return
     if (!searchText.trim()) return
     const to = `/discover?q=${encodeURIComponent(searchText.trim())}`
-    router.push(to)
+    navigate(to)
   }
 
   const onSigninButtonClick = () => {
@@ -96,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         auth.getToken().then((value) => {
           if (value) {
             if (!getPayloadFromAccessToken(value).uname) {
-              router.push("/signin")
+              navigate("/signin")
             }
           } else {
             auth.login()
@@ -109,7 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto">
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4">
         <div className="p-4 border-b">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
@@ -147,7 +148,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 variant="ghost"
                 size="icon"
                 onClick={onSigninButtonClick}
-                className="text-gray-500 hover:text-black hover:bg-gray-100"
+                className="text-gray-500 hover:text-black hover:bg-gray-100 text-black"
                 title="Logout"
               >
                 <LogOut className="h-5 w-5" />
@@ -188,6 +189,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               />
             </div>
             <div className="flex items-center space-x-2 md:space-x-4">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full"
+                onClick={() => navigate("/create-post")}
+                title="Create post"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
               <NotificationsDropdown />
               {/* Profile button next to notifications for mobile & desktop */}
               <Link
@@ -204,21 +214,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Mobile Sidebar Overlay (Fixed + Scrollable) */}
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-              aria-label="Close mobile menu"
-            />
-            {/* Off-canvas sidebar */}
-            <aside
-              className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-xl md:hidden flex flex-col"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Mobile navigation"
-            >
+        <>
+          {/* Backdrop */}
+          <div
+            className={`fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close mobile menu"
+          />
+          {/* Off-canvas sidebar */}
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-xl md:hidden flex flex-col transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation"
+            style={{ paddingTop: 'var(--status-bar-height, 0px)' }}
+          >
               {/* Sidebar header */}
               <div className="flex items-center justify-between p-4 border-b">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="font-semibold">
@@ -290,7 +300,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </aside>
           </>
-        )}
 
         {/* Page Content - only this area is scrollable */}
         <div className="flex-1 overflow-auto">

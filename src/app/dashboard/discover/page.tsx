@@ -4,8 +4,9 @@ import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { NavBar } from "@/components/ui/tubelight-navbar"
 import { useUserData } from "@/context/userdata-context"
-import { Filter, Search, TrendingUp, Users } from "lucide-react"
+import { Filter, Search, TrendingUp, Users, Home, MessageSquare, Compass, User, Settings } from "lucide-react"
 import { FetchType, PostProtos, UserProtos, ulidStringify } from "lupyd-js"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import React, {  useEffect, useMemo, useState } from "react"
@@ -91,6 +92,7 @@ export default function DiscoverPage() {
 
 
   const [searchText, setSearchText] = useState("")
+  const [isMobile, setIsMobile] = useState(false)
 
   const [posts, setPosts] = useState<Array<PostProtos.FullPost>>([])
   const [users, setUsers] = useState<Array<UserProtos.User>>([])
@@ -185,11 +187,31 @@ export default function DiscoverPage() {
 
   }, [searchParams])
 
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
 
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
+
+
+  const { username } = useAuth()
+  
+  const navItems = [
+    { name: 'Home', url: '/', icon: Home },
+    { name: 'Messages', url: '/messages', icon: MessageSquare },
+    { name: 'Discover', url: '/discover', icon: Compass },
+    { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
+    { name: 'Settings', url: '/settings', icon: Settings },
+  ]
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden">
+      <div className="container mx-auto px-4 max-w-full overflow-hidden pb-24 md:pb-0">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-muted-foreground">Explore new content, people, and communities</p>
@@ -516,6 +538,9 @@ export default function DiscoverPage() {
           </Tabs>
         </div>
       </div>
+      {isMobile && (
+        <NavBar items={navItems} className="fixed bottom-0" />
+      )}
     </DashboardLayout>
   )
 }

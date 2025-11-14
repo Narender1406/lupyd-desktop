@@ -6,23 +6,24 @@ import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { UserCard } from "@/components/dashboard/user-card"
 import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trending-topic"
-import { CreatePost } from "@/components/dashboard/create-post"
 import { PostFeed } from "@/components/dashboard/post-feed"
+import { NavBar } from "@/components/ui/tubelight-navbar"
 import { useEffect, useState } from "react"
 import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
-import { Loader2, TrendingUp } from "lucide-react"
+import { Home, MessageSquare, Compass, User, Settings, Loader2, TrendingUp } from "lucide-react"
 import InfiniteScroll from "react-infinite-scroll-component"
 import { PostCard } from "@/components/dashboard/post-card"
+
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
 import { useApiService } from "@/context/apiService"
 // import NotificationTestButton from "@/components/NotificationTestButton"
-import { toast } from "@/hooks/use-toast"
 
 
 export default function DashboardPage() {
   const [suggestedUsers] = useState<UserProtos.User[]>([])
   const [trendingHashtags, setTrendingHashtags] = useState<PostProtos.PostHashtag[]>([])
+  const [isMobile, setIsMobile] = useState(false)
 
   const { api } = useApiService()
 
@@ -31,6 +32,24 @@ export default function DashboardPage() {
       setTrendingHashtags(result.hashtags)
     }).catch(console.error)
   }, [])
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
+  const navItems = [
+    { name: 'Home', url: '/', icon: Home },
+    { name: 'Messages', url: '/messages', icon: MessageSquare },
+    { name: 'Discover', url: '/discover', icon: Compass },
+    { name: 'Profile', url: '/user', icon: User },
+    { name: 'Settings', url: '/settings', icon: Settings },
+  ]
 
   return (
     <DashboardLayout >
@@ -60,8 +79,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Feed */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Create Post */}
-              <CreatePost />
+              {/* Create Post - removed as per requirements */}
 
               {/* Posts Feed with Infinite Scrolling */}
               <PostFeed />
@@ -156,6 +174,9 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
       </Tabs>
+      {isMobile && (
+        <NavBar items={navItems} className="fixed bottom-0" />
+      )}
     </DashboardLayout>
   )
 }
