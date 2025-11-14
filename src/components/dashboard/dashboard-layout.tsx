@@ -110,7 +110,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4">
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'calc(var(--status-bar-height, 0px) + 1rem)' }}>
         <div className="p-4 border-b">
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold">Lupyd</span>
@@ -166,7 +166,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64">
         {/* Sticky Top Navigation Bar */}
-        <div className="sticky top-0 z-20 bg-white border-b">
+        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'var(--status-bar-height, 0px)' }}>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>

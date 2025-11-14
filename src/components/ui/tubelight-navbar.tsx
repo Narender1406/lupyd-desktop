@@ -15,6 +15,7 @@ interface NavItem {
 interface NavBarProps {
   items: NavItem[]
   className?: string
+  isMobileMenuOpen?: boolean
 }
 
 export function NavBar({ items, className }: NavBarProps) {
@@ -33,9 +34,10 @@ export function NavBar({ items, className }: NavBarProps) {
   return (
     <div
       className={cn(
-        "fixed bottom-0 sm:top-0 left-1/2 -translate-x-1/2 z-50 mb-6 sm:pt-6",
+        "fixed bottom-0 sm:top-0 left-1/2 -translate-x-1/2 z-30 mb-6 sm:pt-6",
         className,
       )}
+
     >
       <div className="flex items-center gap-3 bg-background/5 border border-border backdrop-blur-lg py-1 px-1 rounded-full shadow-lg">
         {items.map((item) => {
