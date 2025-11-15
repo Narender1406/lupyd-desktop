@@ -4,9 +4,12 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
+<<<<<<< HEAD
+=======
 import { terser } from "rollup-plugin-terser";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+>>>>>>> 17398106eced43d46d955bd96d211cf1be20aed5
 
 // https://vite.dev/config/
 
@@ -15,17 +18,17 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/api\/v1/, ""),
     },
     "/apicdn/v1": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/apicdn\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/apicdn\/v1/, ""),
     },
     "/cdn": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/cdn/, ""),
+      rewrite: (path: string) => path.replace(/^\/cdn/, ""),
     },
   };
 
@@ -82,11 +85,8 @@ export default defineConfig(({ mode }) => {
           },
         },
         plugins: [
-          terser({
-            output: {
-              comments: false,
-            },
-          }),
+         
+    
         ],
       },
     },
