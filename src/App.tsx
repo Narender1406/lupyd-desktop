@@ -25,8 +25,8 @@ const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(mo
 const TermsOfUse = lazy(() => import('./components/TermsOfUse'));
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 
-const TermsOfService = lazy(() => import("./components/ui/TermsOfService"));
-const FireflyProvider = lazy(() => import("./context/firefly-context"));
+
+// const FireflyProvider = lazy(() => import("./context/firefly-context"));
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
@@ -101,9 +101,11 @@ function App() {
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/post/:postId" element={<PostPage />} />
           <Route path="/user/:username" element={<ProfilePage />} />
-          <Route element={<FireflyProvider />}>
+{/*          <Route element={<FireflyProvider />}>
             <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
+            <Route path="/messages/:username" element={<UserMessagePage />} />
+          </Route>
+*/}
           <Route path="/notification" element={<NotificationsPage />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
