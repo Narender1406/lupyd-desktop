@@ -31,12 +31,14 @@ const acquireFireflyClient = (getAuthToken: () => Promise<string>) => {
 
 const disposeFireflyClient = () => {
   _refs -= 1;
-  if (_refs == 0) {
-    if (_fireflyClient) {
-      _fireflyClient!.dispose()
+  setTimeout(() => {
+    if (_refs == 0) {
+      if (_fireflyClient) {
+        console.log(`Disposing connection`);
+        _fireflyClient!.dispose()
+      }
     }
-  }
-
+  }, 200)
 }
 
 
@@ -121,10 +123,11 @@ export default function FireflyProvider() {
       c.removeEventListener("onConnect", onConnectEventListener);
       disposeFireflyClient();
     }
-    
+
   }, [])
 
   const onConnectEventListener = () => {
+    console.log(`Syncing user messages`);
     EncryptionPlugin.syncUserMessages()
   }
 

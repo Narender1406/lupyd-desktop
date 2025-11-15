@@ -4,7 +4,7 @@ import { CallSession } from "@/context/user-call-context"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { protos as FireflyProtos } from "firefly-client-js"
-import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff  } from "lucide-react"
+import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff } from "lucide-react"
 import { UserAvatar } from "@/components/user-avatar"
 import { EncryptionPlugin } from "@/context/encryption-plugin"
 import { toBase64 } from "@/lib/utils"
@@ -55,22 +55,15 @@ export default function UserCallPage() {
 
   const getConfiguration = async () => {
 
-    return firefly.service.getWebrtcConfig()
 
-    // const qRtcConfig = searchParams.get("rtcConfig")
-    // if (qRtcConfig) {
-    //   return JSON.parse(qRtcConfig) as RTCConfiguration
-    // }
-    // const defaultConfiguratoin: RTCConfiguration = {
-    //   iceServers: [{
-    //     urls: [
-    //       "stun:stun.lupyd.com:3478",
-    //       "stun:stun.l.google.com:19302",
-    //     ]
-    //   }],
-    // }
+    const { iceServers } = (await firefly.service.getWebrtcConfig()) as any as { iceServers: RTCIceServer }
 
-    // return defaultConfiguratoin
+    const config: RTCConfiguration = {
+      iceServers: [
+        iceServers,
+      ]
+    }
+    return config;
   }
 
 
@@ -113,12 +106,16 @@ export default function UserCallPage() {
   useEffect(() => {
     const onCallMessage = (ev: Event) => {
       const callMessage = (ev as CustomEvent).detail as FireflyProtos.CallMessage
+      const randomId = Math.floor(Math.random() * 999999)
+      console.log(`Sending [${randomId}] to ${other}, ty: ${callMessage.type} ${callMessage.jsonBody}`);
 
       const userMessageInner = FireflyProtos.UserMessageInner.create({ callMessage })
 
       const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish()
 
-      firefly.encryptAndSendViaWebSocket(BigInt(convoId), other, payload)
+      firefly.encryptAndSendViaWebSocket(BigInt(convoId), other, payload).then((response) => {
+        console.log(`Sent [${randomId}] ${response.id}`)
+      }).catch(console.error)
     }
     session.current.addEventListener("callMessage", onCallMessage)
 
@@ -149,6 +146,7 @@ export default function UserCallPage() {
     if (sessionInitiated == SessionInitiationStatus.initiating || sessionInitiated == SessionInitiationStatus.initiated) {
       return
     }
+    console.log(`Session is being initiated from ${sessionInitiated}`)
     setSessionInitiated(SessionInitiationStatus.initiating)
     session.current.init().then(() => {
       setSessionInitiated(SessionInitiationStatus.initiated)

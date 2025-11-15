@@ -52,7 +52,6 @@ export class CallSession extends EventTarget {
   }
 
   private _sendCallMessage(type: FireflyProtos.CallMessageType, jsonBody: string) {
-
     const msg = FireflyProtos.CallMessage.create({
       type,
       jsonBody,
@@ -73,6 +72,12 @@ export class CallSession extends EventTarget {
   }
 
   async init() {
+    if (this.pc && (this.pc.connectionState == "connected" || this.pc.connectionState == "connecting" || this.pc.connectionState == "new")) {
+      console.warn(`Not reinitiating as in the process of connecting`)
+      return;
+    }
+
+
     this.pc = new RTCPeerConnection(await this.rtcConfiguration());
 
     this.pc.onconnectionstatechange = () => {
@@ -86,6 +91,7 @@ export class CallSession extends EventTarget {
         }
         // this.silentReconnect();
         setTimeout(() => {
+          console.log(`Reconnecting because connection state is ${this.pc!.connectionState}`)
           this.reconnect();
           this.retriesLeft -= 1;
         }, this.retryDuration());
@@ -158,7 +164,7 @@ export class CallSession extends EventTarget {
   async onCallMessage(msg: FireflyProtos.CallMessage) {
     if (msg.sessionId !== this.sessionId) return;
 
-    console.log(`Received Message of Type: ${msg.type}`)
+    console.log(`Received Message of Type: ${msg.type} ${msg.jsonBody}`)
 
     switch (msg.type) {
       case FireflyProtos.CallMessageType.offer:

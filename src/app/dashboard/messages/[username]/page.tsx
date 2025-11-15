@@ -854,7 +854,7 @@ export function MessageBody(props: { inner: Uint8Array }) {
       const minutes = Math.floor(totalSeconds / 60)
       const seconds = totalSeconds % 60
 
-      return <div>Call {minutes}:{seconds} ms</div>
+      return <div>Call {minutes}:{seconds} s</div>
     }
     if (message.callMessage.type == FireflyProtos.CallMessageType.rejected) {
       return <div>Call Rejected</div>

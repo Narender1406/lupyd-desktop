@@ -8,6 +8,7 @@ import com.nimbusds.jwt.SignedJWT
 import firefly.Message
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -34,6 +35,10 @@ import kotlin.random.Random
 
 val httpClient = HttpClient(CIO) {
     install(HttpCache)
+
+    install(HttpTimeout) {
+        requestTimeoutMillis = 10_000
+    }
 }
 
 class EncryptionWrapper(val context: Context, val onMessageCb: ((DMessage) -> Unit)? = null) {
