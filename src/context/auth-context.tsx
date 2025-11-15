@@ -105,7 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (auth0.isLoading) return
 
     if (auth0.isAuthenticated) {
-      const token = await auth0.getAccessTokenSilently({ cacheMode: refresh ? 'off' : 'on' });
+      const result = await auth0.getAccessTokenSilently({ cacheMode: refresh ? 'off' : 'on', detailedResponse: true });
+      console.log({ result })
+      const token = result.access_token
       if (refresh) {
         onUpdateUser(token)
       }
