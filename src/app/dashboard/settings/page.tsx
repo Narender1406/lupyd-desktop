@@ -34,6 +34,7 @@ import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
 import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 import { useApiService } from "@/context/apiService"
 
 
@@ -53,14 +54,11 @@ export default function SettingsPage() {
 
   const auth = useAuth()
   const { api } = useApiService()
-  const getUser = api.getUser
-  const updateUser = api.updateUser
-  const updateUserProfilePicture = api.updateUserProfilePicture
 
 
   useEffect(() => {
     if (auth.username) {
-      getUser(auth.username).then((user) => {
+      api.getUser(auth.username).then((user) => {
         if (!user) throw Error("User not found")
         if ((user.settings & 16) == 16) {
           setPfpSrc(`${CDN_STORAGE}/users/${auth.username}`)
@@ -102,7 +100,7 @@ export default function SettingsPage() {
     if (isPfpChanged) {
       const pfp = await fetch(pfpSrc)
       const blob = await pfp.blob()
-      await updateUserProfilePicture(blob)
+      await api.updateUserProfilePicture(blob)
     }
 
     let settings = initialUserData?.settings ?? 0;
@@ -125,7 +123,7 @@ export default function SettingsPage() {
     })
 
 
-    await updateUser(info)
+    await api.updateUser(info)
     setInitialUserData(UserProtos.User.create({
       uname: initialUserData!.uname,
       bio: isBioChanged ? PostProtos.PostBody.encode(PostProtos.PostBody.create({ plainText: bio })).finish() : initialUserData!.bio,
@@ -190,24 +188,20 @@ export default function SettingsPage() {
                 >
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger
-                  value="security"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="connections"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Connections
-                </TabsTrigger>
+                
                 <TabsTrigger
                   value="preferences"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
                 >
                   Preferences
                 </TabsTrigger>
+                <TabsTrigger
+                  value="about"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
+                >
+                  About
+                </TabsTrigger>
+                
               </TabsList>
             </div>
           </div>
@@ -321,107 +315,86 @@ export default function SettingsPage() {
               <NotificationsSection />
             </TabsContent>
 
-            <TabsContent value="security" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Account Security</CardTitle>
-                    <CardDescription>Manage your account security settings</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Shield className="h-4 w-4 mr-2" />
-                            Two-Factor Authentication
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <Switch id="twoFactor" />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Smartphone className="h-4 w-4 mr-2" />
-                            Login Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify new logins from unrecognized devices</p>
-                        </div>
-                        <Switch id="loginVerification" defaultChecked />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Mail className="h-4 w-4 mr-2" />
-                            Email Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify your email address</p>
-                        </div>
-                        <Button disabled>
-                          Verified
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="flex items-center justify-between">
-                        Save Security Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
-            <TabsContent value="connections" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Connected Accounts</CardTitle>
-                    <CardDescription>Manage your connected social accounts and services</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                    
-                      
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Apps and Websites</h3>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                        <div>
-                          <p className="font-medium">Manage Third-Party Access</p>
-                          <p className="text-sm text-muted-foreground">
-                            Review apps and websites with access to your account
-                          </p>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          View Apps
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="flex items-center justify-between">
-                        Save Connection Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
+            
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
+            <TabsContent value="about"  className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
+            <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
+                  bg-white text-black dark:bg-black dark:text-white rounded-lg space-y-8">
+
+               {/* Header */}
+                <div>
+              <h1 className="text-4xl font-extrabold text-black dark:text-white">Privacy Center</h1>
+               <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">
+                Your privacy matters to us more.
+          </p>
+          </div>
+
+           {/* PrivacySection */}
+            <div className="max-w-2xl">
+          <h2 className="text-xl font-semibold mb-2">Privacy at Lupyd</h2>
+           <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            At Lupyd, we value your trust and are committed to keeping your personal data safe.  
+            We never share your information without consent and use secure systems to protect your identity.  
+              Your privacy is at the heart of everything we build.
+            </p>
+
+          {/* Privacy Button (Round Black/White) */}
+            <Link to="/privacy"className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+        >
+        Privacy Policy
+        
+          </Link>
+        </div>
+
+    {/* Terms Section */}
+        <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+        <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+        By using Lupyd, you agree to follow our community standards and respect others’ rights.  
+        Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.  
+        We encourage you to read and understand them carefully.
+         </p>
+
+      {/* Terms Button (Round Black/White) */}
+      <Link to="/terms-of-use"
+          className="inline-block px-5 py-2 rounded-md 
+             bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+            >
+          Terms Of Use
+          </Link>
+          </div>
+          {/* Terms Section */}
+<div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+  <h2 className="text-xl font-semibold mb-2">Terms of Service</h2>
+  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+    By using Lupyd, you agree to comply with our Terms of Service, which outline your rights and responsibilities when using our platform.  
+    These terms ensure transparency, fairness, and a safe community for all users.  
+    Please take a moment to review them before continuing to use Lupyd.
+  </p>
+
+  {/* Terms of Service Button */}
+  <Link 
+    to="/terms-of-service"
+    className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+               dark:bg-white dark:text-black dark:hover:bg-gray-200 
+               transition text-sm font-medium"
+  >
+    Terms of Service
+  </Link>
+</div>
+
+          </div>
+          </TabsContent>
+
+            
           </div>
         </Tabs>
       </div>
@@ -476,9 +449,13 @@ function PrivacySection() {
                   <p className="text-sm text-muted-foreground">Review and unblock accounts</p>
                 </div>
               </div>
-              <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                View Blocked Accounts
-              </Button>
+              <Button
+            onClick={() => alert("No blocked accounts")}
+            className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto"
+            >
+           View Blocked Accounts
+            </Button>
+
             </div>
           </div>
 
