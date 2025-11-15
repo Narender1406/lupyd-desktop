@@ -5,8 +5,6 @@ import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
 import { terser } from "rollup-plugin-terser";
-import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 
 // https://vite.dev/config/
 
@@ -39,12 +37,11 @@ export default defineConfig(({ mode }) => {
   console.log(env);
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
+  console.log({ mode });
 
   return {
     plugins: [
       preact(),
-      wasm(),
-      topLevelAwait(),
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,
@@ -71,6 +68,7 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      sourcemap: mode === "development",
       rollupOptions: {
         treeshake: "smallest",
         output: {
