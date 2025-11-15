@@ -1,6 +1,8 @@
 import './App.css'
 import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes, useNavigate } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
+import { PageTransition } from './components/page-transition'
 
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
@@ -108,6 +110,8 @@ function App() {
 
 
   const navigate = useNavigate()
+  const location = useLocation()
+  
   useEffect(() => {
     (async () => {
       const url = await CapApp.getLaunchUrl()
@@ -130,54 +134,56 @@ function App() {
 
   return (
     <Suspense fallback={<LoadingPage />}>
-      <Routes>
-        <Route path="/about/" element={<LandingPage />} />
-        <Route path="/about/community" element={<CommunityPage />} />
-        <Route path="/about/features" element={<FeaturesPage />} />
-        <Route path="/about/experience" element={<ExperiencePage />} />
-        <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
-        <Route path="/about/privacy" element={<PrivacyPage />} />
-        <Route path="/signin" element={<AssignUsernamePage />} />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+        <Route path="/about/" element={<PageTransition><LandingPage /></PageTransition>} />
+        <Route path="/about/community" element={<PageTransition><CommunityPage /></PageTransition>} />
+        <Route path="/about/features" element={<PageTransition><FeaturesPage /></PageTransition>} />
+        <Route path="/about/experience" element={<PageTransition><ExperiencePage /></PageTransition>} />
+        <Route path="/about/creator-tools" element={<PageTransition><CreatorToolsPage /></PageTransition>} />
+        <Route path="/about/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
+        <Route path="/signin" element={<PageTransition><AssignUsernamePage /></PageTransition>} />
         {/*        <Route path="/signin" element={<SignupPage />} />
 */}
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<PageTransition><DashboardPage /></PageTransition>} />
         {/*        <Route path="/action" element={<ActionHandler />} />
 */}
 
-        <Route path="/saved-posts" element={<SavedPostsPage />} />
-        <Route path="/create-post" element={<CreatePostPage />} />
-        <Route path="/connections" element={<ConnectionsPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/activity" element={<ActivityPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/groups" element={<GroupsPage />} />
-        <Route path="/groups/create" element={<CreateGroupPage />} />
-        <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
-        <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
-        <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
-        <Route path="/subscription" element={<SubscriptionPage />} />
-        <Route path="/subscription/checkout" element={<CheckoutPage />} />
-        <Route path="/discover" element={<DiscoverPage />} />
-        <Route path="/post/:postId" element={<PostPage />} />
-        <Route path="/user/:username" element={<ProfilePage />} />
-        <Route path="/notification-test" element={<NotificationTestPage />} />
+        <Route path="/saved-posts" element={<PageTransition><SavedPostsPage /></PageTransition>} />
+        <Route path="/create-post" element={<PageTransition><CreatePostPage /></PageTransition>} />
+        <Route path="/connections" element={<PageTransition><ConnectionsPage /></PageTransition>} />
+        <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
+        <Route path="/activity" element={<PageTransition><ActivityPage /></PageTransition>} />
+        <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+        <Route path="/groups" element={<PageTransition><GroupsPage /></PageTransition>} />
+        <Route path="/groups/create" element={<PageTransition><CreateGroupPage /></PageTransition>} />
+        <Route path="/groups/:groupid/settings" element={<PageTransition><GroupSettingsPage /></PageTransition>} />
+        <Route path="/groups/:groupid/info" element={<PageTransition><GroupInfoPage /></PageTransition>} />
+        <Route path="/groups/:groupid/channels" element={<PageTransition><GroupChannelsPage /></PageTransition>} />
+        <Route path="/subscription" element={<PageTransition><SubscriptionPage /></PageTransition>} />
+        <Route path="/subscription/checkout" element={<PageTransition><CheckoutPage /></PageTransition>} />
+        <Route path="/discover" element={<PageTransition><DiscoverPage /></PageTransition>} />
+        <Route path="/post/:postId" element={<PageTransition><PostPage /></PageTransition>} />
+        <Route path="/user/:username" element={<PageTransition><ProfilePage /></PageTransition>} />
+        <Route path="/notification-test" element={<PageTransition><NotificationTestPage /></PageTransition>} />
         <Route element={<FireflyProvider />}>
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/messages/:username" element={<UserMessagePage />} />
-          <Route path="/messages/:username/call" element={<UserCallPage />} />
+          <Route path="/messages" element={<PageTransition><MessagesPage /></PageTransition>} />
+          <Route path="/messages/:username" element={<PageTransition><UserMessagePage /></PageTransition>} />
+          <Route path="/messages/:username/call" element={<PageTransition><UserCallPage /></PageTransition>} />
         </Route>
-        <Route path="/notification" element={<NotificationsPage />} />
-        <Route path="/terms-of-use" element={<TermsOfUse />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/business" element={<OverviewPage />} />
-        <Route path="/business/clients-page" element={<ClientsPage />} />
-        <Route path="/business/services-page" element={<ServicesPage />} />
-        <Route path="/business/add-client-page" element={<AddClientPage />} />
-        <Route path="/business/edit-client-page" element={<EditClientPage />} />
-        <Route path="/business/api-key-page" element={<ApiKeyPage />} />
-        <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
-        <Route path="/business/add-service-page" element={<AddServicePage />} />
+        <Route path="/notification" element={<PageTransition><NotificationsPage /></PageTransition>} />
+        <Route path="/terms-of-use" element={<PageTransition><TermsOfUse /></PageTransition>} />
+        <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+        <Route path="/business" element={<PageTransition><OverviewPage /></PageTransition>} />
+        <Route path="/business/clients-page" element={<PageTransition><ClientsPage /></PageTransition>} />
+        <Route path="/business/services-page" element={<PageTransition><ServicesPage /></PageTransition>} />
+        <Route path="/business/add-client-page" element={<PageTransition><AddClientPage /></PageTransition>} />
+        <Route path="/business/edit-client-page" element={<PageTransition><EditClientPage /></PageTransition>} />
+        <Route path="/business/api-key-page" element={<PageTransition><ApiKeyPage /></PageTransition>} />
+        <Route path="/business/clientdetails" element={<PageTransition><ClientDetailsPage /></PageTransition>} />
+        <Route path="/business/add-service-page" element={<PageTransition><AddServicePage /></PageTransition>} />
       </Routes>
+      </AnimatePresence>
     </Suspense>
   )
 }

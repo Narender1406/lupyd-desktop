@@ -31,7 +31,7 @@ type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
 type PostBody = PostProtos.PostBody
 
-export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) => void }) {
+export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) => void; isComment?: boolean }) {
 
   const { api } = useApiService()
 
@@ -150,15 +150,15 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   }
 
   return (
-    <Card className="border-none shadow-sm mx-auto w-full max-w-[560px] sm:max-w-[640px] md:max-w-[700px] lg:max-w-[740px]">
-      <CardHeader className="p-4 pb-0">
+    <Card className={`border-none shadow-sm mx-auto w-full ${props.isComment ? 'max-w-[480px] sm:max-w-[560px] md:max-w-[620px]' : 'max-w-[560px] sm:max-w-[640px] md:max-w-[700px] lg:max-w-[740px]'}`}>
+      <CardHeader className={`p-4 pb-0 ${props.isComment ? 'p-2 pb-0' : ''}`}>
         <div className="flex justify-between items-center">
           <Link to={`/user/${post.by}`}>
             <div className="flex items-center space-x-3">
               <UserAvatar username={post.by} />
               <div>
-                <CardTitle className="text-base">{post.by}</CardTitle>
-                <CardDescription className="text-xs">
+                <CardTitle className={`text-base ${props.isComment ? 'text-sm' : ''}`}>{post.by}</CardTitle>
+                <CardDescription className={`text-xs ${props.isComment ? 'text-[10px]' : ''}`}>
                   {dateToRelativeString(new Date(getTimestampFromUlid(post.id)))}
                 </CardDescription>
               </div>
@@ -199,8 +199,8 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <p className="mb-4">{post.title}</p>
+      <CardContent className={`p-4 ${props.isComment ? 'p-2' : ''}`}>
+        <p className={`mb-4 ${props.isComment ? 'text-sm mb-2' : ''}`}>{post.title}</p>
         {post.body.length > 0 && (
           <LazyLoad>
             <PostBodiesElement {...PostProtos.PostBodies.decode(post.body)} />
@@ -239,12 +239,12 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
         </div>
 
         {showComments && (
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center space-x-2 mb-4">
+          <div className={`mt-4 pt-4 border-t ${props.isComment ? 'mt-2 pt-2' : ''}`}>
+            <div className={`flex items-center space-x-2 mb-4 ${props.isComment ? 'mb-2' : ''}`}>
               <UserAvatar username={auth.username ?? ""} />
               <Input
                 placeholder="Write a comment..."
-                className="flex-1"
+                className={`flex-1 ${props.isComment ? 'text-sm' : ''}`}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
@@ -260,11 +260,12 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
 
             {comments.length > 0 ? (
               <div className="space-y-1">
-                {comments.map((comment, _index) => (
-                  <div key={ulidStringify(comment.id)}>
+                {comments.map((comment) => (
+                  <div key={ulidStringify(comment.id)} className="ml-2 pl-4 border-l-2 border-gray-200">
                     <PostCard
                       post={comment}
                       onDelete={(id) => setComments((prev) => prev.filter((c) => !indexedDB.cmp(c.id, id)))}
+                      isComment={true}
                     />
                   </div>
                 ))}
@@ -309,7 +310,7 @@ function MarkdownToHTMLElement(props: { markdown: string; pickedFileUrls: Picked
     let url: URL | undefined
     try {
       url = new URL(href)
-    } catch (err) {
+    } catch {
       if (href.startsWith("/")) {
         url = new URL(window.location.origin + href)
       } else {
@@ -399,7 +400,7 @@ async function buildHtmlElementFromMarkdown(
     i.loading = "lazy"
     try {
       i.decoding = "async"
-    } catch { }
+    } catch { /* Ignore decoding errors */ }
     i.classList.add("w-full", "h-full", "object-contain")
     const mediaWindow = div(
       {
@@ -423,7 +424,7 @@ async function buildHtmlElementFromMarkdown(
         title,
       })
       videoEl.setAttribute("data-src", src)
-        ; (videoEl as any).className = "w-full h-full object-contain bg-black/90"
+        ; (videoEl as HTMLVideoElement).className = "w-full h-full object-contain bg-black/90"
       const vWrap = div(
         {
           class:

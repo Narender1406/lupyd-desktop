@@ -108,13 +108,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row w-full">
+    <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto">
       {/* Main Content */}
       <div className="flex-1">
         {/* Profile Header */}
-        <div className="relative mb-6">
+        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
           {/* Cover Image */}
-          <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-b-lg">
+          <div className="relative h-32 md:h-48 w-full bg-gradient-to-r from-blue-400 to-purple-500">
             {/*
             <Image src={profileData.coverImage || "/placeholder.svg"} alt="Cover" fill className="object-cover" />
             <Button
@@ -129,30 +129,32 @@ export default function ProfilePage() {
           </div>
 
           {/* Profile Picture and Basic Info */}
-          <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end">
+          <div className="px-4 md:px-6 -mt-16 md:-mt-24 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0">
               <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-white">
+                <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white shadow-lg">
                   <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
-                  <AvatarFallback className="text-4xl">
+                  <AvatarFallback className="text-2xl md:text-4xl bg-gray-200">
                     {(user?.uname ?? "U")[0]}
                   </AvatarFallback>
                 </Avatar>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="absolute bottom-0 right-0 bg-white/80 hover:bg-white rounded-full h-8 w-8"
-                  onClick={() => console.log("Change profile picture")}
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
+                {showSettings && (
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md"
+                    onClick={() => console.log("Change profile picture")}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               <div className="mt-4 md:mt-0 md:ml-6 flex-1">
                 <div className="flex flex-col md:flex-row md:items-center justify-between">
                   <div>
-                    <div className="flex items-center">
-                      <h1 className="text-2xl font-bold">{user?.uname}</h1>
+                    <div className="flex items-center space-x-2">
+                      <h1 className="text-xl md:text-2xl font-bold">{user?.uname}</h1>
                       {/*profileData.isVerified && (
                         <span className="ml-2 bg-blue-500 text-white rounded-full p-1">
                           <svg
@@ -170,7 +172,7 @@ export default function ProfilePage() {
                         </span>
                       )*/}
                     </div>
-                    <p className="text-gray-500">@{user?.uname}</p>
+                    <p className="text-gray-500 text-sm md:text-base">@{user?.uname}</p>
                   </div>
 
                   <div className="flex mt-4 md:mt-0 space-x-2">
@@ -180,7 +182,7 @@ export default function ProfilePage() {
                           (((user?.settings ?? 0) & 1) == 1) ?
                             () => router(`/messages/${getUsername()}`) : undefined}>
                           <MessageSquare className="h-4 w-4 mr-2" />
-                          Message
+                          <span className="hidden md:inline">Message</span>
                         </Button>
 
                         <Button
@@ -193,7 +195,7 @@ export default function ProfilePage() {
                           ) : (
                             <>
                               <UserPlus className="h-4 w-4 mr-2" />
-                              Follow
+                              <span className="hidden md:inline">Follow</span>
                             </>
                           )}
                         </Button>
@@ -232,7 +234,15 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm"> {bio ? <PostBodyElement {...bio} /> : <></>}</p>
+                <div className="mt-3">
+                  {bio ? (
+                    <p className="text-sm text-gray-700 max-w-2xl">
+                      <PostBodyElement {...bio} />
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No bio yet</p>
+                  )}
+                </div>
 
                 {/*
                 <div className="flex mt-4 space-x-6">
