@@ -2,9 +2,7 @@ import './App.css'
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
-
-
-
+const TermsOfService  = lazy(() => import('./components/ui/TermsOfService'));
 
 const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
 const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
@@ -32,7 +30,7 @@ const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
 const CreatePostPage = lazy(() => import('./app/dashboard/create-post/page'));
 const DiscoverPage = lazy(() => import('./app/dashboard/discover/page'));
-const MessagesPage = lazy(() => import('./app/dashboard/messages/page'));
+// const MessagesPage = lazy(() => import('./app/dashboard/messages/page'));
 const PostPage = lazy(() => import('./app/dashboard/post/[postId]/page'));
 const SavedPostsPage = lazy(() => import('./app/dashboard/saved-posts/page'));
 const SettingsPage = lazy(() => import('./app/dashboard/settings/page'));
@@ -58,7 +56,7 @@ const GroupsPage = lazy(() => import('./app/dashboard/groups/page'))
 const CreateGroupPage = lazy(() => import('./app/dashboard/groups/create/page'))
 const GroupSettingsPage = lazy(() => import('./app/dashboard/groups/[id]/settings/page'))
 const GroupInfoPage = lazy(() => import('./app/dashboard/groups/[id]/info/page'))
-const UserMessagePage = lazy(() => import('./app/dashboard/messages/[username]/page'))
+// const UserMessagePage = lazy(() => import('./app/dashboard/messages/[username]/page'))
 
 
 
