@@ -160,56 +160,7 @@ export function NotificationsDropdown() {
       </Button>
 
       {/* Dropdown - Only show on desktop when hovering */}
-      {showDropdown && !isMobile && (
-        <div
-          className="absolute right-0 top-full mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
-          onMouseEnter={() => {
-            if (hideTimeoutRef.current) {
-              clearTimeout(hideTimeoutRef.current)
-              hideTimeoutRef.current = null
-            }
-          }}
-          onMouseLeave={handleMouseLeave}
-        >
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-black flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notifications
-                {unreadCount > 0 && (
-                  <Badge variant="secondary" className="bg-black text-white text-sm">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </h3>
-              {unreadCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-600 hover:text-black text-xs"
-                  onClick={markAllAsRead}
-                >
-                  Mark all read
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.slice(0, 4).map((notification) => <NotificationItem notification={notification} onMarkAsRead={handleClick}/>)}
-          </div>
-
-          <div className="p-3 border-t border-gray-200">
-            <Button
-              variant="ghost"
-              className="w-full text-center text-black hover:bg-gray-100 font-medium"
-              onClick={() => navigate("/notification")}
-            >
-              View all notifications
-            </Button>
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }

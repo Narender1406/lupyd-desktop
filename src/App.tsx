@@ -4,6 +4,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 
 
+
+
 const ClientsPage = lazy(() => import('./app/saas/pages/clients-page').then(m => ({ default: m.ClientsPage })));
 const ServicesPage = lazy(() => import('./app/saas/pages/services-page').then(m => ({ default: m.ServicesPage })));
 const AddClientPage = lazy(() => import('./app/saas/pages/add-client-page').then(m => ({ default: m.AddClientPage })));
@@ -15,15 +17,6 @@ const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').the
 const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
 const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
 
-
-
-
-
-
-
-
-
-
 // import TermsOfUse from './components/TermsOfUse';
 // import PrivacyPolicy from "./components/PrivacyPolicy";
 
@@ -32,7 +25,7 @@ const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(mo
 const TermsOfUse = lazy(() => import('./components/TermsOfUse'));
 const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicy"));
 
-
+const TermsOfService = lazy(() => import("./components/ui/TermsOfService"));
 const FireflyProvider = lazy(() => import("./context/firefly-context"));
 const ActivityPage = lazy(() => import('./app/dashboard/activity/page'));
 const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
@@ -113,6 +106,7 @@ function App() {
             <Route path="/messages/:username" element={<UserMessagePage />} /> </Route>
           <Route path="/notification" element={<NotificationsPage />} />
           <Route path="/terms-of-use" element={<TermsOfUse />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/business" element={<OverviewPage />} />
           <Route path="/business/clients-page" element={<ClientsPage />} />
