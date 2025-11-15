@@ -4,7 +4,6 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-import { terser } from "rollup-plugin-terser";
 
 // https://vite.dev/config/
 
@@ -13,17 +12,17 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/api\/v1/, ""),
     },
     "/apicdn/v1": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/apicdn\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/apicdn\/v1/, ""),
     },
     "/cdn": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/cdn/, ""),
+      rewrite: (path: string) => path.replace(/^\/cdn/, ""),
     },
   };
 
@@ -77,11 +76,8 @@ export default defineConfig(({ mode }) => {
           },
         },
         plugins: [
-          terser({
-            output: {
-              comments: false,
-            },
-          }),
+         
+    
         ],
       },
     },

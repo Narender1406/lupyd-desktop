@@ -231,13 +231,16 @@ export default function SettingsPage() {
                             {(auth.username ?? "U")[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-white"
-                          onClick={pickProfileImage}>
-                          <Camera className="h-4 w-4" />
+                       <Button
+                        size="icon"
+                        variant="outline"
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8 
+                          bg-white dark:bg-neutral-800 dark:border-neutral-700"
+                          onClick={pickProfileImage}
+                          >
+                        <Camera className="h-4 w-4 dark:text-white" />
                         </Button>
+
                       </div>
                       <div className="flex-1 space-y-4 w-full">
                         <div className="space-y-2">
@@ -258,7 +261,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="allowChats" className="text-base font-medium text-gray-700">
+                      <Label htmlFor="allowChats" className="space-y-2">
                         Allow Chats
                       </Label>
                       <Switch
@@ -270,7 +273,7 @@ export default function SettingsPage() {
 
                     <Separator />
                     <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto" onClick={onSubmit}>Save Changes</Button>
+                      <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -370,7 +373,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+                      <Button className="flex items-center justify-between">
                         Save Security Settings
                       </Button>
                     </div>
@@ -407,7 +410,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+                      <Button className="flex items-center justify-between">
                         Save Connection Settings
                       </Button>
                     </div>
@@ -498,7 +501,7 @@ function PrivacySection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Privacy Settings
             </Button>
           </div>
@@ -526,13 +529,17 @@ function PreferencesSection() {
               <Label>Theme</Label>
               <RadioGroup
                 value={theme ?? "system"} // ✅ fallback for undefined
-                // onValueChange={(value) => setTheme(value)}
+                onValueChange={(value) => setTheme(value)}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
                 </div>
                 
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="dark" id="dark" />
+                  <Label htmlFor="dark">Dark</Label>
+                </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="system" id="system" />
                   <Label htmlFor="system">System default</Label>
@@ -621,7 +628,7 @@ function PreferencesSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Preferences
             </Button>
           </div>
@@ -732,7 +739,7 @@ function NotificationsSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Notification Settings
             </Button>
           </div>
