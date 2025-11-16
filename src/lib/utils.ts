@@ -160,3 +160,32 @@ export function fromBase64(b64: string) {
   for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
 }
+
+export const SIZE_LOOKUP_TABLE = [
+  { value: 1, symbol: "" },
+  { value: 1e3, symbol: "K" },
+  { value: 1e6, symbol: "M" },
+  { value: 1e9, symbol: "G" },
+];
+
+export const READABLE_LOOKUP_TABLE = [
+  { value: 1, symbol: "" },
+  { value: 1e3, symbol: "K" },
+  { value: 1e6, symbol: "M" },
+  { value: 1e9, symbol: "B" },
+];
+export function formatNumber(
+  num: number,
+  digits = 2,
+  lookupTable = READABLE_LOOKUP_TABLE,
+) {
+  const lookup = lookupTable;
+  const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+  const item = lookup
+    .slice()
+    .reverse()
+    .find((item) => num >= item.value);
+  return item
+    ? (num / item.value).toFixed(digits).replace(rx, "$1") + item.symbol
+    : "0";
+}

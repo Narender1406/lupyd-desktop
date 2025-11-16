@@ -26,6 +26,7 @@ import {
 } from "lupyd-js"
 import type { Extension, HtmlExtension } from "micromark-util-types"
 import { useApiService } from "@/context/apiService"
+import { formatNumber } from "@/lib/utils"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
@@ -216,7 +217,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
               onClick={handleLike}
             >
               <ThumbsUp className="h-4 w-4" />
-              <span>{likeCount}</span>
+              <span>{formatNumber(likeCount)}</span>
             </Button>
             <Button
               variant="ghost"
@@ -225,7 +226,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
               onClick={handleDislike}
             >
               <ThumbsDown className="h-4 w-4" />
-              <span>{dislikeCount}</span>
+              <span>{formatNumber(dislikeCount)}</span>
             </Button>
             <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2" onClick={toggleComments}>
               <MessageCircle className="h-4 w-4" />

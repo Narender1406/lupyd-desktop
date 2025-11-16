@@ -38,12 +38,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useFirefly } from "@/context/firefly-context";
-import { dateToRelativeString } from "lupyd-js";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { bMessageToDMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type DMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
-import { decryptBlobV1, encryptBlobV1, toBase64 } from "@/lib/utils";
+import { encryptBlobV1, formatNumber, SIZE_LOOKUP_TABLE, toBase64 } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -342,7 +341,8 @@ export default function UserMessagePage() {
         encryptedFiles.files.push(FireflyProtos.EncryptedFile.create({
           url: `${cdnUrl}/${objectKey}`,
           secretKey: key,
-          contentType
+          contentType,
+          contentLength: file.size,
         }))
       }
 
@@ -957,6 +957,8 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   const segments = file.url.split("/")
   const filename = segments[segments.length - 1]
 
+  const fileSize = formatNumber(file.contentLength, 2, SIZE_LOOKUP_TABLE)
+
   return (
     <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
       <div className="flex-shrink-0 w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
@@ -966,7 +968,7 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
       </div>
       <div className="ml-3">
         <p className="text-sm font-medium text-gray-900 whitespace-normal">{filename}</p>
-        <p className="text-xs text-gray-500">1.2 MB</p>
+        <p className="text-xs text-gray-500">{fileSize}</p>
       </div>
     </div>
   )
