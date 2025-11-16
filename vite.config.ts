@@ -4,7 +4,6 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-import { terser } from "rollup-plugin-terser";
 
 // https://vite.dev/config/
 
@@ -68,7 +67,7 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
-      sourcemap: mode === "development",
+      sourcemap: mode === "development" ? "inline" : undefined,
       rollupOptions: {
         treeshake: true,
         output: {
@@ -79,7 +78,7 @@ export default defineConfig(({ mode }) => {
             }
           },
         },
-        plugins: [sourcemaps()],
+        plugins: [],
         // plugins: [
         //   terser({
         //     output: {
