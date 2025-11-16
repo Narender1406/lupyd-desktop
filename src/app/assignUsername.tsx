@@ -26,8 +26,7 @@ export default function AssignUsernamePage() {
 
 
   const navigateToNext = () => {
-    const navigateTo = targetPath != "" ? targetPath : "/"
-    navigate(navigateTo, { replace: true })
+    navigate("/", { replace: true })
   }
 
 
@@ -72,7 +71,7 @@ export default function AssignUsernamePage() {
       }
     }).finally(() => setUsernameBeingAssigned(false))
   }
-  const [targetPath, setTargetPath] = useState<string>("")
+
 
 
   useEffect(() => {

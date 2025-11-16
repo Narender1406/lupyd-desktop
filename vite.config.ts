@@ -4,10 +4,8 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-import sourcemaps from "rollup-plugin-sourcemaps";
-// import { terser } from "rollup-plugin-terser";
-// import wasm from "vite-plugin-wasm";
-// import topLevelAwait from "vite-plugin-top-level-await";
+import { terser } from "rollup-plugin-terser";
+
 // https://vite.dev/config/
 
 const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
@@ -15,17 +13,17 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/api\/v1/, ""),
     },
     "/apicdn/v1": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/apicdn\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/apicdn\/v1/, ""),
     },
     "/cdn": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/cdn/, ""),
+      rewrite: (path: string) => path.replace(/^\/cdn/, ""),
     },
   };
 
@@ -39,12 +37,11 @@ export default defineConfig(({ mode }) => {
   console.log({ mode, env });
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
+  console.log({ mode });
 
   return {
     plugins: [
       preact(),
-      // wasm(),
-      // topLevelAwait(),
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,
@@ -71,9 +68,7 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
-      minify: true,
-      sourcemap: "inline",
-
+      sourcemap: mode === "development",
       rollupOptions: {
         treeshake: true,
         output: {

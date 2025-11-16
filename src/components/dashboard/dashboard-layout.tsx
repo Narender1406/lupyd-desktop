@@ -129,65 +129,78 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
+    <div className="flex min-h-screen ">
+     
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white overflow-y-auto pt-4" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)' }}>
-        <div className="p-4 border-b">
-          <Link to="/" className="flex items-center">
-            <span className="text-xl font-bold">Lupyd</span>
-          </Link>
-        </div>
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
+      {/* Logo */}
+      <div className="p-4 border-b dark:border-neutral-800">
+      <Link to="/" className="flex items-center">
+       <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
+      </Link>
+      </div>
+
+        {/* Navigation Links */}
         <nav className="flex-1 p-4 space-y-1">
-          {dedupedNavItems.map((item, index) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={`${item.path}-${index}`}
-                to={item.path}
-                className={`flex items-center px-3 py-2 rounded-md ${isActive ? "bg-gray-100" : "hover:bg-gray-100"}`}
+        {dedupedNavItems.map((item, index) => {
+          const Icon = item.icon
+        const isActive = location.pathname === item.path
+        return (
+           <Link
+           key={`${item.path}-${index}`}
+            to={item.path}
+            className={`flex items-center px-3 py-2 rounded-md transition-colors duration-150 ${
+              isActive
+                ? "bg-gray-100 text-gray-900 dark:bg-neutral-900 dark:text-white"
+                  : "hover:bg-gray-100 text-gray-700 dark:text-gray-300 dark:hover:bg-neutral-900 dark:hover:text-white"
+                }`}
               >
-                <Icon className="mr-3 h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            )
+              <Icon className="mr-3 h-5 w-5" />
+              <span>{item.label}</span>
+          </Link>
+          )
           })}
-        </nav>
-        {auth.username ? (
-          <div className="p-4 border-t">
+          </nav>
+
+          {/* Profile / Sign Out or Sign In */}
+          {auth.username ? (
+          <div className="p-4 border-t dark:border-neutral-800">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Link to={`/user/${auth.username}`}>
-                  <UserAvatar username={username ?? ""} />
-                </Link>
+            <div className="flex items-center">
+            <Link to={`/user/${auth.username}`}>
+              <UserAvatar username={username ?? ""} />
+              </Link>
                 <div className="ml-3">
-                  <p className="text-sm font-medium">{username}</p>
-                  <p className="text-xs text-muted-foreground">@{username}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
+                <p className="text-xs text-muted-foreground dark:text-gray-400">@{username}</p>
                 </div>
               </div>
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={onSigninButtonClick}
-                className="text-gray-500 hover:text-black hover:bg-gray-100 text-black"
-                title="Logout"
+              variant="ghost"
+              size="icon"
+              onClick={onSigninButtonClick}
+              className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
+              title="Logout"
               >
-                <LogOut className="h-5 w-5" />
+              <LogOut className="h-5 w-5" />
               </Button>
-            </div>
-          </div>
-        ) : (
-          <Button className="m-4" onClick={onSigninButtonClick}>
-            <LogIn className="mr-2 h-4 w-4" />
-            <span>Sign In</span>
-          </Button>
-        )}
-      </aside>
+              </div>
+              </div>
+                ) : (
+                <Button
+                className="m-4 bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                onClick={onSigninButtonClick}
+                 >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  <span>Sign In</span>
+                  </Button>
+                )}
+              </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen max-w-full md:ml-64 overflow-hidden" style={{ overscrollBehavior: 'none' }}>
         {/* Sticky Top Navigation Bar */}
-        <div className="sticky top-0 z-20 bg-white border-b" style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.125rem)' }}>
+        <div className="sticky top-0 z-20 border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -197,16 +210,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="text-xl font-bold">Lupyd</span>
               </Link>
             </div>
-            {/* SEARCH BAR will always be sticky */}
-            <div className="relative w-full max-w-md mx-4 hidden md:block">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="pl-8 bg-gray-100 border-none"
-                onKeyDown={searchSubmit}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
+           {/* SEARCH BAR will always be sticky */}
+             <div className="relative w-full max-w-md mx-4 hidden md:block">
+               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 
+                     text-muted-foreground dark:text-gray-400" />
+                <Input
+               type="search"
+               placeholder="Search..."
+               className="pl-8 bg-gray-100 border-none text-gray-900 placeholder-gray-500 
+               dark:bg-black dark:text-white dark:placeholder-gray-400 
+               focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700"
+               onKeyDown={searchSubmit}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
               />
             </div>
             <div className="flex items-center space-x-2 md:space-x-4">
@@ -235,21 +251,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Mobile Sidebar Overlay (Fixed + Scrollable) */}
-        <>
-          {/* Backdrop */}
-          <div
-            className={`fixed inset-0 z-40 bg-black/40 md:hidden transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Close mobile menu"
-          />
-          {/* Off-canvas sidebar */}
-          <aside
-            className={`fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-xl md:hidden flex flex-col transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Mobile navigation"
-            style={{ paddingTop: 'max(var(--status-bar-height, 0px), 0.25rem)', overscrollBehavior: 'contain' }}
-          >
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-40  md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close mobile menu"
+            />
+            {/* Off-canvas sidebar */}
+            <aside
+              className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw]  shadow-xl md:hidden flex flex-col"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobile navigation"
+            >
               {/* Sidebar header */}
               <div className="flex items-center justify-between p-4 border-b">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className="font-semibold">

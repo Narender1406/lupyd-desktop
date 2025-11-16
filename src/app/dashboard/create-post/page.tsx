@@ -522,9 +522,9 @@ export default function CreatePostPage() {
             </TabsTrigger>
             <TabsTrigger
               value="preview"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4"
+              
             >
-              Preview
+              Previews
             </TabsTrigger>
           </TabsList>
 

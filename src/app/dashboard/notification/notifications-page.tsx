@@ -136,7 +136,9 @@ export default function NotificationsPage() {
   }
 
   const handleMarkAsRead = (id: Uint8Array) => {
-    setNotifications((prev) => prev.map((notif) => (indexedDB.cmp(notif.id, id) ? { ...notif, read: true } : notif)))
+    setNotifications((prev) =>
+      prev.map((notif) => (indexedDB.cmp(notif.id, id) ? { ...notif, read: true } : notif))
+    )
   }
 
   const handleGoBack = () => {
@@ -144,35 +146,36 @@ export default function NotificationsPage() {
   }
 
   const auth = useAuth()
-  const {api} = useApiService()
+  const { api } = useApiService()
 
   useEffect(() => {
     if (auth.username) {
-      api.getNotifications().then(result => setNotifications(result.notifications))
+      api.getNotifications().then((result) => setNotifications(result.notifications))
     }
   }, [auth])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Back Arrow */}
         <Button
           variant="ghost"
           onClick={handleGoBack}
-          className="mb-6 text-gray-600 hover:text-black hover:bg-gray-100 p-2 rounded-full transition-all duration-200"
+          className="mb-6 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white 
+                     hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-full transition-all duration-200"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back
         </Button>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
-          <CardHeader className="border-b border-gray-200 bg-white">
+        <Card className="bg-white dark:bg-black border border-gray-200 dark:border-gray-700 shadow-sm">
+          <CardHeader className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-black">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3 text-black text-2xl font-bold">
+              <CardTitle className="flex items-center gap-3 text-black dark:text-white text-2xl font-bold">
                 <Bell className="h-6 w-6" />
                 Notifications
                 {unreadCount > 0 && (
-                  <Badge variant="secondary" className="bg-black text-white text-sm px-3 py-1">
+                  <Badge variant="secondary" className="bg-black dark:bg-white text-white dark:text-black text-sm px-3 py-1">
                     {unreadCount}
                   </Badge>
                 )}
@@ -181,7 +184,9 @@ export default function NotificationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-gray-300 text-gray-700 hover:bg-black hover:text-white hover:border-black transition-all duration-200 bg-white font-medium"
+                  className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 
+                             hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black 
+                             transition-all duration-200 bg-white dark:bg-black font-medium"
                   onClick={handleMarkAllAsRead}
                 >
                   Mark all as read
@@ -189,17 +194,24 @@ export default function NotificationsPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-0 bg-white">
+
+          <CardContent className="p-0 bg-white dark:bg-black">
             {notifications.length === 0 ? (
               <div className="text-center py-16">
-                <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg">No notifications yet</p>
-                <p className="text-gray-500 text-sm mt-2">{"When you get notifications, they'll show up here"}</p>
+                <Bell className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-300 text-lg">No notifications yet</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
+                  {"When you get notifications, they'll show up here"}
+                </p>
               </div>
             ) : (
               <div>
                 {notifications.map((notification) => (
-                  <NotificationItem key={ulidStringify(notification.id)} notification={notification} onMarkAsRead={handleMarkAsRead} />
+                  <NotificationItem
+                    key={ulidStringify(notification.id)}
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                  />
                 ))}
               </div>
             )}
