@@ -5,7 +5,7 @@ import react, { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { isCallRequestMessage, useFirefly } from "@/context/firefly-context"
+import { useFirefly } from "@/context/firefly-context"
 import { dateToRelativeString } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { protos as FireflyProtos, FireflyWsClient } from "firefly-client-js"
@@ -194,7 +194,7 @@ export default function MessagesPage() {
 
 
   return (<DashboardLayout>
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
       <div className="divide-y w-full">
         {lastConversations.length == 0 &&
           <div className="flex items-center justify-center h-screen">
@@ -253,9 +253,9 @@ function ConversationElement(props: { conversation: DMessage, sender: string, in
           <div className="flex items-center space-x-3">
             <div className="relative">
               <UserAvatar username={username} />
-              {false && (
+              {/* {false && (
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 border-2 border-white"></span>
-              )}
+              )} */}
             </div>
             <div className="flex-1">
               <div className="w-full">

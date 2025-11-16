@@ -38,12 +38,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useFirefly } from "@/context/firefly-context";
-import { dateToRelativeString } from "lupyd-js";
+
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
 import { bMessageToDMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type DMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
-import { decryptBlobV1, encryptBlobV1, toBase64 } from "@/lib/utils";
+import { encryptBlobV1, toBase64 } from "@/lib/utils";
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -469,13 +469,7 @@ export default function UserMessagePage() {
   }, []);
 
   return (
-    <div
-      className="flex-1 flex flex-col h-full relative overflow-hidden"
-      style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-    >
+    <div className="flex-1 flex flex-col h-full relative overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
       {/* Chat Header - Fixed at top with safe area padding */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b px-2 sm:px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)] fixed-header">
         <div className="flex items-center space-x-2 sm:space-x-3">

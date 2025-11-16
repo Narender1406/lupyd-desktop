@@ -123,7 +123,7 @@ export default function GroupWorkspaceRoutePage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <Button variant="outline" className="bg-transparent" onClick={() => navigate("/dashboard/groups")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           All Groups

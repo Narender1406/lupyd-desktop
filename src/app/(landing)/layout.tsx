@@ -135,7 +135,7 @@ export default function LandingLayout({
           </>
         )}
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="flex-1" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>{children}</main>
       <footer className="border-t bg-background">
         <div className="container flex flex-col gap-4 py-10 md:flex-row md:gap-8 md:py-12">
           <div className="flex-1 space-y-4">

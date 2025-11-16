@@ -12,7 +12,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full h-screen overflow-hidden flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full h-screen overflow-hidden flex items-center justify-center bg-gray-50 p-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <Card className="max-w-md w-full mx-4 shadow-2xl border-2 border-black">
           <CardHeader className="text-center pb-4">
             <div className="bg-black text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">

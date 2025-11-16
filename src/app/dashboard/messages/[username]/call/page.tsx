@@ -292,7 +292,7 @@ export default function UserCallPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
       <div className="relative w-full h-full flex items-center justify-center">
 
         {/* MAIN DISPLAY */}

@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PostCard } from "@/components/dashboard/post-card"
+
 import { AnimatedCard } from "@/components/animated-card"
 import { Bookmark, Grid, List, Search, Filter, Clock, ImageIcon, Video, Link2 } from "lucide-react"
 
@@ -129,7 +129,7 @@ export default function SavedPostsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Saved Posts</h1>
           <p className="text-muted-foreground">Posts you've bookmarked for later</p>

@@ -324,7 +324,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page Content - only this area is scrollable */}
         <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
-          <div className="container mx-auto p-4 md:p-6 max-w-full">{children}</div>
+          <div className="container mx-auto p-4 md:p-6 max-w-full" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>{children}</div>
         </div>
       </main>
     </div>

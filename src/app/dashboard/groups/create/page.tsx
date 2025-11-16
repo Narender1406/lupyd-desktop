@@ -91,7 +91,7 @@ export default function CreateGroupPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate("/groups")} className="flex items-center gap-2">

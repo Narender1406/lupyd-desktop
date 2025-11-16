@@ -4,15 +4,12 @@ import { useEffect, useState } from "react"
 import {
   Camera,
   Lock,
-  Eye,
   Globe,
   Languages,
   Shield,
   Smartphone,
   Mail,
-  Clock,
   UserMinus,
-  Download,
   Megaphone,
   Heart,
   BellOff,
@@ -35,7 +32,7 @@ import { useAuth } from "@/context/auth-context"
 import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
 import { useApiService } from "@/context/apiService"
-import { toast } from "@/hooks/use-toast"
+
 
 
 
@@ -47,8 +44,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("")
   const [initialUserData, setInitialUserData] = useState<UserProtos.User | null>(null)
 
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  // const [password, setPassword] = useState("")
+  // const [confirmPassword, setConfirmPassword] = useState("")
 
 
   const auth = useAuth()
@@ -159,7 +156,7 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden">
+      <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings and preferences</p>
@@ -508,7 +505,7 @@ function PrivacySection() {
 }
 
 function PreferencesSection() {
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   return (
     <AnimatedCard>
       <Card className="border-none shadow-sm">

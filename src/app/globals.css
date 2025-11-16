@@ -25,6 +25,7 @@
     --ring: 0 0% 0%;
     --radius: 0.5rem;
     --status-bar-height: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .dark {

@@ -1,13 +1,13 @@
 "use client"
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { toast } from "@/hooks/use-toast"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function NotificationTestPage() {
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Notification Testing</h1>
           <p className="text-muted-foreground">
