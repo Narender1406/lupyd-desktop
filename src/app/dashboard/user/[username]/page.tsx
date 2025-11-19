@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus } from "lucide-react"
+import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus, Ban } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
 import { ProfileSettings } from "@/components/dashboard/profile-settings"
-import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
+import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, usernameExistsInToken, UserProtos } from "lupyd-js"
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
 import { useApiService } from "@/context/apiService"
@@ -101,10 +101,27 @@ export default function ProfilePage() {
     const username = getUsername()
     if (!username) return
     if (userData.follows.includes(username)) {
-      await userData.relationState.followUser(username)
-    } else {
       await userData.relationState.unfollowUser(username)
+    } else {
+      await userData.relationState.followUser(username)
     }
+  }
+  const [isBlocked, setIsBlocked] = useState(false)
+  useEffect(() => {
+    if (!auth.username) return
+    if (!getUsername()) return
+
+    setIsBlocked(userData.blocked.includes(getUsername()!))
+  }, [auth, userData])
+  async function blockUser() {
+    const username = getUsername()
+    if (!username) return
+    if (userData.blocked.includes(username)) {
+      await userData.relationState.unblockUser(username)
+    } else {
+      await userData.relationState.blockUser(username)
+    }
+
   }
 
   return (
@@ -198,8 +215,16 @@ export default function ProfilePage() {
                           )}
                         </Button>
 
-                        <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
-                          <Settings className="h-4 w-4" />
+                        <Button
+                         variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
+                          <Ban className="h-4 w-4 " strokeWidth={3.5}/>
+                          {isBlocked ? (
+                            "Blocked"
+                          ) :(
+                            <>
+                            Block </>
+                          )
+                          }
                         </Button>
                       </>
                     )}
