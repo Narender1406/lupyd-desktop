@@ -4,12 +4,6 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-<<<<<<< HEAD
-=======
-import { terser } from "rollup-plugin-terser";
-import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
->>>>>>> 17398106eced43d46d955bd96d211cf1be20aed5
 
 // https://vite.dev/config/
 
@@ -46,8 +40,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       preact(),
-      wasm(),
-      topLevelAwait(),
+      
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,

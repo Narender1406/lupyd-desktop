@@ -1,7 +1,7 @@
 "use client"
 
 import { Crown, TrendingUp, Users, BarChart3, Download, Lock, Zap } from "lucide-react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import {DashboardLayout} from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"

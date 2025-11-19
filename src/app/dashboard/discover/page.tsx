@@ -198,15 +198,14 @@ export default function DiscoverPage() {
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search for people, topics, or content..."
-              className="pl-10 bg-white border-none shadow-sm w-full"
-              onKeyDown={onSearchFieldKeyDown}
-              value={searchText}
-              onChange={
-                (e) => { setSearchText(e.target.value); }
-              }
-            />
+           <Input
+           placeholder="Search for people, topics, or content..."
+          className="pl-10 bg-black text-white placeholder-gray-400 border border-gray-600 rounded-md w-full shadow-sm focus:border-white focus:ring-white"
+            onKeyDown={onSearchFieldKeyDown}
+            value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              />
+
           </div>
           <Button variant="outline" className="flex items-center w-full sm:w-auto">
             <Filter className="h-4 w-4 mr-2" />
