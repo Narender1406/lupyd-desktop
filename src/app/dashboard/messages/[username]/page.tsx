@@ -413,29 +413,36 @@ export default function UserMessagePage() {
         const keyboardHeight = window.innerHeight - viewport.height
         
         if (keyboardHeight > 100) {
-          // Keyboard is open - move input container above keyboard
-          inputContainer.style.position = 'fixed'
-          inputContainer.style.bottom = `${keyboardHeight}px`
+          // Keyboard is open - add padding to prevent content jump
+          document.body.style.paddingBottom = `${keyboardHeight}px`
         } else {
-          // Keyboard is closed - reset input container position
-          inputContainer.style.position = 'fixed'
-          inputContainer.style.bottom = '0'
+          // Keyboard is closed - reset padding
+          document.body.style.paddingBottom = '0px'
         }
       }
     }
 
     viewport.addEventListener("resize", handleResize)
-    return () => viewport.removeEventListener("resize", handleResize)
+    return () => {
+      viewport.removeEventListener("resize", handleResize)
+      // Clean up styles when component unmounts
+      document.body.style.paddingBottom = '0px'
+    }
   }, [])
 
   return (
     <div 
       className="flex flex-col h-screen bg-gray-50 relative"
       style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        overflow: 'hidden'
-      }}
+      paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+      overflow: 'hidden',
+      height: '100vh', // Ensure full viewport height
+      position: 'fixed', // Change from relative to fixed
+      width: '100%', // Ensure full width
+      top: 0,
+      left: 0
+    }}
     >
       {/* Chat Header - FIXED positioning */}
       <div 
@@ -480,8 +487,10 @@ export default function UserMessagePage() {
         <div
           id="chat-scroll"
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4"
-          style={{ height: 'calc(100vh - 120px)' }}
+          className="flex-1 overflow-y-auto p-4 pb-24"
+          style={{ height: 'calc(100vh - 120px)',
+          marginBottom: 'env(safe-area-inset-bottom)' 
+           }}
         >
           <InfiniteScroll
             scrollableTarget="chat-scroll"
@@ -520,7 +529,7 @@ export default function UserMessagePage() {
       {/* Message Input Area - FIXED POSITION */}
       <div
         className="message-input-container fixed bottom-0 left-0 right-0 bg-white border-t p-2 shadow-lg z-50"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
       >
         {replyingTo && (
           <div className="px-2 py-1 bg-gray-100 rounded-lg mb-1 flex items-center justify-between">
