@@ -63,6 +63,8 @@ export default function UserMessagePage() {
   const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
   const [endOfOlderMessages] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
+  // Remove unused viewportHeight state since we're using a different approach
+  // const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.visualViewport?.height || window.innerHeight : 0)
   const { api, cdnUrl } = useApiService()
   const sender = useMemo(() => auth.username, [auth])
 
@@ -381,8 +383,20 @@ export default function UserMessagePage() {
     setMessages(fakeMessages.reverse())
   }
 
-  // Handle keyboard appearance on mobile
+  // Prevent body scrolling and handle mobile keyboard
   useEffect(() => {
+    // Prevent body and html from scrolling
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    const originalBodyPosition = document.body.style.position
+    const originalBodyHeight = document.body.style.height
+    const originalBodyWidth = document.body.style.width
+    
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+    document.documentElement.style.overflow = 'hidden'
+    
     // Set viewport meta tag for proper mobile rendering
     const viewportMeta = document.querySelector('meta[name="viewport"]')
     if (!viewportMeta) {
@@ -393,55 +407,85 @@ export default function UserMessagePage() {
     } else {
       (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover'
     }
+    
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.body.style.position = originalBodyPosition
+      document.body.style.height = originalBodyHeight
+      document.body.style.width = originalBodyWidth
+      document.documentElement.style.overflow = originalHtmlOverflow
+    }
+  }, [])
 
-    // Handle keyboard appearance
+  // Handle mobile keyboard appearance without resizing page
+  useEffect(() => {
     if (!window.visualViewport) return
-
+    
     const viewport = window.visualViewport
-    let previousViewportHeight = viewport.height
-
+    let previousOffset = 0
+    let keyboardOpen = false
+    
     const handleResize = () => {
-      // Only update if the viewport height actually changed
-      if (viewport.height === previousViewportHeight) return
-      previousViewportHeight = viewport.height
-
-      // Get the input container
-      const inputContainer = document.querySelector('.message-input-container') as HTMLElement | null
-      
-      if (inputContainer) {
-        // Calculate keyboard height
-        const keyboardHeight = window.innerHeight - viewport.height
+      // Get the message container
+      const container = document.querySelector('.message-input-container') as HTMLElement | null
+      if (container) {
+        // Calculate the offset from bottom of screen to bottom of viewport
+        const viewportBottom = viewport.offsetTop + viewport.height
+        const screenBottom = window.innerHeight
+        const offset = screenBottom - viewportBottom
         
-        if (keyboardHeight > 100) {
-          // Keyboard is open - add padding to prevent content jump
-          document.body.style.paddingBottom = `${keyboardHeight}px`
-        } else {
-          // Keyboard is closed - reset padding
-          document.body.style.paddingBottom = '0px'
+        // Detect keyboard state change
+        if (offset > 100 && !keyboardOpen) {
+          // Keyboard opened
+          keyboardOpen = true
+        } else if (offset < 10 && keyboardOpen) {
+          // Keyboard closed - force reset to original position after a small delay
+          keyboardOpen = false
+          setTimeout(() => {
+            if (container) {
+              container.style.transform = 'translateY(0px)'
+              previousOffset = 0
+            }
+          }, 100)
+        }
+        
+        // Only update if the offset actually changed significantly
+        if (Math.abs(offset - previousOffset) > 5) {
+          previousOffset = offset
+          // Move the input container up by the offset to stay visible
+          container.style.transform = `translateY(-${offset}px)`
         }
       }
     }
-
+    
+    // Also handle initial position
+    handleResize()
+    
     viewport.addEventListener("resize", handleResize)
     return () => {
       viewport.removeEventListener("resize", handleResize)
-      // Clean up styles when component unmounts
-      document.body.style.paddingBottom = '0px'
+      // Clean up transform when component unmounts
+      const container = document.querySelector('.message-input-container') as HTMLElement | null
+      if (container) {
+        container.style.transform = ''
+      }
     }
   }, [])
 
   return (
     <div 
-      className="flex flex-col h-screen bg-gray-50 relative"
+      className="flex flex-col h-screen bg-gray-50"
       style={{
       paddingTop: 'env(safe-area-inset-top)',
       paddingBottom: 'env(safe-area-inset-bottom)',
       overflow: 'hidden',
-      height: '100vh', // Ensure full viewport height
-      position: 'fixed', // Change from relative to fixed
-      width: '100%', // Ensure full width
+      height: '100vh', // Use full viewport height
+      position: 'fixed',
+      width: '100%',
       top: 0,
-      left: 0
+      left: 0,
+      right: 0,
+      bottom: 0
     }}
     >
       {/* Chat Header - FIXED positioning */}
