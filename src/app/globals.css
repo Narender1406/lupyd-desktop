@@ -54,27 +54,35 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    height: 100%;
+    overflow: hidden; /* Stop html scrolling */
+  }
+
   body {
     @apply bg-background text-foreground;
-    overscroll-behavior: none;
+    height: 100%;
+    width: 100%;
+    position: fixed; /* CRITICAL: Locks the body in place so it can't scroll when keyboard opens */
+    overflow: hidden; /* Stop body scrolling */
+    overscroll-behavior: none; /* Stop the "rubber band" effect */
+    -webkit-overflow-scrolling: touch;
+    padding: 0;
+    margin: 0;
   }
+
+  /* Ensure root fills the space but doesn't scroll itself */
   #root {
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    width: 100%;
+    overflow: hidden; 
     padding: env(safe-area-inset-top) 
             env(safe-area-inset-right) 
             env(safe-area-inset-bottom)
             env(safe-area-inset-left);
     background: hsl(var(--background));
     overscroll-behavior: none;
-  }
-  
-  body {
-    @apply bg-background text-foreground;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
   }
 }
 

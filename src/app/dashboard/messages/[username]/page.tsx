@@ -63,10 +63,37 @@ export default function UserMessagePage() {
   const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
   const [endOfOlderMessages] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
-  // Remove unused viewportHeight state since we're using a different approach
-  // const [viewportHeight, setViewportHeight] = useState(typeof window !== 'undefined' ? window.visualViewport?.height || window.innerHeight : 0)
+  // NEW: Track the exact height of the visible screen
+  const [viewportHeight, setViewportHeight] = useState('100%')
   const { api, cdnUrl } = useApiService()
   const sender = useMemo(() => auth.username, [auth])
+
+  // NEW: Handle Viewport Resizing (Keyboard Open/Close)
+  useEffect(() => {
+    if (!window.visualViewport) return
+
+    const handleResize = () => {
+      // Set the container height to the exact visual viewport height
+      // This automatically shrinks the UI when keyboard opens
+      setViewportHeight(`${window.visualViewport?.height}px`)
+      
+      // Optional: Scroll to bottom if keyboard opened
+      if (document.activeElement === document.querySelector('input')) {
+        setTimeout(scrollToBottom, 100)
+      }
+    }
+
+    window.visualViewport.addEventListener('resize', handleResize)
+    window.visualViewport.addEventListener('scroll', handleResize) // Handle scroll offset on iOS
+    
+    // Initial set
+    handleResize()
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize)
+      window.visualViewport?.removeEventListener('scroll', handleResize)
+    }
+  }, [])
 
   function addMessage(prev: DMessage[], msg: DMessage) {
     // Decode the message to check if it's a call message
@@ -383,117 +410,22 @@ export default function UserMessagePage() {
     setMessages(fakeMessages.reverse())
   }
 
-  // Prevent body scrolling and handle mobile keyboard
-  useEffect(() => {
-    // Prevent body and html from scrolling
-    const originalBodyOverflow = document.body.style.overflow
-    const originalHtmlOverflow = document.documentElement.style.overflow
-    const originalBodyPosition = document.body.style.position
-    const originalBodyHeight = document.body.style.height
-    const originalBodyWidth = document.body.style.width
-    
-    document.body.style.overflow = 'hidden'
-    document.body.style.position = 'fixed'
-    document.body.style.width = '100%'
-    document.documentElement.style.overflow = 'hidden'
-    
-    // Set viewport meta tag for proper mobile rendering
-    const viewportMeta = document.querySelector('meta[name="viewport"]')
-    if (!viewportMeta) {
-      const meta = document.createElement('meta')
-      meta.name = 'viewport'
-      meta.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover'
-      document.head.appendChild(meta)
-    } else {
-      (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover'
-    }
-    
-    return () => {
-      document.body.style.overflow = originalBodyOverflow
-      document.body.style.position = originalBodyPosition
-      document.body.style.height = originalBodyHeight
-      document.body.style.width = originalBodyWidth
-      document.documentElement.style.overflow = originalHtmlOverflow
-    }
-  }, [])
-
-  // Handle mobile keyboard appearance without resizing page
-  useEffect(() => {
-    if (!window.visualViewport) return
-    
-    const viewport = window.visualViewport
-    let previousOffset = 0
-    let keyboardOpen = false
-    
-    const handleResize = () => {
-      // Get the message container
-      const container = document.querySelector('.message-input-container') as HTMLElement | null
-      if (container) {
-        // Calculate the offset from bottom of screen to bottom of viewport
-        const viewportBottom = viewport.offsetTop + viewport.height
-        const screenBottom = window.innerHeight
-        const offset = screenBottom - viewportBottom
-        
-        // Detect keyboard state change
-        if (offset > 100 && !keyboardOpen) {
-          // Keyboard opened
-          keyboardOpen = true
-        } else if (offset < 10 && keyboardOpen) {
-          // Keyboard closed - force reset to original position after a small delay
-          keyboardOpen = false
-          setTimeout(() => {
-            if (container) {
-              container.style.transform = 'translateY(0px)'
-              previousOffset = 0
-            }
-          }, 100)
-        }
-        
-        // Only update if the offset actually changed significantly
-        if (Math.abs(offset - previousOffset) > 5) {
-          previousOffset = offset
-          // Move the input container up by the offset to stay visible
-          container.style.transform = `translateY(-${offset}px)`
-        }
-      }
-    }
-    
-    // Also handle initial position
-    handleResize()
-    
-    viewport.addEventListener("resize", handleResize)
-    return () => {
-      viewport.removeEventListener("resize", handleResize)
-      // Clean up transform when component unmounts
-      const container = document.querySelector('.message-input-container') as HTMLElement | null
-      if (container) {
-        container.style.transform = ''
-      }
-    }
-  }, [])
-
   return (
     <div 
-      className="flex flex-col h-screen bg-gray-50"
+      className="flex flex-col bg-gray-50 w-full"
       style={{
-      paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)',
-      overflow: 'hidden',
-      height: '100vh', // Use full viewport height
-      position: 'fixed',
-      width: '100%',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0
-    }}
+        // APPLY: The dynamic height here
+        height: viewportHeight,
+        overflow: 'hidden', // Prevent outer scrolling
+        position: 'fixed', // Ensures it stays in viewport
+        inset: 0
+      }}
     >
-      {/* Chat Header - FIXED positioning */}
+      {/* Header - Changed from fixed to standard flex item */}
       <div 
-        className="fixed top-0 left-0 right-0 z-50 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm"
+        className="flex-none bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm z-20"
         style={{ 
-          paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)',
-          paddingBottom: '0.5rem'
+          paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', 
         }}
       >
         <div className="flex items-center space-x-3">
@@ -526,15 +458,15 @@ export default function UserMessagePage() {
         </div>
       </div>
 
-      {/* Messages container - ADDED pt-16 to ensure content starts below fixed header */}
-      <div className="flex flex-col flex-1 pt-16 overflow-hidden">
+      {/* Messages Container - Flex-1 takes remaining space */}
+      <div className="flex-1 min-h-0 relative w-full">
         <div
           id="chat-scroll"
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 pb-24"
-          style={{ height: 'calc(100vh - 120px)',
-          marginBottom: 'env(safe-area-inset-bottom)' 
-           }}
+          className="h-full overflow-y-auto p-4 w-full overscroll-y-none touch-pan-y"
+          style={{ 
+             overscrollBehavior: 'contain'
+          }}
         >
           <InfiniteScroll
             scrollableTarget="chat-scroll"
@@ -542,8 +474,8 @@ export default function UserMessagePage() {
             hasMore={!endOfOlderMessages}
             loader={<Loader className="mx-auto my-4" />}
             dataLength={messages.length}
-            inverse={true}
-            style={{ display: 'flex', flexDirection: 'column-reverse' }}
+            inverse={false}
+            style={{ display: 'flex', flexDirection: 'column' }}
           >
             {messages.map((message) => (
               <div key={message.id.toString()} className="space-y-4">
@@ -551,29 +483,34 @@ export default function UserMessagePage() {
               </div>
             ))}
           </InfiniteScroll>
+          
+          {/* Dummy div to ensure scroll to bottom works nicely with spacing */}
+          <div className="h-2"></div>
         </div>
+
+        {/* Scroll to bottom button */}
+        {!isAtBottom && newMessagesCount > 0 && (
+          <Button
+            className="absolute bottom-4 right-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg w-10 h-10 z-30"
+            size="icon"
+            onClick={scrollToBottom}
+          >
+            <ChevronDown className="h-5 w-5" />
+            {newMessagesCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {newMessagesCount > 99 ? "99+" : newMessagesCount}
+              </span>
+            )}
+          </Button>
+        )}
       </div>
 
-      {/* Scroll to bottom button */}
-      {!isAtBottom && newMessagesCount > 0 && (
-        <Button
-          className="fixed bottom-24 right-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg w-10 h-10 z-50"
-          size="icon"
-          onClick={scrollToBottom}
-        >
-          <ChevronDown className="h-5 w-5" />
-          {newMessagesCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {newMessagesCount > 99 ? "99+" : newMessagesCount}
-            </span>
-          )}
-        </Button>
-      )}
-
-      {/* Message Input Area - FIXED POSITION */}
+      {/* Input Area - Flex-none ensures it stays at bottom, no 'fixed' needed */}
       <div
-        className="message-input-container fixed bottom-0 left-0 right-0 bg-white border-t p-2 shadow-lg z-50"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
+        className="flex-none bg-white border-t p-2 shadow-lg z-20 w-full touch-none"
+        style={{ 
+          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' 
+        }}
       >
         {replyingTo && (
           <div className="px-2 py-1 bg-gray-100 rounded-lg mb-1 flex items-center justify-between">
@@ -619,6 +556,8 @@ export default function UserMessagePage() {
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyDown}
+            // Prevent auto-zoom on iOS inputs by ensuring font-size is at least 16px in CSS or here
+            style={{ fontSize: '16px' }}
           />
 
           <Popover>
@@ -655,7 +594,8 @@ export default function UserMessagePage() {
             )}
           </Button>
         </div>
-
+        
+        {/* hidden file input */}
         <input
           type="file"
           ref={fileInputRef}
