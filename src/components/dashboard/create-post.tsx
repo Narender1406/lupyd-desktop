@@ -1,10 +1,8 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { ImageIcon, Video, FileText, Smile } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { UserAvatar } from "../user-avatar"
 import { useNavigate } from "react-router-dom"
@@ -16,30 +14,24 @@ export function CreatePost() {
   const goToCreatePost = () => {
     router("/create-post")
   }
-  
 
   return (
-    <Card className="border-none shadow-sm">
+    <Card className="border-none shadow-sm bg-white dark:bg-black">
       <CardContent className="p-4">
         <div className="flex space-x-4">
-          <UserAvatar username={username ?? ""}/>
+          <UserAvatar username={username ?? ""} />
           <div className="flex-1">
-            <Input placeholder="What's on your mind?" className="bg-gray-100 border-none"  onMouseDown={goToCreatePost}/>
-            <div className="flex flex-wrap gap-2 mt-3 overflow-x-auto md:overflow-visible">
-              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Photo
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
-                <Video className="h-4 w-4 mr-2" />
-                Video
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500 whitespace-nowrap" onClick={goToCreatePost}>
-                <FileText className="h-4 w-4 mr-2" />
-                Document
-              </Button>
-             
-            </div>
+            <Input
+              placeholder="What's on your mind?"
+              className="
+                bg-white text-black placeholder-gray-600
+                dark:bg-black dark:text-white dark:placeholder-gray-400
+                border border-gray-300 dark:border-gray-600
+                rounded-md
+                focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700
+              "
+              onMouseDown={goToCreatePost}
+            />
           </div>
         </div>
       </CardContent>

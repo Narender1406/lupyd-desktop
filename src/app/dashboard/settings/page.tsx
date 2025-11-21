@@ -34,6 +34,7 @@ import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
 import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 import { useApiService } from "@/context/apiService"
 import { useNavigate } from "react-router-dom"
 import { useUserData } from "@/context/userdata-context"
@@ -188,24 +189,20 @@ export default function SettingsPage() {
                 >
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger
-                  value="security"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Security
-                </TabsTrigger>
-                <TabsTrigger
-                  value="connections"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
-                >
-                  Connections
-                </TabsTrigger>
+                
                 <TabsTrigger
                   value="preferences"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
                 >
                   Preferences
                 </TabsTrigger>
+                <TabsTrigger
+                  value="about"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
+                >
+                  About
+                </TabsTrigger>
+                
               </TabsList>
             </div>
           </div>
@@ -229,13 +226,16 @@ export default function SettingsPage() {
                             {(auth.username ?? "U")[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="absolute bottom-0 right-0 rounded-full h-8 w-8 bg-white"
-                          onClick={pickProfileImage}>
-                          <Camera className="h-4 w-4" />
+                       <Button
+                        size="icon"
+                        variant="outline"
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8 
+                          bg-white dark:bg-neutral-800 dark:border-neutral-700"
+                          onClick={pickProfileImage}
+                          >
+                        <Camera className="h-4 w-4 dark:text-white" />
                         </Button>
+
                       </div>
                       <div className="flex-1 space-y-4 w-full">
                         <div className="space-y-2">
@@ -256,7 +256,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="allowChats" className="text-base font-medium text-gray-700">
+                      <Label htmlFor="allowChats" className="space-y-2">
                         Allow Chats
                       </Label>
                       <Switch
@@ -268,7 +268,7 @@ export default function SettingsPage() {
 
                     <Separator />
                     <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto" onClick={onSubmit}>Save Changes</Button>
+                      <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -316,107 +316,86 @@ export default function SettingsPage() {
               <NotificationsSection />
             </TabsContent>
 
-            <TabsContent value="security" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Account Security</CardTitle>
-                    <CardDescription>Manage your account security settings</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Shield className="h-4 w-4 mr-2" />
-                            Two-Factor Authentication
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <Switch id="twoFactor" />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Smartphone className="h-4 w-4 mr-2" />
-                            Login Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify new logins from unrecognized devices</p>
-                        </div>
-                        <Switch id="loginVerification" defaultChecked />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium flex items-center">
-                            <Mail className="h-4 w-4 mr-2" />
-                            Email Verification
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Verify your email address</p>
-                        </div>
-                        <Button disabled>
-                          Verified
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
-                        Save Security Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
-            <TabsContent value="connections" className="mt-0 space-y-6">
-              <AnimatedCard>
-                <Card className="border-none shadow-sm">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle>Connected Accounts</CardTitle>
-                    <CardDescription>Manage your connected social accounts and services</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Apps and Websites</h3>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                        <div>
-                          <p className="font-medium">Manage Third-Party Access</p>
-                          <p className="text-sm text-muted-foreground">
-                            Review apps and websites with access to your account
-                          </p>
-                        </div>
-                        <Button className="w-full sm:w-auto mt-2 sm:mt-0">
-                          View Apps
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
-                        Save Connection Settings
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
-            </TabsContent>
-
+            
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
+            <TabsContent value="about"  className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
+            <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
+                  bg-white text-black dark:bg-black dark:text-white rounded-lg space-y-8">
+
+               {/* Header */}
+                <div>
+              <h1 className="text-4xl font-extrabold text-black dark:text-white">Privacy Center</h1>
+               <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">
+                Your privacy matters to us more.
+          </p>
+          </div>
+
+           {/* PrivacySection */}
+            <div className="max-w-2xl">
+          <h2 className="text-xl font-semibold mb-2">Privacy at Lupyd</h2>
+           <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+            At Lupyd, we value your trust and are committed to keeping your personal data safe.  
+            We never share your information without consent and use secure systems to protect your identity.  
+              Your privacy is at the heart of everything we build.
+            </p>
+
+          {/* Privacy Button (Round Black/White) */}
+            <Link to="/privacy"className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+        >
+        Privacy Policy
+        
+          </Link>
+        </div>
+
+    {/* Terms Section */}
+        <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+        <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
+        <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+        By using Lupyd, you agree to follow our community standards and respect others’ rights.  
+        Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.  
+        We encourage you to read and understand them carefully.
+         </p>
+
+      {/* Terms Button (Round Black/White) */}
+      <Link to="/terms-of-use"
+          className="inline-block px-5 py-2 rounded-md 
+             bg-black text-white hover:bg-gray-800 
+             dark:bg-white dark:text-black dark:hover:bg-gray-200 
+             transition text-sm font-medium"
+            >
+          Terms Of Use
+          </Link>
+          </div>
+          {/* Terms Section */}
+<div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+  <h2 className="text-xl font-semibold mb-2">Terms of Service</h2>
+  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+    By using Lupyd, you agree to comply with our Terms of Service, which outline your rights and responsibilities when using our platform.  
+    These terms ensure transparency, fairness, and a safe community for all users.  
+    Please take a moment to review them before continuing to use Lupyd.
+  </p>
+
+  {/* Terms of Service Button */}
+  <Link 
+    to="/terms-of-service"
+    className="inline-block px-5 py-2 rounded-md 
+               bg-black text-white hover:bg-gray-800 
+               dark:bg-white dark:text-black dark:hover:bg-gray-200 
+               transition text-sm font-medium"
+  >
+    Terms of Service
+  </Link>
+</div>
+
+          </div>
+          </TabsContent>
+
+            
           </div>
         </Tabs>
       </div>
@@ -547,7 +526,7 @@ function PrivacySection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Privacy Settings
             </Button>
           </div>
@@ -575,13 +554,17 @@ function PreferencesSection() {
               <Label>Theme</Label>
               <RadioGroup
                 value={theme ?? "system"} // ✅ fallback for undefined
-              // onValueChange={(value) => setTheme(value)}
+                onValueChange={(value) => setTheme(value)}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="dark" id="dark" />
+                  <Label htmlFor="dark">Dark</Label>
+                </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="system" id="system" />
                   <Label htmlFor="system">System default</Label>
@@ -670,7 +653,7 @@ function PreferencesSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Preferences
             </Button>
           </div>
@@ -781,7 +764,7 @@ function NotificationsSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+            <Button className="flex items-center justify-between">
               Save Notification Settings
             </Button>
           </div>

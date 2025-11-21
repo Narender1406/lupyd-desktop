@@ -97,7 +97,7 @@ export function GroupWorkspacePane({
   )
 
   const header = (
-    <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b bg-white">
+    <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b bg-white dark:bg-black">
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold truncate">{groupName}</span>
@@ -109,20 +109,23 @@ export function GroupWorkspacePane({
       <div className="flex items-center gap-2">
         {/* Channels (mobile) */}
         <Sheet open={openChannelsSheet} onOpenChange={setOpenChannelsSheet}>
-          
-          <SheetContent side="left" className="p-0 w-80 max-w-[calc(100vw-1rem)]">
+          <SheetContent
+            side="left"
+            className="p-0 w-80 max-w-[calc(100vw-1rem)] bg-white dark:bg-black"
+          >
             <SheetHeader className="p-4 border-b">
               <SheetTitle className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Channels
               </SheetTitle>
             </SheetHeader>
+
             <div className="p-3 space-y-3">
               <Input
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Filter channels"
-                className="bg-gray-100 border-none"
+                className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
               />
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Role</span>
@@ -140,6 +143,7 @@ export function GroupWorkspacePane({
                 </Select>
               </div>
             </div>
+
             <div className="overflow-y-auto">
               <ChannelList
                 channels={channels}
@@ -157,10 +161,9 @@ export function GroupWorkspacePane({
         {/* Tasks button */}
         <Button
           variant="outline"
-          className="bg-transparent"
+          className="bg-transparent dark:text-white"
           onClick={() => setOpenTasks(true)}
           aria-label="Open tasks"
-          title="Open tasks"
         >
           <ListChecks className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">Tasks</span>
@@ -169,10 +172,9 @@ export function GroupWorkspacePane({
         {/* Settings */}
         <Button
           variant="outline"
-          className="bg-transparent"
+          className="bg-transparent dark:text-white"
           onClick={() => navigate(`/groups/${groupId}/settings`)}
           aria-label="Group settings"
-          title="Group settings"
         >
           <Settings className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">{groupName}-Settings</span>
@@ -182,11 +184,11 @@ export function GroupWorkspacePane({
   )
 
   return (
-    <div className="flex flex-col bg-white border rounded-lg w-full max-w-full overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
+    <div className="flex flex-col bg-white dark:bg-black border rounded-lg w-full max-w-full overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
       {/* Header */}
       {header}
 
-      {/* Tasks sheet */}
+      {/* Tasks */}
       <GroupTasks
         open={openTasks}
         onOpenChange={setOpenTasks}
@@ -194,7 +196,7 @@ export function GroupWorkspacePane({
         members={mockMembers as unknown as TaskMember[]}
       />
 
-      <div className="grid w-full max-w-full [--aside-w:260px] md:grid-cols-[minmax(240px,var(--aside-w))_minmax(0,1fr)] min-h-[70vh] md:gap-0 overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip [&>*]:min-w-0">
+      <div className="grid w-full max-w-full [--aside-w:260px] md:grid-cols-[minmax(240px,var(--aside-w))_minmax(0,1fr)] min-h-[70vh] md:gap-0 overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
         {/* Channel list (desktop) */}
         <aside className="hidden md:flex md:flex-col border-r shrink-0 w-[var(--aside-w)] max-w-full overflow-x-hidden">
           <div className="p-3 space-y-3">
@@ -202,8 +204,9 @@ export function GroupWorkspacePane({
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filter channels"
-              className="bg-gray-100 border-none"
+              className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
             />
+
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Role</span>
               <Select value={role} onValueChange={(v: RoleKey) => setRole(v)}>
@@ -220,6 +223,7 @@ export function GroupWorkspacePane({
               </Select>
             </div>
           </div>
+
           <div className="flex-1 overflow-y-auto">
             <ChannelList
               channels={channels}
@@ -232,21 +236,28 @@ export function GroupWorkspacePane({
 
         {/* Chat column */}
         <section className="flex min-h-[60vh] flex-col min-w-0 max-w-full overflow-x-hidden supports-[overflow:clip]:overflow-x-clip break-words">
+
           {/* Channel header */}
-          <div className="px-3 md:px-4 py-2 border-b flex items-center justify-between">
+          <div className="px-3 md:px-4 py-2 border-b flex items-center justify-between bg-white dark:bg-black">
             <div className="flex items-center gap-2 min-w-0">
-              {selectedChannel?.isPrivate ? <Lock className="h-5 w-5" /> : <Hash className="h-5 w-5" />}
-              <h2 className="font-semibold truncate">{selectedChannel?.name || "channel"}</h2>
+              {selectedChannel?.isPrivate ? (
+                <Lock className="h-5 w-5" />
+              ) : (
+                <Hash className="h-5 w-5" />
+              )}
+              <h2 className="font-semibold truncate">{selectedChannel?.name}</h2>
+
               {selectedChannel?.category && (
                 <Badge variant="outline" className="text-xs">
                   {selectedChannel.category}
                 </Badge>
               )}
             </div>
+
             <div className="hidden md:flex items-center gap-2">
               <Button
                 variant="outline"
-                className="bg-transparent"
+                className="bg-transparent dark:text-white"
                 onClick={() => {
                   const topic = prompt("Set channel topic", selectedChannel?.topic ?? "") ?? selectedChannel?.topic
                   if (topic !== undefined) {
@@ -261,26 +272,33 @@ export function GroupWorkspacePane({
             </div>
           </div>
 
-          {/* Chat content */}
+          {/* Chat */}
           <div className="flex-1 min-h-0">
             <ChannelChat channelId={selectedChannelId} members={mockMembers} />
           </div>
 
-          {/* Composer - sticky to avoid falling under viewport on mobile */}
-          <div className="border-t p-2 md:p-3 sticky bottom-0 bg-white hidden md:block">
+          {/* Composer */}
+          <div className="border-t p-2 md:p-3 sticky bottom-0 bg-white dark:bg-black hidden md:block">
             <div className="flex items-center gap-2">
-              <Input placeholder={`Message #${selectedChannel?.name}`} className="bg-gray-100 border-none" />
-              <Button className="bg-black text-white hover:bg-gray-800">Send</Button>
+              <Input
+                placeholder={`Message #${selectedChannel?.name}`}
+                className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
+              />
+              <Button className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300">
+                Send
+              </Button>
             </div>
           </div>
 
-          {/* Channel details below chat on all sizes */}
+          {/* Channel details */}
           <div className="border-t">
             <Accordion type="single" collapsible className="w-full">
-              
               <AccordionItem value="projects">
-                <AccordionTrigger className="px-4">Projects</AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
+                <AccordionTrigger className="px-4 dark:text-white">
+                  Projects
+                </AccordionTrigger>
+
+                <AccordionContent className="px-4 pb-4 dark:text-white">
                   <ChannelProjects members={mockMembers} />
                 </AccordionContent>
               </AccordionItem>

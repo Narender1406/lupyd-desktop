@@ -5,8 +5,6 @@ import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
 import { terser } from "rollup-plugin-terser";
-import wasm from "vite-plugin-wasm";
-import topLevelAwait from "vite-plugin-top-level-await";
 
 // https://vite.dev/config/
 
@@ -15,17 +13,17 @@ const buildProxy = (addr: string): Record<string, string | ProxyOptions> => {
     "/api/v1": {
       target: `http://${addr}:39201`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/api\/v1/, ""),
     },
     "/apicdn/v1": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/apicdn\/v1/, ""),
+      rewrite: (path: string) => path.replace(/^\/apicdn\/v1/, ""),
     },
     "/cdn": {
       target: `http://${addr}:8787`,
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/cdn/, ""),
+      rewrite: (path: string) => path.replace(/^\/cdn/, ""),
     },
   };
 
@@ -39,12 +37,11 @@ export default defineConfig(({ mode }) => {
   console.log(env);
 
   const emulatorAddr = env["NEXT_PUBLIC_JS_ENV_EMULATOR_ADDR"];
+  console.log({ mode });
 
   return {
     plugins: [
       preact(),
-      wasm(),
-      topLevelAwait(),
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,
@@ -71,6 +68,7 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      sourcemap: mode === "development",
       rollupOptions: {
         treeshake: "smallest",
         output: {
@@ -90,7 +88,7 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-    assetsInclude: ['**/*.wasm'],
+    assetsInclude: ["**/*.wasm"],
 
     server: {
       port: 8080,
@@ -98,8 +96,8 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
 
       mimeTypes: {
-        'application/wasm': ['wasm']
-      }
+        "application/wasm": ["wasm"],
+      },
     },
   };
 });
