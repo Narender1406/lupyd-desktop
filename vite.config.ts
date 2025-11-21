@@ -4,10 +4,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
 import { defineConfig, loadEnv, type ProxyOptions } from "vite";
 import rollupPluginLicense from "rollup-plugin-license";
-<<<<<<< HEAD
 import { terser } from "rollup-plugin-terser";
-=======
->>>>>>> PR_200
 
 // https://vite.dev/config/
 
@@ -45,10 +42,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       preact(),
-<<<<<<< HEAD
-=======
-      
->>>>>>> PR_200
       rollupPluginLicense({
         thirdParty: {
           includePrivate: true,
