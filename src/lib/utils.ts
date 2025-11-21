@@ -63,15 +63,14 @@ export function encryptBlobV1(blob: Blob) {
   const keyBytes = crypto.getRandomValues(new Uint8Array(32));
   const counter = crypto.getRandomValues(new Uint8Array(16));
 
-  const reader = asyncGenToReadableStream(
-    encryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter),
-  );
-
-  const key = new Uint8Array(keyBytes.length + counter.length);
-  key.set([1], 0);
+  const key = new Uint8Array(1 + keyBytes.length + counter.length);
+  key.set([1], 0); // version
   key.set(keyBytes, 1);
   key.set(counter, 1 + keyBytes.length);
 
+  const reader = asyncGenToReadableStream(
+    encryptStream(readableStreamToAsyncGen(blob.stream()), keyBytes, counter),
+  );
   return { reader, key };
 }
 
