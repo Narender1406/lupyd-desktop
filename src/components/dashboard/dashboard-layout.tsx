@@ -337,6 +337,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </aside>
           </>
+        )}
 
         {/* Page Content - only this area is scrollable */}
         <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
