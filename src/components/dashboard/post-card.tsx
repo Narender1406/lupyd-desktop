@@ -26,6 +26,7 @@ import {
 } from "lupyd-js"
 import type { Extension, HtmlExtension } from "micromark-util-types"
 import { useApiService } from "@/context/apiService"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
@@ -47,6 +48,12 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   const [comments, setComments] = useState<FullPost[]>([])
 
   const auth = useAuth()
+
+  // Ref for the comments container
+  const commentsContainerRef = useRef<HTMLDivElement>(null)
+
+  // Apply scroll boundary guard to comments container
+  useScrollBoundaryGuard(commentsContainerRef)
 
   const toggleComments = async () => {
     if (comments.length == 0) {

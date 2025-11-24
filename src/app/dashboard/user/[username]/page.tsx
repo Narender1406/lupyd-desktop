@@ -1,7 +1,7 @@
 "use client"
 
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
 import { useApiService } from "@/context/apiService"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 
 export default function ProfilePage() {
   const router = useNavigate()
@@ -47,6 +48,11 @@ export default function ProfilePage() {
     }
   }, [])
 
+  // Ref for the main content area
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // Apply scroll boundary guard to the main content area
+  useScrollBoundaryGuard(contentRef)
 
   const getUsername = () => {
     const username = params.username
@@ -59,8 +65,6 @@ export default function ProfilePage() {
     return PostProtos.PostBody.decode(user.bio)
   }, [user])
   const { api } = useApiService()
-
-
 
   useEffect(() => {
     const username = getUsername()
@@ -110,7 +114,7 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         {/* Main Content */}
         <div className="flex-1">
           {/* Profile Header */}

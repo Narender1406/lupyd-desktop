@@ -38,6 +38,7 @@ import { toast } from "@/hooks/use-toast"
 import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin"
 import { useApiService } from "@/context/apiService"
 import { encryptBlobV1, toBase64 } from "@/lib/utils"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -95,49 +96,8 @@ export default function UserMessagePage() {
     }
   }, [])
 
-  // FIX: The "Nuclear" Scroll Boundary Guard
-  // This actively blocks the touch event if it tries to scroll past the edges
-  useEffect(() => {
-    const element = messagesContainerRef.current
-    if (!element) return
-
-    let startY = 0
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const currentY = e.touches[0].clientY
-      const scrollTop = element.scrollTop
-      const scrollHeight = element.scrollHeight
-      const clientHeight = element.clientHeight
-      
-      // Determine scroll direction
-      const isScrollingUp = currentY > startY // Dragging finger down
-      const isScrollingDown = currentY < startY // Dragging finger up
-
-      // 1. If at TOP and dragging DOWN -> Block it (Prevents top body bounce)
-      if (isScrollingUp && scrollTop <= 0) {
-        e.preventDefault()
-      }
-
-      // 2. If at BOTTOM and dragging UP -> Block it (Prevents bottom body scroll)
-      // We use a 1px buffer (-1) to be safe
-      if (isScrollingDown && scrollTop + clientHeight >= scrollHeight - 1) {
-        e.preventDefault()
-      }
-    }
-
-    // IMPORTANT: { passive: false } is required to use preventDefault()
-    element.addEventListener('touchstart', handleTouchStart, { passive: false })
-    element.addEventListener('touchmove', handleTouchMove, { passive: false })
-
-    return () => {
-      element.removeEventListener('touchstart', handleTouchStart)
-      element.removeEventListener('touchmove', handleTouchMove)
-    }
-  }, []) // Run once on mount
+  // Apply the scroll boundary guard hook
+  useScrollBoundaryGuard(messagesContainerRef)
 
   function addMessage(prev: DMessage[], msg: DMessage) {
     // Decode the message to check if it's a call message
