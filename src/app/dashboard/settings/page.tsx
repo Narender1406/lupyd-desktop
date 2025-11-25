@@ -50,8 +50,7 @@ export default function SettingsPage() {
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-
-
+  
   const auth = useAuth()
   const { api } = useApiService()
 
@@ -265,9 +264,8 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <Separator />
-                    <div className="flex justify-end">
-                      <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button>
+                   <div className="flex justify-end"> 
+                    <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button> 
                     </div>
                   </CardContent>
                 </Card>
@@ -314,8 +312,6 @@ export default function SettingsPage() {
             <TabsContent value="notifications" className="mt-0 space-y-6">
               <NotificationsSection />
             </TabsContent>
-
-            
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
