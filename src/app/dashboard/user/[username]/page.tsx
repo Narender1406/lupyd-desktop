@@ -14,12 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
-<<<<<<< HEAD
-import { ProfileSettings } from "@/components/dashboard/profile-settings"
-import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, usernameExistsInToken, UserProtos } from "lupyd-js"
-=======
 import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
->>>>>>> c4c3c43829c78d5d1944d9730a43b9984cc40c4b
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
 import { useApiService } from "@/context/apiService"
@@ -148,9 +143,9 @@ export default function ProfilePage() {
                   <div className="flex mt-4 md:mt-0 space-x-2">
                     {!isMobile && (
                       <>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
                         >
                           <MessageSquare className="h-4 w-4 mr-2" />
@@ -170,26 +165,16 @@ export default function ProfilePage() {
                           )}
                         </Button>
 
-<<<<<<< HEAD
                         <Button
-                         variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
-                          <Ban className="h-4 w-4 " strokeWidth={3.5}/>
+                          variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
+                          <Ban className="h-4 w-4 " strokeWidth={3.5} />
                           {isBlocked ? (
                             "Blocked"
-                          ) :(
+                          ) : (
                             <>
-                            Block </>
+                              Block </>
                           )
                           }
-=======
-                        {/* FINAL SETTINGS BUTTON */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => router("/settings")}
-                        >
-                          <Settings className="h-4 w-4" />
->>>>>>> c4c3c43829c78d5d1944d9730a43b9984cc40c4b
                         </Button>
                       </>
                     )}
@@ -227,7 +212,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm"> 
+                <p className="mt-2 text-sm">
                   {bio ? <PostBodyElement {...bio} /> : <></>}
                 </p>
               </div>
@@ -244,31 +229,31 @@ export default function ProfilePage() {
                 <TabsTrigger value="saved">Saved</TabsTrigger>
                 <TabsTrigger value="tagged">Tagged</TabsTrigger>
               </TabsList>
-<div className="flex space-x-2">
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`
       ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("grid")}
-  >
-    <Grid className="h-4 w-4" />
-  </Button>
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
 
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`
       ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("list")}
-  >
-    <List className="h-4 w-4" />
-  </Button>
-</div>
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
 
             </div>
 
