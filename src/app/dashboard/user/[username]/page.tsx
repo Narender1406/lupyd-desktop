@@ -93,13 +93,17 @@ export default function ProfilePage() {
       await userData.relationState.followUser(username)
     }
   }
+
+
   const [isBlocked, setIsBlocked] = useState(false)
+
   useEffect(() => {
     if (!auth.username) return
     if (!getUsername()) return
 
     setIsBlocked(userData.blocked.includes(getUsername()!))
   }, [auth, userData])
+ 
   async function blockUser() {
     const username = getUsername()
     if (!username) return
