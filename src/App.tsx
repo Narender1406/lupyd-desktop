@@ -46,7 +46,7 @@ const ExperiencePage = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage = lazy(() => import('./app/(landing)/privacy/page'));
-
+const BlockedAccountsPage = lazy(() => import('./app/blocked-accounts/page'));
 
 
 
@@ -116,6 +116,7 @@ function App() {
           <Route path="/business/api-key-page" element={<ApiKeyPage />} />
           <Route path="/business/clientdetails" element={<ClientDetailsPage />} />
           <Route path="/business/add-service-page" element={<AddServicePage />} />
+          <Route path="/blocked-accounts" element={<BlockedAccountsPage />} />
         </Routes>
 
       </Suspense>

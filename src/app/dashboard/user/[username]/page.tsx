@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus } from "lucide-react"
+import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus, Ban } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -88,10 +88,27 @@ export default function ProfilePage() {
     const username = getUsername()
     if (!username) return
     if (userData.follows.includes(username)) {
-      await userData.relationState.followUser(username)
-    } else {
       await userData.relationState.unfollowUser(username)
+    } else {
+      await userData.relationState.followUser(username)
     }
+  }
+  const [isBlocked, setIsBlocked] = useState(false)
+  useEffect(() => {
+    if (!auth.username) return
+    if (!getUsername()) return
+
+    setIsBlocked(userData.blocked.includes(getUsername()!))
+  }, [auth, userData])
+  async function blockUser() {
+    const username = getUsername()
+    if (!username) return
+    if (userData.blocked.includes(username)) {
+      await userData.relationState.unblockUser(username)
+    } else {
+      await userData.relationState.blockUser(username)
+    }
+
   }
 
   return (
@@ -126,9 +143,9 @@ export default function ProfilePage() {
                   <div className="flex mt-4 md:mt-0 space-x-2">
                     {!isMobile && (
                       <>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
                         >
                           <MessageSquare className="h-4 w-4 mr-2" />
@@ -148,13 +165,16 @@ export default function ProfilePage() {
                           )}
                         </Button>
 
-                        {/* FINAL SETTINGS BUTTON */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => router("/settings")}
-                        >
-                          <Settings className="h-4 w-4" />
+                        <Button
+                          variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
+                          <Ban className="h-4 w-4 " strokeWidth={3.5} />
+                          {isBlocked ? (
+                            "Blocked"
+                          ) : (
+                            <>
+                              Block </>
+                          )
+                          }
                         </Button>
                       </>
                     )}
@@ -192,7 +212,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm"> 
+                <p className="mt-2 text-sm">
                   {bio ? <PostBodyElement {...bio} /> : <></>}
                 </p>
               </div>
@@ -209,31 +229,31 @@ export default function ProfilePage() {
                 <TabsTrigger value="saved">Saved</TabsTrigger>
                 <TabsTrigger value="tagged">Tagged</TabsTrigger>
               </TabsList>
-<div className="flex space-x-2">
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`
       ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("grid")}
-  >
-    <Grid className="h-4 w-4" />
-  </Button>
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
 
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`
       ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("list")}
-  >
-    <List className="h-4 w-4" />
-  </Button>
-</div>
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
 
             </div>
 

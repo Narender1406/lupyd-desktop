@@ -443,7 +443,7 @@ export default function DiscoverPage() {
             <TabsContent value="people" className="mt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                {users.map(user => (<UserCard key={user.uname} {...user} />))}
+                {users.map(user => (<UserCard key={user.uname} user={user} />))}
 
 
                 {/*                {suggestedUsers.map((user, index) => (
@@ -528,41 +528,63 @@ export default function DiscoverPage() {
 }
 
 
-function UserCard(user: UserProtos.User) {
+// props typing: adjust if you already have a Props type elsewhere
+function UserCard({ user }: { user: UserProtos.User }) {
+  const navigate = useNavigate();
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
 
-  const router = useNavigate()
-  const [isFollowing, setIsFollowing] = useState(false)
+  // decode bio (keeps your original logic)
+  const bio =
+    user.bio != undefined && user.bio.length > 0
+      ? PostProtos.PostBody.decode(user.bio)
+      : PostProtos.PostBody.create({ plainText: "" });
 
-  const bio = user.bio.length > 0 ? PostProtos.PostBody.decode(user.bio) : PostProtos.PostBody.create({ plainText: "" })
-  const auth = useAuth()
+  const auth = useAuth();
+  const userData = useUserData();
 
-  const userData = useUserData()
+  // determine "is me" — include the exact values in deps so memo is stable
+  const isMe = useMemo(
+    () => auth.username === user.uname,
+    [auth.username, user.uname]
+  );
+
+  // update follow state based on userData.follows
+  useEffect(() => {
+    const following = Array.isArray(userData?.follows)
+      ? userData.follows.includes(user.uname)
+      : false;
+    setIsFollowing(following);
+    console.log(`isFollowing '${user.uname}'? : ${following}`);
+  }, [userData?.follows, user.uname]);
 
   const connect = () => {
-    router(`/messages/${user.uname}`)
-  }
+    navigate(`/messages/${user.uname}`);
+  };
 
-  useEffect(() => {
-    setIsFollowing(userData.follows.includes(user.uname))
-    console.log(`isFollowing '${user.uname}'? : ${isFollowing}`)
-  }, [userData])
-
+  // optimistic update + call relation API on userData.relationState
   const handleFollow = () => {
-    if (isFollowing) {
-      userData.relationState.unfollowUser(user.uname)
-      setIsFollowing(false)
-    } else {
-      userData.relationState.followUser(user.uname)
-      setIsFollowing(true)
-    }
-  }
+    setIsFollowing((prev) => {
+      const next = !prev;
+      try {
+        if (next) {
+          userData.relationState.followUser(user.uname);
+        } else {
+          userData.relationState.unfollowUser(user.uname);
+        }
+      } catch (err) {
+        // If relationState throws, revert optimistic update
+        console.error("follow/unfollow failed:", err);
+        return prev;
+      }
+      return next;
+    });
+  };
 
-  const isMe = useMemo(() => auth.username == user.uname, [auth])
-
-  return (<>
-    <Link to={`/user/${user.uname}`}>
-      <div key={user.uname} className="flex items-center justify-between">
-        <div className="flex items-center min-w-0">
+  return (
+    <div className="flex items-center justify-between" aria-label={`user-card-${user.uname}`}>
+      <div className="flex items-center min-w-0">
+        {/* Only the avatar + name are the Link to profile — avoids nested navigation issues */}
+        <Link to={`/user/${user.uname}`} className="flex items-center min-w-0">
           <UserAvatar username={user.uname} />
           <div className="ml-3 overflow-hidden">
             <p className="font-medium text-sm truncate">{user.uname}</p>
@@ -570,20 +592,34 @@ function UserCard(user: UserProtos.User) {
               <PostBodyElement {...bio} />
             </div>
           </div>
-        </div>
-
-        {(!isMe && (user.settings & 1) == 1) &&
-          <Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={connect}>
-            Connect
-          </Button>
-        }
-        {
-          !isMe &&
-          (<Button variant="outline" size="sm" className="flex-shrink-0 ml-2" onClick={handleFollow}>
-            {!isFollowing ? "Follow" : "Unfollow"}
-          </Button>
-          )}
+        </Link>
       </div>
-    </Link>
-  </>)
+
+      <div className="flex items-center ml-2 gap-2">
+        {/* Connect button shown only when not viewing self and user allows connections (settings bit 1) */}
+        {!isMe && (user.settings & 1) === 1 && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex-shrink-0"
+            onClick={connect}
+          >
+            Connect
+          </button>
+        )}
+
+        {/* Follow / Unfollow button — separate from Link */}
+        {!isMe && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm flex-shrink-0"
+            onClick={handleFollow}
+            aria-pressed={isFollowing}
+          >
+            {isFollowing ? "Unfollow" : "Follow"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
+
