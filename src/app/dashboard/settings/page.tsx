@@ -459,15 +459,15 @@ function PrivacySection() {
           <Separator />
 
 
-          <div className="space-y-4 p-4 border rounded-xl shadow-sm bg-white">
-            <h3 className="font-medium text-lg">Blocked Accounts</h3>
+          <div className="space-y-4 ">
+            <h3 className="font-medium ">Blocked Accounts</h3>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
               <div className="flex items-center">
-                <UserMinus className="h-5 w-5 mr-3 text-gray-500" />
+                <UserMinus className="h-5 w-5 mr-3 text-muted- foreground" />
                 <div>
                   <h4 className="font-medium">Manage Blocked Users</h4>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted- foreground">
                     Review and unblock accounts anytime.
                   </p>
                 </div>
@@ -475,7 +475,7 @@ function PrivacySection() {
 
               <Button
                 onClick={handleViewBlocked}
-                className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+                className="hover:bg-gray-800 w-full sm:w-auto">
 
 
                 View Blocked Accounts
