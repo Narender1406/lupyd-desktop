@@ -216,9 +216,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm">
+                <div className="mt-2 text-sm">
                   {bio ? <PostBodyElement {...bio} /> : <></>}
-                </p>
+                </div>
               </div>
             </div>
           </div>
