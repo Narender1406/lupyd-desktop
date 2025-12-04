@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus, Ban } from "lucide-react"
+import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus, Ban, UserMinus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -18,6 +18,7 @@ import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "l
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
 import { useApiService } from "@/context/apiService"
+import { UserAvatar } from "@/components/user-avatar"
 
 export default function ProfilePage() {
   const router = useNavigate()
@@ -103,7 +104,7 @@ export default function ProfilePage() {
 
     setIsBlocked(userData.blocked.includes(getUsername()!))
   }, [auth, userData])
- 
+
   async function blockUser() {
     const username = getUsername()
     if (!username) return
@@ -128,12 +129,7 @@ export default function ProfilePage() {
           <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end">
               <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-white">
-                  <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
-                  <AvatarFallback className="text-4xl">
-                    {(user?.uname ?? "U")[0]}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar username={getUsername() ?? ""} />
               </div>
 
               <div className="mt-4 md:mt-0 md:ml-6 flex-1">
@@ -200,8 +196,16 @@ export default function ProfilePage() {
                           </DropdownMenuItem>
 
                           <DropdownMenuItem onClick={handleFollow}>
+                             {isFollowing ? <UserMinus className="h-4 w-4 mr-2"></UserMinus> :
                             <UserPlus className="h-4 w-4 mr-2" />
+                              }
                             {isFollowing ? "Unfollow" : "Follow"}
+                          </DropdownMenuItem>
+
+
+                          <DropdownMenuItem onClick={blockUser}>
+                            <Ban className="h-4 w-4 mr-2" />
+                            {isBlocked? "Unblock" : "Block"}
                           </DropdownMenuItem>
 
                           <DropdownMenuSeparator />
@@ -216,9 +220,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm">
+                <div className="mt-2 text-sm">
                   {bio ? <PostBodyElement {...bio} /> : <></>}
-                </p>
+                </div>
               </div>
             </div>
           </div>

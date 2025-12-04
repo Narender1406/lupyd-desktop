@@ -9,6 +9,10 @@ import { AnimatedCard } from "@/components/animated-card";
 import { Button } from "@/components/ui/button";
 import { UserMinus, MessageSquare, Image, FileText, Users } from "lucide-react";
 
+// Avatar elements
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
+
 export default function BlockedContent() {
     const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
     const [blockedPosts, setBlockedPosts] = useState<string[]>([]);
@@ -164,12 +168,11 @@ function Section({ title, list, onUnblock, isImage, isMessage, icon }: SectionPr
                         }
                     </CardDescription>
                 </CardHeader>
+
                 <CardContent className="p-4 sm:p-6 space-y-4 overflow-visible">
                     {list.length === 0 ? (
-                        <div className="text-center py-8">
-                            <div className="text-muted-foreground">
-                                No blocked content found.
-                            </div>
+                        <div className="text-center py-8 text-muted-foreground">
+                            No blocked content found.
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -178,18 +181,23 @@ function Section({ title, list, onUnblock, isImage, isMessage, icon }: SectionPr
                                     key={index}
                                     className="p-4 border rounded-lg bg-white dark:bg-zinc-900 shadow-sm flex justify-between items-start"
                                 >
-                                    <div className="flex-1">
-                                        {isImage ? (
-                                            <img
-                                                src={item}
-                                                alt="Blocked media"
-                                                className="w-32 h-32 object-cover rounded-lg"
-                                            />
-                                        ) : isMessage ? (
-                                            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{item}</p>
-                                        ) : (
-                                            <p className="text-gray-700 dark:text-gray-300">{item}</p>
-                                        )}
+                                    <div className="flex items-center gap-3 w-full">
+                                        
+                                       <UserAvatar username={item} />
+
+                                        <div className="flex-1">
+                                            {isImage ? (
+                                                <img
+                                                    src={item}
+                                                    alt="Blocked media"
+                                                    className="w-32 h-32 object-cover rounded-lg"
+                                                />
+                                            ) : isMessage ? (
+                                                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{item}</p>
+                                            ) : (
+                                                <p className="text-gray-700 dark:text-gray-300">{item}</p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <Button
