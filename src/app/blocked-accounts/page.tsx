@@ -11,6 +11,7 @@ import { UserMinus, MessageSquare, Image, FileText, Users } from "lucide-react";
 
 // Avatar elements
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 
 export default function BlockedContent() {
     const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -182,17 +183,7 @@ function Section({ title, list, onUnblock, isImage, isMessage, icon }: SectionPr
                                 >
                                     <div className="flex items-center gap-3 w-full">
                                         
-                                        {/* Avatar only for Users */}
-                                        {!isImage && !isMessage && (
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage
-                                                    src={`https://api.dicebear.com/7.x/thumbs/svg?seed=${item}`}
-                                                />
-                                                <AvatarFallback>
-                                                    {item[0]?.toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        )}
+                                       <UserAvatar username={item} />
 
                                         <div className="flex-1">
                                             {isImage ? (
