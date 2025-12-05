@@ -12,8 +12,7 @@ import androidx.room.Query
 class DMessageNotification(
     val msgId: Long,
     val conversationId: Long,
-    val mfrom: String,
-    val mto: String,
+    val other: String,
     val text: ByteArray,
     val sentByMe: Boolean,
 )
@@ -24,7 +23,7 @@ interface UserMessageNotificationsDao {
     suspend fun getAll(): List<DMessageNotification>
 
 
-    @Query("SELECT * FROM user_message_notifications WHERE (mfrom = :user OR mto = :user) ORDER BY msgId LIMIT :limit")
+    @Query("SELECT * FROM user_message_notifications WHERE other = :user ORDER BY msgId LIMIT :limit")
     suspend fun getFromUser(user: String, limit: Int): List<DMessageNotification>
 
     @Insert
@@ -33,20 +32,20 @@ interface UserMessageNotificationsDao {
     @Query("DELETE FROM user_message_notifications")
     suspend fun deleteAll()
 
-    @Query("DELETE FROM user_message_notifications WHERE (mfrom = :sender OR mto = :sender) AND msgId <= :messageId")
+    @Query("DELETE FROM user_message_notifications WHERE other = :sender AND msgId <= :messageId")
     suspend fun deleteUntilOfSender(sender: String, messageId: Long)
 
-    @Query("""
-        WITH ranked_messages AS (
-          SELECT
-            *,
-            ROW_NUMBER() OVER(PARTITION BY (CASE WHEN mfrom < mto THEN mfrom || mto ELSE mto || mfrom END) ORDER BY msgId DESC) as rn
-          FROM user_message_notifications
-        )
-        SELECT *
-        FROM ranked_messages
-        WHERE rn <= :limit
-        ORDER BY mfrom, msgId DESC
-    """)
-    suspend fun getLastNPerSender(limit: Int): List<DMessageNotification>
+//    @Query("""
+//        WITH ranked_messages AS (
+//          SELECT
+//            *,
+//            ROW_NUMBER() OVER(PARTITION BY (CASE WHEN mfrom < mto THEN mfrom || mto ELSE mto || mfrom END) ORDER BY msgId DESC) as rn
+//          FROM user_message_notifications
+//        )
+//        SELECT *
+//        FROM ranked_messages
+//        WHERE rn <= :limit
+//        ORDER BY mfrom, msgId DESC
+//    """)
+//    suspend fun getLastNPerSender(limit: Int): List<DMessageNotification>
 }

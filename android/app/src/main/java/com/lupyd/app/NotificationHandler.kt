@@ -26,6 +26,7 @@ import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
 import com.lupyd.app.NativeNotificationPlugin.Companion.ACTION_ACCEPT_CALL
 import firefly.Message
 import kotlinx.coroutines.runBlocking
+import uniffi.firefly_signal.UserMessage
 
 class NotificationHandler(private val context: Context) {
 
@@ -190,11 +191,12 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun addMessageToHistory(msg: DMessage, me: String) {
+    fun addMessageToHistory(msg: UserMessage) {
         try {
+
             runBlocking {
                 db.userMessageNotificationsDao().put(
-                    DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, msg.text, msg.mfrom == me)
+                    DMessageNotification(msg.id.toLong(), msg.convoId.toLong(), msg.other, msg.message, !msg.sentByOther)
                 )
             }
         } catch (e: Exception) {
@@ -202,9 +204,9 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun showUserBundledNotification(msg: DMessage, me: String) {
+    fun showUserBundledNotification(msg: UserMessage) {
 
-        val other = if (msg.mfrom == me) msg.mto else msg.mfrom
+        val other = msg.other
         try {
             createNotificationChannel()
 
@@ -217,7 +219,7 @@ class NotificationHandler(private val context: Context) {
             Log.d(MyFirebaseMessagingService.Companion.TAG, "Showing bundled notification from: $other")
 
             // Add message to persistent storage
-            addMessageToHistory(msg, me)
+            addMessageToHistory(msg)
 
             // Get all messages from this sender
             val messages =  runBlocking {
@@ -240,7 +242,7 @@ class NotificationHandler(private val context: Context) {
             // Create reply action
             val replyIntent = Intent(context, ReplyReceiver::class.java)
             replyIntent.putExtra("sender", other)
-            replyIntent.putExtra("conversationId", msg.conversationId)
+            replyIntent.putExtra("conversationId", msg.convoId.toLong())
             val replyPendingIntent = PendingIntent.getBroadcast(
                 context,
                 other.hashCode() + 1,
@@ -264,7 +266,7 @@ class NotificationHandler(private val context: Context) {
             // Mark as Read action
             val markAsReadIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
                 putExtra("sender", other)
-                putExtra("msgId", msg.msgId)
+                putExtra("msgId", msg.id.toLong())
             }
 
             val markAsReadPendingIntent = PendingIntent.getBroadcast(
@@ -287,7 +289,7 @@ class NotificationHandler(private val context: Context) {
                 inboxStyle.addLine(text)
             }
 
-            val messageBody = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+            val messageBody = Message.UserMessageInner.parseFrom(msg.message).messagePayload.text
 
             // No summary text - just show sender name
             inboxStyle.setBigContentTitle(other)

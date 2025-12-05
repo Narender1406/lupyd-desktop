@@ -107,6 +107,18 @@ dependencies {
 
 
 
+    // JNA dependency for native library access
+//    implementation("net.java.dev.jna:jna:5.18.1@aar")
+//    implementation("net.java.dev.jna:jna:android")
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
+
+
+    // Kotlinx coroutines for async operations
+    implementation("libs.kotlinx.coroutines.core:1.10.2")
+
+
+
+
 
 }
 

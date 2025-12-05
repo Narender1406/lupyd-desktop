@@ -40,7 +40,7 @@ import {
 import { useFirefly } from "@/context/firefly-context";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { toast } from "@/hooks/use-toast";
-import { bMessageToDMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type DMessage } from "@/context/encryption-plugin";
+import { bUserMessageToUserMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, userMessageToBUserMessage, type BUserMessage, type UserMessage } from "@/context/encryption-plugin";
 import { useApiService } from "@/context/apiService";
 import { encryptBlobV1, formatNumber, SIZE_LOOKUP_TABLE, toBase64 } from "@/lib/utils";
 
@@ -66,14 +66,14 @@ export default function UserMessagePage() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
 
-  const [messages, setMessages] = useState<DMessage[]>([])
+  const [messages, setMessages] = useState<UserMessage[]>([])
 
   const [files, setFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const firefly = useFirefly()
 
-  function addMessage(prev: DMessage[], msg: DMessage) {
+  function addMessage(prev: UserMessage[], msg: UserMessage) {
     const message = FireflyProtos.UserMessageInner.decode(msg.text)
     if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
 
@@ -177,14 +177,14 @@ export default function UserMessagePage() {
 
     // TODO: this is not good
 
-    const { result } = await EncryptionPlugin.getLastMessagesInBetween({ from: receiver!, to: sender!, limit: count, before: lastTs })
+    const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: count, before: lastTs })
 
     setMessages((prev) => {
       let newMessages = prev
 
       // not the most efficient way, but good enough
       for (const msg of result) {
-        newMessages = addMessage(newMessages, bMessageToDMessage(msg))
+        newMessages = addMessage(newMessages, bUserMessageToUserMessage(msg))
       }
 
       return newMessages
@@ -200,7 +200,7 @@ export default function UserMessagePage() {
   // })
 
   useEffect(() => {
-    const callback = async (_: FireflyWsClient, message: DMessage) => {
+    const callback = async (message: UserMessage) => {
 
 
       // if (msg.callMessage) {
@@ -220,20 +220,12 @@ export default function UserMessagePage() {
       //   return
       // }
 
-      if (!(message.from == receiver || message.to == receiver)) {
+      if (message.other != receiver) {
 
         const msg = FireflyProtos.UserMessageInner.decode(message.text)
         if (msg.messagePayload && msg.messagePayload.text.length > 0) {
-          EncryptionPlugin.showUserNotification({
-            from: message.from,
-            to: message.to,
-            me: auth.username!,
-            textB64:
-              toBase64(message.text),
-            conversationId: message.convoId,
-            id: message.id
-          })
 
+          EncryptionPlugin.showUserNotification(userMessageToBUserMessage(message))
         }
         return
       }
@@ -250,9 +242,8 @@ export default function UserMessagePage() {
         setNewMessagesCount(prev => prev + 1);
       }
 
-      const other = message.from == sender ? message.to : message.from
 
-      EncryptionPlugin.markAsReadUntil({ username: other, ts: message.id })
+      EncryptionPlugin.markAsReadUntil({ username: message.other, ts: message.id })
 
     }
 
@@ -269,15 +260,15 @@ export default function UserMessagePage() {
 
 
   const [messageText, setMessageText] = useState("")
-  const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
+  const [replyingTo, setReplyingTo] = useState<UserMessage | null>(null)
 
   const [endOfOlderMessages] = useState(false)
-  function handleReaction(_msg: DMessage, _emoji: string): void {
+  function handleReaction(_msg: UserMessage, _emoji: string): void {
     // TODO: Implement reaction functionality
     console.log('Adding reaction', _emoji, 'to message', _msg);
   }
 
-  function handleReply(message: DMessage): void {
+  function handleReply(message: UserMessage): void {
     setReplyingTo(message)
   }
 
@@ -307,7 +298,7 @@ export default function UserMessagePage() {
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
     // const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
 
-    const msg = await firefly.encryptAndSendViaWebSocket(BigInt(currentConvoId), receiver!, payload)
+    const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
 
     setMessages(prev => addMessage(prev, msg))
   }
@@ -377,7 +368,7 @@ export default function UserMessagePage() {
   }
   // Create fake conversation for testing
   const createFakeConversation = () => {
-    const fakeMessages: DMessage[] = [];
+    const fakeMessages: BUserMessage[] = [];
     const now = Date.now() * 1000;
 
     // Create different types of messages
@@ -398,23 +389,26 @@ export default function UserMessagePage() {
       const isSender = i % 2 === 0;
       const messageType = messageTypes[i % messageTypes.length];
 
-      const fakeMessage: DMessage = {
-        id: now - (i * 1000000),
-        convoId: 1,
-        from: isSender ? sender! : receiver!,
-        to: isSender ? receiver! : sender!,
-        text: FireflyProtos.UserMessageInner.encode(
-          FireflyProtos.UserMessageInner.create({
-            messagePayload: FireflyProtos.MessagePayload.create({
-              text: messageType
-            })
-          })
-        ).finish()
-      };
-      fakeMessages.push(fakeMessage);
+
+      throw new Error(`Ain't doing that`)
+
+    //   const fakeMessage: DMessage = {
+    //     id: now - (i * 1000000),
+    //     convoId: 1,
+    //     from: isSender ? sender! : receiver!,
+    //     to: isSender ? receiver! : sender!,
+    //     text: FireflyProtos.UserMessageInner.encode(
+    //       FireflyProtos.UserMessageInner.create({
+    //         messagePayload: FireflyProtos.MessagePayload.create({
+    //           text: messageType
+    //         })
+    //       })
+    //     ).finish()
+    //   };
+    //   fakeMessages.push(fakeMessage);
     }
 
-    setMessages(fakeMessages.reverse());
+    // setMessages(fakeMessages.reverse());
   };
 
   // Set viewport meta tag for mobile optimization
@@ -575,7 +569,7 @@ export default function UserMessagePage() {
               <div className="w-1 h-6 bg-black mr-2 flex-shrink-0"></div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium">
-                  Replying to {replyingTo.from === sender ? "yourself" : sender}
+                  Replying to {!replyingTo.sentByOther ? "yourself" : sender}
                 </p>
                 <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.text}></MessageBody></p>
               </div>
@@ -699,9 +693,9 @@ export default function UserMessagePage() {
 }
 
 
-export function MessageElement(props: { message: DMessage, sender: string, handleReply?: (message: DMessage) => void, handleReaction?: (message: DMessage, emoji: string) => void }) {
-  const { message, sender, handleReaction, handleReply } = props;
-  const isMine = message.from === sender;
+export function MessageElement(props: { message: UserMessage, sender: string, handleReply?: (message: UserMessage) => void, handleReaction?: (message: UserMessage, emoji: string) => void }) {
+  const { message, handleReaction, handleReply } = props;
+  const isMine = !message.sentByOther;
 
   // const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
 

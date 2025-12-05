@@ -43,9 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = getPayloadFromAccessToken(token!)
       // setUser(user)
       setUsername(user?.uname ?? null)
-      if (user.uname) {
-        EncryptionPlugin.checkSetup()
-      }
     }
   }
 

@@ -37,7 +37,7 @@ const AnalyticsPage = lazy(() => import('./app/dashboard/analytics/page'));
 const ConnectionsPage = lazy(() => import('./app/dashboard/connections/page'));
 const CreatePostPage = lazy(() => import('./app/dashboard/create-post/page'));
 const DiscoverPage = lazy(() => import('./app/dashboard/discover/page'));
-// const MessagesPage = lazy(() => import('./app/dashboard/messages/page'));
+const MessagesPage = lazy(() => import('./app/dashboard/messages/page'));
 const PostPage = lazy(() => import('./app/dashboard/post/[postId]/page'));
 const SavedPostsPage = lazy(() => import('./app/dashboard/saved-posts/page'));
 const SettingsPage = lazy(() => import('./app/dashboard/settings/page'));
