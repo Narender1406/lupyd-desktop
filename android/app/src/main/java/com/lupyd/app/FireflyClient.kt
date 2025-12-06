@@ -3,13 +3,18 @@ package com.lupyd.app
 import android.content.Context
 import android.util.Log
 import firefly.Message
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
+import uniffi.firefly_signal.ConnectionState
 import uniffi.firefly_signal.FfiFireflyWsClient
 import uniffi.firefly_signal.FireflyWsClientCallback
 import uniffi.firefly_signal.LastMessageAndUnreadCount
 import uniffi.firefly_signal.MessagesStore
 import uniffi.firefly_signal.TokenResponse
 import uniffi.firefly_signal.UserMessage
+import uniffi.firefly_signal.initLogger
 
 class FireflyClient() {
 
@@ -18,11 +23,13 @@ class FireflyClient() {
 
         fun getInstance(ctx: Context): FireflyClient {
             if (instance == null) {
+                initLogger()
                 instance = FireflyClient(ctx)
             }
             return instance!!
         }
     }
+
     lateinit var notificationHandler: NotificationHandler
 
     private constructor(ctx: Context) : this() {
@@ -31,10 +38,9 @@ class FireflyClient() {
 
     val tag = "lupyd-firefly"
 
-    var isRunning = false
 
-    lateinit var client: FfiFireflyWsClient
-    lateinit var messagesStore: MessagesStore
+    var client: FfiFireflyWsClient? = null
+    var messagesStore: MessagesStore? = null
 
     private val onMessageCallbacks = mutableSetOf<(UserMessage) -> Unit>()
 
@@ -50,41 +56,64 @@ class FireflyClient() {
         notificationHandler = NotificationHandler(ctx)
 
         try {
-
-            if (isRunning) {
-                return
+            if (messagesStore == null) {
+                messagesStore =
+                    MessagesStore.fromPath(ctx.getDatabasePath("user_messages.db").absolutePath)
             }
 
-            isRunning = true
-            val dbPath = ctx.getDatabasePath("firefly/firefly.db").absolutePath
+            if (client == null) {
+                val callbacks = object : FireflyWsClientCallback {
+                    override suspend fun onMessage(message: UserMessage) {
+                        try {
+                            onUserMessage(message)
+                        } catch (e: Exception) {
+                            Log.e(tag, "failed to handle message: ${e.toString()}")
+                        }
 
-            messagesStore = MessagesStore.fromPath(ctx.getDatabasePath("user_messages/user_messages.db").absolutePath)
+                    }
+                }
+                val dbPath = ctx.getDatabasePath("firefly.db").absolutePath
 
-            val callbacks = object: FireflyWsClientCallback {
-                override suspend fun onMessage(message: UserMessage) {
+                client = FfiFireflyWsClient.create(
+                    Constants.FIREFLY_API_URL, Constants.FIREFLY_WS_URL, 1000.toULong(),
+                    callbacks,
+                    dbPath,
+                    5000.toULong(),
+                    Constants.AUTH0_CLIENT_ID,
+                    Constants.AUTH0_DOMAIN,
+                )
+            }
+            if (client!!.getConnectionState() == ConnectionState.DISCONNECTED) {
+                GlobalScope.launch {
+
                     try {
-                        onUserMessage(message)
+                        client!!.initializeWithRetrying()
+
                     } catch (e: Exception) {
-                        Log.e(tag, "failed to handle message: ${e.toString()}")
+                        Log.e(tag, "failed to initialize client: ${e.toString()}")
                     }
 
                 }
             }
 
-            client = FfiFireflyWsClient.create(Constants.FIREFLY_API_URL, Constants.FIREFLY_WS_URL, 1000.toULong(),
-                callbacks,
-                dbPath,
-                5000.toULong(),
-                Constants.AUTH0_CLIENT_ID,
-                Constants.AUTH0_DOMAIN,
-                )
 
-            client.initializeWithRetrying()
+
 
         } catch (e: Exception) {
             Log.e(tag, "firefly client ended ${e}")
-        } finally {
-            isRunning = false
+
+        }
+    }
+
+    suspend fun waitUntilConnected(timeoutInMs: Long) {
+        val intervalInMs = 100L
+        var triesLeft = timeoutInMs / intervalInMs
+        while (client!!.getConnectionState() != ConnectionState.CONNECTED) {
+            if (triesLeft <= 0) {
+                throw Exception("timeout failed to connect to internet")
+            }
+            delay(intervalInMs)
+            triesLeft -= 1
         }
     }
 
@@ -98,7 +127,8 @@ class FireflyClient() {
 
             if (callMsg.type == Message.CallMessageType.candidate
                 || callMsg.type == Message.CallMessageType.offer
-                || callMsg.type == Message.CallMessageType.answer) {
+                || callMsg.type == Message.CallMessageType.answer
+            ) {
 
 
                 for (onMessageCb in onMessageCallbacks) {
@@ -118,7 +148,8 @@ class FireflyClient() {
 
                 while (msgsProcessed < maxLimit) {
 
-                    val messages = messagesStore.getLastMessagesOf(msg.other, cursor.toLong(), limit.toLong())
+                    val messages =
+                        messagesStore!!.getLastMessagesOf(msg.other, cursor.toLong(), limit.toLong())
 
                     if (messages.isEmpty()) {
                         break
@@ -141,22 +172,30 @@ class FireflyClient() {
                     if (startMessage != null) {
                         val newCallMessage = Message.CallMessage.newBuilder(callMsg)
                             .setType(Message.CallMessageType.ended)
-                            .setJsonBody(JSONObject()
-                                .put("duration", msg.id - startMessage.id)
-                                .toString())
+                            .setJsonBody(
+                                JSONObject()
+                                    .put("duration", msg.id - startMessage.id)
+                                    .toString()
+                            )
                             .build()
 
                         val newInner = Message.UserMessageInner.newBuilder(msgInner)
                             .setCallMessage(newCallMessage).build()
 
 
-                        val newMsg = UserMessage(msg.id, msg.convoId, msg.other, newInner.toByteArray(), msg.sentByOther)
+                        val newMsg = UserMessage(
+                            msg.id,
+                            msg.convoId,
+                            msg.other,
+                            newInner.toByteArray(),
+                            msg.sentByOther
+                        )
 
 
-                            for (onMessageCb in onMessageCallbacks) {
-                                onMessageCb(msg)
-                                onMessageCb(newMsg)
-                            }
+                        for (onMessageCb in onMessageCallbacks) {
+                            onMessageCb(msg)
+                            onMessageCb(newMsg)
+                        }
                         saveMessage(newMsg)
                         return
                     }
@@ -166,12 +205,16 @@ class FireflyClient() {
             if (callMsg.type == Message.CallMessageType.request) {
 
                 if (msg.sentByOther) {
-                    notificationHandler.showCallNotification(msg.other, msg.convoId.toLong(), callMsg.sessionId)
+                    notificationHandler.showCallNotification(
+                        msg.other,
+                        msg.convoId.toLong(),
+                        callMsg.sessionId
+                    )
                 }
             }
         }
 
-        Log.i(tag, "Saving message ${msg}")
+
         saveMessage(msg)
 
         for (onMessageCb in onMessageCallbacks) {
@@ -179,8 +222,10 @@ class FireflyClient() {
         }
     }
 
-    suspend fun encryptAndSend(message: ByteArray, convoId: Long, to: String) : UserMessage {
-        val message = client.encryptAndSend(to, message, convoId.toULong())
+    suspend fun encryptAndSend(message: ByteArray, convoId: Long, to: String): UserMessage {
+
+
+        val message = client!!.encryptAndSend(to, message, convoId.toULong())
         onUserMessage(message)
 
         return message
@@ -189,27 +234,31 @@ class FireflyClient() {
 
     suspend fun updateAuthTokens(accessToken: String, refreshToken: String) {
         val tokens = TokenResponse(accessToken, refreshToken)
-        client.setAuthTokens(tokens)
+        client!!.setAuthTokens(tokens)
     }
 
     suspend fun getLastConversations(): List<LastMessageAndUnreadCount> {
-        return messagesStore.getLastMessageFromAllConversations()
+        return messagesStore!!.getLastMessageFromAllConversations()
     }
 
     suspend fun getLastMessagesOf(other: String, before: Long, limit: Long): List<UserMessage> {
-        return messagesStore.getLastMessagesOf(other, before, limit)
+        return messagesStore!!.getLastMessagesOf(other, before, limit)
     }
 
     suspend fun saveMessage(message: UserMessage) {
-        messagesStore.insertUserMessage(message)
+        Log.i(
+            tag,
+            "Saving message id: ${message.id} other: ${message.other} sentByOther: ${message.sentByOther} convoId: ${message.convoId}"
+        )
+        messagesStore!!.insertUserMessage(message)
     }
 
     suspend fun markAsReadUntil(other: String, id: Long) {
-        messagesStore.markAsReadUntil(other, id)
+        messagesStore!!.markAsReadUntil(other, id)
     }
 
     suspend fun sendFcmTokenToServer(token: String?) {
-        client.uploadFcmToken(token)
+        client!!.uploadFcmToken(token)
     }
 
 }

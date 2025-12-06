@@ -114,7 +114,10 @@ dependencies {
 
 
     // Kotlinx coroutines for async operations
-    implementation("libs.kotlinx.coroutines.core:1.10.2")
+//    implementation("libs.kotlinx.coroutines.core:1.10.2")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+
 
 
 

@@ -57,7 +57,7 @@ class EncryptionPlugin : Plugin() {
         fireflyClient.addOnMessageCallback (this::sendUserMessage)
 
 
-        GlobalScope.launch {
+        bridge.activity.lifecycleScope.launch {
             fireflyClient.initialize(context)
         }
 

@@ -512,6 +512,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         scope.launch {
             try {
+                fireflyClient.initialize(this@MyFirebaseMessagingService)
                 fireflyClient.sendFcmTokenToServer(token)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send fcm token to server ${e}")
@@ -689,7 +690,8 @@ class ReplyReceiver : BroadcastReceiver() {
             val replyText = remoteInput?.getCharSequence(KEY_TEXT_REPLY)?.toString()
 
             val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(context)
+//            val encryptionWrapper = EncryptionWrapper(context)
+            val fireflyClient = FireflyClient.getInstance(context)
 
             if (replyText != null) {
                 Log.d(TAG, "Reply received for $sender: $replyText")
@@ -697,14 +699,19 @@ class ReplyReceiver : BroadcastReceiver() {
                 val failedToSend = runBlocking{
                     try {
                         Log.i(TAG, "Getting access token ${sender} ${conversationId}")
-                        val token = encryptionWrapper.getAccessToken()
+//                        val token = encryptionWrapper.getAccessToken()
                         Log.i(TAG, "Encrypting reply for ${sender} ${conversationId}")
                         val payload = Message.UserMessageInner.newBuilder().setMessagePayload(
                             Message.MessagePayload.newBuilder().setText(replyText).build()
                         ).build().toByteArray()
-                        val msg = encryptionWrapper.encryptAndSend(sender, conversationId, payload, token)
 
-                        db.userMessageNotificationsDao().put(DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom,  msg.text, true))
+                        fireflyClient.initialize(context)
+
+                        fireflyClient.waitUntilConnected(5000)
+
+                        val msg = fireflyClient.encryptAndSend(payload, conversationId, sender)
+
+                        db.userMessageNotificationsDao().put(DMessageNotification(msg.id.toLong(), msg.convoId.toLong(), msg.other,  msg.message, true))
 
                         Log.i(TAG, "Encrypted reply sent for ${sender} ${msg}")
 
@@ -817,16 +824,17 @@ class CallActionReceiver : BroadcastReceiver() {
 
             Log.d(TAG, "Call action received: $action from $caller, sessionId: $sessionId")
             val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(context)
+            val fireflyClient = FireflyClient.getInstance(context)
+//            val encryptionWrapper = EncryptionWrapper(context)
 
-            val (token, me) = runBlocking {
-                val token = encryptionWrapper.getAccessToken()
-                val username = encryptionWrapper.getUsernameFromToken(token)
-                token to username
-            }
-            if (me == null) {
-                throw Exception("User not logged in")
-            }
+//            val (token, me) = runBlocking {
+//                val token = encryptionWrapper.getAccessToken()
+//                val username = encryptionWrapper.getUsernameFromToken(token)
+//                token to username
+//            }
+//            if (me == null) {
+//                throw Exception("User not logged in")
+//            }
             when (action) {
                 ACTION_ACCEPT_CALL -> {
                     Log.d(TAG, "Call accepted from $caller")
@@ -866,13 +874,15 @@ class CallActionReceiver : BroadcastReceiver() {
                     val payload = Message.UserMessageInner.newBuilder().setCallMessage(Message.CallMessage.newBuilder().setMessage(
                         ByteString.copyFrom(JSONObject()
                             .put("sessionId", sessionId)
-                            .put("from", me)
+//                            .put("from", me)
                             .put("type", "reject")
                             .toString().toByteArray())).build()
                     ).build().toByteArray()
 
                     runBlocking {
-                        encryptionWrapper.encryptAndSend(caller, conversationId, payload, token)
+                        fireflyClient.initialize(context)
+                        fireflyClient.waitUntilConnected(5000)
+                        fireflyClient.encryptAndSend(payload, conversationId, caller)
                     }
                 }
             }
