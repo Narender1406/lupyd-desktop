@@ -3,7 +3,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
-const queryClient = new QueryClient({
+// Global configuration for React Query
+export const queryConfig = {
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 2, // 2 minutes
@@ -12,7 +13,9 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+}
+
+const queryClient = new QueryClient(queryConfig)
 
 export function QueryClientProviderWrapper({ children }: { children: ReactNode }) {
   return (
