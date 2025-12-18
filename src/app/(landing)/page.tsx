@@ -39,7 +39,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center space-y-4 text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Why Lupyd?</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             <AnimatedCard delay={0.1}>
               <Card className="bg-white border-none shadow-md h-full">
                 <CardHeader className="pb-2">
@@ -89,6 +89,19 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             </AnimatedCard>
+            <AnimatedCard delay={0.5}>
+              <Card className="bg-white border-none shadow-md h-full">
+                <CardHeader className="pb-2 flex flex-col items-center">
+                  <img src="/flag.png" alt="Indian Flag" className="h-12 w-12 mb-2" />
+                  <CardTitle className="text-xl text-center">Made in India</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-muted-foreground">
+                    The first ever Encrypted Project Development app developed in India, built with sense of security for global users.
+                  </p>
+                </CardContent>
+              </Card>
+            </AnimatedCard>
           </div>
           <div className="flex justify-center mt-12">
             <Link to="/about/features">
@@ -104,7 +117,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center space-y-4 text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Key Features</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             <AnimatedCard delay={0.1}>
               <Card className="bg-white border-none shadow-md h-full">
                 <CardHeader className="pb-2 flex flex-col items-center">
@@ -150,6 +163,17 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <p className="text-muted-foreground">Take control of your privacy with customizable settings.</p>
+                </CardContent>
+              </Card>
+            </AnimatedCard>
+            <AnimatedCard delay={0.5}>
+              <Card className="bg-white border-none shadow-md h-full">
+                <CardHeader className="pb-2 flex flex-col items-center">
+                  <img src="/flag.png" alt="Indian Flag" className="h-12 w-12 mb-2" />
+                  <CardTitle className="text-xl text-center">Indian Innovation</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-muted-foreground">Proudly developed in India with cutting-edge security and technology standards.</p>
                 </CardContent>
               </Card>
             </AnimatedCard>
