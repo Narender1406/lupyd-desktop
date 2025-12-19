@@ -164,7 +164,11 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
 
 
     fun startServer() {
-        server.start(wait = true)
+        Log.d(TAG, "Starting FileServer")
+        server.start(wait = false)
+        val port = server.environment.config.port
+        Log.d(TAG, "FileServer started on port: $port")
+        Constants.fileServerPort = port
     }
 
     fun closeServer() {

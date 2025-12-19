@@ -180,7 +180,6 @@ interface LastSeenTimestampDao {
 }
 
 @Database(entities = [
-    DMessage::class,
     KeyValueEntry::class,
     PreKeyEntry::class,
     SignedPreKeyEntry::class,
@@ -199,7 +198,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun identitiesDao(): IdentitiesDao
     abstract fun trustedKeysDao(): TrustedKeysDao
     abstract fun keyValueDao(): KeyValueDao
-    abstract fun messagesDao(): DMessagesDao
+
     abstract fun lastSeenTimestampDao(): LastSeenTimestampDao
 
     abstract fun userMessageNotificationsDao(): UserMessageNotificationsDao

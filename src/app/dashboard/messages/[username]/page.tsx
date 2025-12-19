@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-import { FireflyWsClient, protos as FireflyProtos } from "firefly-client-js"
+import { protos as FireflyProtos } from "firefly-client-js"
 
 import { useAuth } from '@/context/auth-context';
 import { useEffect, useMemo, useState, useRef } from 'react';
@@ -177,6 +177,9 @@ export default function UserMessagePage() {
 
     // TODO: this is not good
 
+
+    console.log({ getLastMessages: { other: receiver!, limit: count, before: lastTs }})
+
     const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: count, before: lastTs })
 
     setMessages((prev) => {
@@ -191,7 +194,6 @@ export default function UserMessagePage() {
     })
   }
 
-  const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].convoId, [messages]);
 
   // const myCallSession = new CallSession({
   //   onSendMessage: (callMessage) => {
@@ -222,11 +224,6 @@ export default function UserMessagePage() {
 
       if (message.other != receiver) {
 
-        const msg = FireflyProtos.UserMessageInner.decode(message.text)
-        if (msg.messagePayload && msg.messagePayload.text.length > 0) {
-
-          EncryptionPlugin.showUserNotification(userMessageToBUserMessage(message))
-        }
         return
       }
       // const decryptedMessage = FireflyProtos.UserMessageInner.decode(msg.text)
@@ -298,7 +295,7 @@ export default function UserMessagePage() {
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
     // const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
 
-    const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
+    const msg = await firefly.encryptAndSend( receiver!, payload)
 
     setMessages(prev => addMessage(prev, msg))
   }
@@ -364,7 +361,7 @@ export default function UserMessagePage() {
   }
 
   function startCall() {
-    navigate(`/messages/${receiver}/call?requested=true&convoId=${currentConvoId}&sessionId=${Math.floor(Math.random() * 99999)}`)
+    navigate(`/messages/${receiver}/call?requested=true&sessionId=${Math.floor(Math.random() * 99999)}`)
   }
   // Create fake conversation for testing
   const createFakeConversation = () => {

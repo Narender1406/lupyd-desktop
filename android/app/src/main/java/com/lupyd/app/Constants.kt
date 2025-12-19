@@ -10,4 +10,7 @@ object Constants {
 
     const val FIREFLY_WS_URL = BuildConfig.NEXT_PUBLIC_JS_ENV_CHAT_WEBSOCKET_URL
 
+
+    var fileServerPort = 51414
+
 }

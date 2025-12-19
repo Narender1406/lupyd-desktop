@@ -85,7 +85,7 @@ class FireflyClient() {
             }
             if (client!!.getConnectionState() == ConnectionState.DISCONNECTED) {
                 GlobalScope.launch {
-
+                    Log.e(tag, " fireflyWs initializing with retrying");
                     try {
                         client!!.initializeWithRetrying()
 
@@ -185,7 +185,6 @@ class FireflyClient() {
 
                         val newMsg = UserMessage(
                             msg.id,
-                            msg.convoId,
                             msg.other,
                             newInner.toByteArray(),
                             msg.sentByOther
@@ -207,7 +206,6 @@ class FireflyClient() {
                 if (msg.sentByOther) {
                     notificationHandler.showCallNotification(
                         msg.other,
-                        msg.convoId.toLong(),
                         callMsg.sessionId
                     )
                 }
@@ -222,10 +220,10 @@ class FireflyClient() {
         }
     }
 
-    suspend fun encryptAndSend(message: ByteArray, convoId: Long, to: String): UserMessage {
+    suspend fun encryptAndSend(message: ByteArray, to: String): UserMessage {
 
 
-        val message = client!!.encryptAndSend(to, message, convoId.toULong())
+        val message = client!!.encryptAndSend(to, message)
         onUserMessage(message)
 
         return message
@@ -242,13 +240,20 @@ class FireflyClient() {
     }
 
     suspend fun getLastMessagesOf(other: String, before: Long, limit: Long): List<UserMessage> {
+        Log.d(tag, "getting last messages of ${other} ${before} ${limit}")
+        if (messagesStore == null) {
+            throw Exception("messagesStore is unitialized")
+        }
+
+
+
         return messagesStore!!.getLastMessagesOf(other, before, limit)
     }
 
     suspend fun saveMessage(message: UserMessage) {
         Log.i(
             tag,
-            "Saving message id: ${message.id} other: ${message.other} sentByOther: ${message.sentByOther} convoId: ${message.convoId}"
+            "Saving message id: ${message.id} other: ${message.other} sentByOther: ${message.sentByOther}"
         )
         messagesStore!!.insertUserMessage(message)
     }

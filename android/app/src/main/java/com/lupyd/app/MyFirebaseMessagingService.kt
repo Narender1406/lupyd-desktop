@@ -709,9 +709,9 @@ class ReplyReceiver : BroadcastReceiver() {
 
                         fireflyClient.waitUntilConnected(5000)
 
-                        val msg = fireflyClient.encryptAndSend(payload, conversationId, sender)
+                        val msg = fireflyClient.encryptAndSend(payload,  sender)
 
-                        db.userMessageNotificationsDao().put(DMessageNotification(msg.id.toLong(), msg.convoId.toLong(), msg.other,  msg.message, true))
+                        db.userMessageNotificationsDao().put(DMessageNotification(msg.id.toLong(), msg.other,  msg.message, true))
 
                         Log.i(TAG, "Encrypted reply sent for ${sender} ${msg}")
 
@@ -882,7 +882,7 @@ class CallActionReceiver : BroadcastReceiver() {
                     runBlocking {
                         fireflyClient.initialize(context)
                         fireflyClient.waitUntilConnected(5000)
-                        fireflyClient.encryptAndSend(payload, conversationId, caller)
+                        fireflyClient.encryptAndSend(payload,  caller)
                     }
                 }
             }

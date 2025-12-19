@@ -162,22 +162,21 @@ export default function MessagesPage() {
     })
 
 
-    firefly.service.getConversations().then(conversations => {
-      for (const conversation of conversations.conversations) {
-        addLastConversation(
-          {
-            count: 0,
-            message: {
-              id: 0,
-              convoId: Number(conversation.id),
-              other: conversation.other,
-              sentByOther: false,
-              text: FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create()).finish()
-            }
-          }
-        )
-      }
-    })
+    // firefly.service.getConversations().then(conversations => {
+    //   for (const conversation of conversations.conversations) {
+    //     addLastConversation(
+    //       {
+    //         count: 0,
+    //         message: {
+    //           id: 0,
+    //           other: conversation.other,
+    //           sentByOther: false,
+    //           text: FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create()).finish()
+    //         }
+    //       }
+    //     )
+    //   }
+    // })
   }, [auth])
 
   // Scroll to bottom of messages when conversation changes or new message is added

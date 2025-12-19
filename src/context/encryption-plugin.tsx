@@ -7,7 +7,6 @@ import { decryptBlobV1 } from "@/lib/utils";
 
 export interface BUserMessage {
   id: number,
-  convoId: number,
   other: string,
   sentByOther: boolean,
   textB64: string,
@@ -52,7 +51,6 @@ export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
 export interface EncryptionPluginType extends CapacitorPlugin {
 
   encryptAndSend(options: {
-    convoId: number,
     textB64: string,
     to: string,
   }): Promise<BUserMessage>,

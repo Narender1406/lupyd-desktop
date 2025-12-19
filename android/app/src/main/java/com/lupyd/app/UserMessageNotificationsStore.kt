@@ -7,11 +7,10 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 
 @Entity(tableName = "user_message_notifications",
-    primaryKeys = ["conversationId", "msgId"],
+    primaryKeys = ["other", "msgId"],
     )
 class DMessageNotification(
     val msgId: Long,
-    val conversationId: Long,
     val other: String,
     val text: ByteArray,
     val sentByMe: Boolean,

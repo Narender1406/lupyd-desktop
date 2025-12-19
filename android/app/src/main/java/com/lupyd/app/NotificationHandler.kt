@@ -54,7 +54,7 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun showCallNotification(caller: String, conversationId: Long, sessionId: Int) {
+    fun showCallNotification(caller: String, sessionId: Int) {
         try {
             createCallNotificationChannel()
 
@@ -71,7 +71,6 @@ class NotificationHandler(private val context: Context) {
             fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             fullScreenIntent.putExtra("type", "call")
             fullScreenIntent.putExtra("caller", caller)
-            fullScreenIntent.putExtra("conversationId", conversationId)
             fullScreenIntent.putExtra("sessionId", sessionId)
 
             val fullScreenPendingIntent = PendingIntent.getActivity(
@@ -84,7 +83,6 @@ class NotificationHandler(private val context: Context) {
             val acceptIntent = Intent(context, CallActionReceiver::class.java).apply {
                 action = MyFirebaseMessagingService.ACTION_ACCEPT_CALL
                 putExtra("caller", caller)
-                putExtra("conversationId", conversationId)
                 putExtra("sessionId", sessionId)
             }
 
@@ -98,7 +96,6 @@ class NotificationHandler(private val context: Context) {
             val declineIntent = Intent(context, CallActionReceiver::class.java)
             declineIntent.action = MyFirebaseMessagingService.ACTION_DECLINE_CALL
             declineIntent.putExtra("caller", caller)
-            declineIntent.putExtra("conversationId", conversationId)
             declineIntent.putExtra("sessionId", sessionId)
 
             val declinePendingIntent = PendingIntent.getBroadcast(
@@ -196,7 +193,7 @@ class NotificationHandler(private val context: Context) {
 
             runBlocking {
                 db.userMessageNotificationsDao().put(
-                    DMessageNotification(msg.id.toLong(), msg.convoId.toLong(), msg.other, msg.message, !msg.sentByOther)
+                    DMessageNotification(msg.id.toLong(),  msg.other, msg.message, !msg.sentByOther)
                 )
             }
         } catch (e: Exception) {
@@ -233,7 +230,7 @@ class NotificationHandler(private val context: Context) {
 
             val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
             val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
 
             val pendingIntent = PendingIntent.getActivity(context, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -242,7 +239,6 @@ class NotificationHandler(private val context: Context) {
             // Create reply action
             val replyIntent = Intent(context, ReplyReceiver::class.java)
             replyIntent.putExtra("sender", other)
-            replyIntent.putExtra("conversationId", msg.convoId.toLong())
             val replyPendingIntent = PendingIntent.getBroadcast(
                 context,
                 other.hashCode() + 1,
@@ -429,15 +425,12 @@ suspend fun buildUserNotification(ctx: Context, other: String): Notification {
     Log.d(MyFirebaseMessagingService.TAG, "Total messages from $other: $messageCount")
 
     val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
-    val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-    }
+    val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl)
 
     val pendingIntent = PendingIntent.getActivity(ctx, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
     val replyIntent = Intent(ctx, ReplyReceiver::class.java)
     replyIntent.putExtra("sender", other)
-    replyIntent.putExtra("conversationId", lastMessage.conversationId)
     val replyPendingIntent = PendingIntent.getBroadcast(
         ctx,
         other.hashCode() + 1,

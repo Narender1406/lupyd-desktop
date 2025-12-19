@@ -1,13 +1,14 @@
 "use client"
 
 import * as fireflyClientJs from "firefly-client-js"
-import { createContext, useContext, useRef, useEffect, useMemo } from "react"
+import { createContext, useContext, useRef, useEffect, useMemo, type ReactNode } from "react"
 
 import { useAuth } from "./auth-context"
 import { Outlet } from "react-router-dom";
+import { protos as FireflyProtos } from "firefly-client-js"
 
-import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, type UserMessage } from "./encryption-plugin";
-import {  toBase64 } from "@/lib/utils";
+import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type UserMessage } from "./encryption-plugin";
+import { toBase64 } from "@/lib/utils";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -15,8 +16,8 @@ export type MessageCallbackType = (message: UserMessage) => void;
 type FireflyContextType = {
   addEventListener: (cb: MessageCallbackType) => void,
   removeEventListener: (cb: MessageCallbackType) => void,
-  encryptAndSend: (convoId: bigint, other: string, text: Uint8Array) => Promise<UserMessage>,
-  service:fireflyClientJs.FireflyService
+  encryptAndSend: (other: string, text: Uint8Array) => Promise<UserMessage>,
+  service: fireflyClientJs.FireflyService
 }
 
 
@@ -25,7 +26,7 @@ const FireflyContext = createContext<FireflyContextType | undefined>(undefined)
 
 
 
-export default function FireflyProvider() {
+export default function FireflyProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
 
 
@@ -50,18 +51,35 @@ export default function FireflyProvider() {
         const isValid = isBUserMessage(data)
         console.log(`onUserMessage Recevied  ${isValid} ${JSON.stringify(data)}`)
         const dmsg = bUserMessageToUserMessage(data)
+
+        {
+
+          const currentPathname = window.location.pathname
+
+          if (!currentPathname.includes(`/messages/${dmsg.other}`)) {
+
+            console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
+
+            if (dmsg.sentByOther) {
+              const msg = FireflyProtos.UserMessageInner.decode(dmsg.text)
+
+              if (msg.messagePayload && msg.messagePayload.text.length > 0) {
+                EncryptionPlugin.showUserNotification(userMessageToBUserMessage(dmsg))
+              }
+
+            }
+
+          }
+
+        }
+
+
         eventListeners.current.forEach(e => e(dmsg))
       })
 
     return () => { listener.then(_ => _.remove()) }
 
   }, [])
-
-
-  if (!auth.username) {
-    return <div>User should complete authentication to see this page</div>
-  }
-
 
   const service = useMemo(() => new fireflyClientJs.FireflyService(apiUrl, async () => {
     if (!auth.username) throw Error(`Not authenticated`);
@@ -74,16 +92,16 @@ export default function FireflyProvider() {
 
 
 
-  async function encryptAndSend(convoId: bigint, other: string, text: Uint8Array) {
+  async function encryptAndSend(other: string, text: Uint8Array) {
 
     const msg = await EncryptionPlugin.encryptAndSend({
-      convoId: Number(convoId), textB64: toBase64(text), to: other, 
+      textB64: toBase64(text), to: other,
     })
 
     return bUserMessageToUserMessage(msg)
   }
 
-    
+
 
 
   const addEventListener = (cb: MessageCallbackType) => {
@@ -98,7 +116,7 @@ export default function FireflyProvider() {
     addEventListener, removeEventListener,
     service,
     encryptAndSend,
-  }}> <Outlet /> </FireflyContext.Provider>
+  }}> {children} </FireflyContext.Provider>
 }
 
 
