@@ -10,26 +10,32 @@ import { UserDataProvider } from "@/context/userdata-context"
 import { DialogProvider } from "@/context/dialog-context"
 import { UserImageProvider } from "@/context/user-image-context"
 import { ApiServiceProvider } from "@/context/apiService"
+import { QueryClientProviderWrapper } from "@/context/query-client"
+import { PersistenceProvider } from "@/context/persistence-provider"
 
 
 createRoot(document.getElementById('root')!).render(
 
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-    <DialogProvider>
-      <LupydAuth0Provider>
-        <AuthProvider>
-          <ApiServiceProvider>
-            <UserImageProvider>
-              <UserDataProvider>
-                <div className="flex min-h-screen flex-col">
-                  <App />
-                </div>
-              </UserDataProvider>
-            </UserImageProvider>
-          </ApiServiceProvider>
-        </AuthProvider>
-      </LupydAuth0Provider>
-    </DialogProvider>
+    <QueryClientProviderWrapper>
+      <PersistenceProvider>
+        <DialogProvider>
+          <LupydAuth0Provider>
+            <AuthProvider>
+              <ApiServiceProvider>
+                <UserImageProvider>
+                  <UserDataProvider>
+                    <div className="flex min-h-screen flex-col">
+                      <App />
+                    </div>
+                  </UserDataProvider>
+                </UserImageProvider>
+              </ApiServiceProvider>
+            </AuthProvider>
+          </LupydAuth0Provider>
+        </DialogProvider>
+      </PersistenceProvider>
+    </QueryClientProviderWrapper>
   </ThemeProvider>
 
 

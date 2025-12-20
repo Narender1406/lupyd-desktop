@@ -11,13 +11,6 @@ const EditClientPage = lazy(() => import('./app/saas/pages/editclient').then(m =
 const ApiKeyPage = lazy(() => import('./app/saas/pages/api-key-page').then(m => ({ default: m.ApiKeyPage })));
 const ClientDetailsPage = lazy(() => import('./app/saas/pages/clientdetails').then(m => ({ default: m.ClientDetailsPage })));
 const AddServicePage = lazy(() => import('./app/saas/pages/add-service-page').then(m => ({ default: m.AddServicePage })));
-const MonitoringPage = lazy(() => import('./app/saas/pages/monitoring-page').then(m => ({ default: m.MonitoringPage })));
-const BillingPage = lazy(() => import('./app/saas/pages/billing-page').then(m => ({ default: m.BillingPage })));
-const SupportPage = lazy(() => import('./app/saas/pages/support-page').then(m => ({ default: m.SupportPage })));
-
-// import TermsOfUse from './components/TermsOfUse';
-// import PrivacyPolicy from "./components/PrivacyPolicy";
-
 const OverviewPage = lazy(() => import('./app/saas/pages/overview-page').then(mod => { return { default: mod.OverviewPage } }));
 
 const TermsOfUse = lazy(() => import('./components/TermsOfUse'));
@@ -47,7 +40,6 @@ const FeaturesPage = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage = lazy(() => import('./app/(landing)/privacy/page'));
 const BlockedAccountsPage = lazy(() => import('./app/blocked-accounts/page'));
-
 
 
 const GroupChannelsPage = lazy(() => import('./app/dashboard/groups/[id]/channels/page'));

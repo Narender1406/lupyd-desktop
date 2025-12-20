@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { UserCard } from "@/components/dashboard/user-card"
 import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trending-topic"
 import { CreatePost } from "@/components/dashboard/create-post"
-import { PostFeed } from "@/components/dashboard/post-feed"
+import { PersistentPostFeed } from "@/components/dashboard/persistent-post-feed"
 import { useEffect, useState } from "react"
 import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
 import { Loader2, TrendingUp } from "lucide-react"
@@ -19,7 +19,7 @@ import { useApiService } from "@/context/apiService"
 
 
 export default function DashboardPage() {
-  const [suggestedUsers, setSuggestedUsers] = useState<UserProtos.User[]>([])
+  const [suggestedUsers] = useState<UserProtos.User[]>([])
   const [trendingHashtags, setTrendingHashtags] = useState<PostProtos.PostHashtag[]>([])
 
   const { api } = useApiService()
@@ -62,7 +62,8 @@ export default function DashboardPage() {
               <CreatePost />
 
               {/* Posts Feed with Infinite Scrolling */}
-              <PostFeed />
+              <PersistentPostFeed />
+
             </div>
 
             {/* Sidebar */}
@@ -163,7 +164,7 @@ export function FollowingFeed() {
   const [hasMore, setHasMore] = useState(true);
 
   const userData = useUserData()
-  let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
+  const [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
 
 
   const { api } = useApiService()
@@ -179,7 +180,7 @@ export function FollowingFeed() {
     const posts = await api.getPosts(details)
     if (posts.length === 0) { setHasMore(false); return }
 
-    let minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
+    const minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
     if (!minimumPostId || ulidStringify(minimumPostId) > minimumId) {
       setMinimumPostId(ulidFromString(minimumId))
     }

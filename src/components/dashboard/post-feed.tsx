@@ -1,36 +1,34 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import InfiniteScroll from "react-infinite-scroll-component"
 import { PostCard } from "@/components/dashboard/post-card"
 import { Loader2 } from "lucide-react"
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import localForage from 'localforage'
 
-import { FetchType, type GetPostsData, ulidFromString, ulidStringify } from "lupyd-js"
+import { FetchType, type GetPostsData, ulidFromString, ulidStringify, PostProtos } from "lupyd-js"
 
-// Import the post data type from post-card.tsx
-import { PostProtos } from "lupyd-js"
 import store from "store2"
 import { useUserData } from "@/context/userdata-context"
 import { useAuth } from "@/context/auth-context"
 import { useApiService } from "@/context/apiService"
-
+import { usePersistedFeed } from "@/hooks/use-persisted-feed"
 
 export function PostFeed() {
-
   const { api } = useApiService()
-
-
-  const [items, setItems] = useState<PostProtos.FullPost[]>([])
+  const queryClient = useQueryClient()
   const [hasMore, setHasMore] = useState(true)
-  let [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
-
-
+  const [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
+  
+  // Persist scroll position and feed state
+  const [scrollPosition, setScrollPosition] = usePersistedFeed<number>('postFeedScrollPosition', 0)
+  
   const userData = useUserData()
-  // let maximumPostId: Uint8Array | undefined = undefined
+  const auth = useAuth()
 
-
-  const fetchItems = async () => {
-
+  // Fetch posts function
+  const fetchPosts = async () => {
     const details: GetPostsData = {
       fetchType: FetchType.Latest,
       start: minimumPostId ? ulidStringify(minimumPostId) : undefined,
@@ -40,46 +38,94 @@ export function PostFeed() {
     console.log({ details })
 
     const posts = await api.getPosts(details)
-    if (posts.length === 0) { setHasMore(false); return }
+    
+    // Update hasMore state
+    if (posts.length === 0) {
+      setHasMore(false)
+      return []
+    }
 
-
-    let minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
+    // Update minimumPostId for pagination
+    const minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
     if (!minimumPostId || ulidStringify(minimumPostId) > minimumId) {
       setMinimumPostId(ulidFromString(minimumId))
     }
 
-    setItems((prev) => {
-      const prevIds = new Set(prev.map(e => ulidStringify(e.id)))
-      const newPosts = [...prev];
-      for (const post of posts) {
-        if (!prevIds.has(ulidStringify(post.id))) {
-          newPosts.push(post)
-        }
-      }
-      return newPosts
-    })
-
+    return posts
   }
 
+  // Use React Query to fetch and cache posts
+  const {
+    data = []
+  } = useQuery<PostProtos.FullPost[]>({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnMount: false,
+  })
 
+  // ✅ CONTROLLED REFRESH (MERGE, DON'T REPLACE)
+  const handleRefresh = async () => {
+    const details: GetPostsData = {
+      fetchType: FetchType.Latest,
+      allowedPostTypes: Number(store.get("allowedPostsTypes") ?? "1"),
+    }
+
+    const newPosts = await api.getPosts(details)
+
+    queryClient.setQueryData(["posts"], (oldPosts: PostProtos.FullPost[] = []) => {
+      const oldIds = new Set(oldPosts.map((p) => ulidStringify(p.id)))
+
+      // ✅ Only truly new posts get added
+      const uniqueNewPosts = newPosts.filter(
+        (p) => !oldIds.has(ulidStringify(p.id))
+      )
+
+      return [...uniqueNewPosts, ...oldPosts]; // ✅ Prepend new
+    })
+  }
+
+  // Fetch more posts for infinite scroll
+  const fetchMorePosts = async () => {
+    const details: GetPostsData = {
+      fetchType: FetchType.Latest,
+      start: minimumPostId ? ulidStringify(minimumPostId) : undefined,
+      allowedPostTypes: Number(store.get("allowedPostsTypes") ?? "1"),
+    }
+
+    const posts = await api.getPosts(details)
+    
+    if (posts.length === 0) {
+      setHasMore(false)
+      return
+    }
+
+    const minimumId = posts.map(e => ulidStringify(e.id)).reduce((a, b) => a > b ? b : a)
+    if (!minimumPostId || ulidStringify(minimumPostId) > minimumId) {
+      setMinimumPostId(ulidFromString(minimumId))
+    }
+
+    // Update query data with new posts
+    queryClient.setQueryData(["posts"], (oldPosts: PostProtos.FullPost[] = []) => {
+      const oldIds = new Set(oldPosts.map((p) => ulidStringify(p.id)))
+      const uniqueNewPosts = posts.filter((p) => !oldIds.has(ulidStringify(p.id)))
+      return [...oldPosts, ...uniqueNewPosts]
+    })
+  }
+
+  // Fetch followed users posts
   const fetchFollowedUsersPosts = async () => {
     const follows = userData.follows
     if (follows.length == 0) return
 
     const usersPosts = await api.getPosts({ fetchType: FetchType.Users, fetchTypeFields: follows })
-    setItems((prev) => {
-      const prevIds = new Set(prev.map(e => ulidStringify(e.id)))
-      const newItems = [...prev]
-      for (const post of usersPosts) {
-        if (!prevIds.has(ulidStringify(post.id))) {
-          newItems.push(post)
-        }
-      }
-      return newItems
+    
+    queryClient.setQueryData(["posts"], (oldPosts: PostProtos.FullPost[] = []) => {
+      const oldIds = new Set(oldPosts.map((p) => ulidStringify(p.id)))
+      const uniqueNewPosts = usersPosts.filter((p) => !oldIds.has(ulidStringify(p.id)))
+      return [...uniqueNewPosts, ...oldPosts]
     })
   }
-
-  const auth = useAuth()
 
   useEffect(() => {
     if (auth.username) {
@@ -87,16 +133,36 @@ export function PostFeed() {
     }
   }, [auth])
 
-
+  // Restore scroll position on mount
   useEffect(() => {
-    fetchItems()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (scrollPosition > 0) {
+      window.scrollTo(0, scrollPosition)
+    }
   }, [])
+
+  // Save scroll position before unmounting
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [setScrollPosition])
+
+  // ✅ AFTER MERGING, PERSIST THE MERGED DATA
+  useEffect(() => {
+    if (data?.length) {
+      localForage.setItem("cachedPosts", data).catch((error) => {
+        console.log("Failed to persist posts to storage", error);
+      });
+    }
+  }, [data]);
 
   return (
     <InfiniteScroll
-      dataLength={items.length}
-      next={fetchItems}
+      dataLength={data.length}
+      next={fetchMorePosts}
       hasMore={hasMore}
       loader={
         <div className="flex justify-center py-4">
@@ -104,12 +170,26 @@ export function PostFeed() {
         </div>
       }
       endMessage={<p className="text-center py-4 text-sm text-muted-foreground">You've seen all posts for now!</p>}
+      refreshFunction={handleRefresh}
+      pullDownToRefresh
+      pullDownToRefreshThreshold={50}
+      pullDownToRefreshContent={
+        <h3 className="text-center">&#8595; Pull down to refresh</h3>
+      }
+      releaseToRefreshContent={
+        <h3 className="text-center">&#8593; Release to refresh</h3>
+      }
     >
-      {items.map((post) => {
+      {data.map((post) => {
         const id = ulidStringify(post.id)
         return (
           <div key={id} className="mb-6">
-            <PostCard post={post} onDelete={(id) => setItems((prev) => prev.filter(e => !indexedDB.cmp(e.id, id)))} />
+            <PostCard post={post} onDelete={() => {
+              // Remove deleted post from cache
+              queryClient.setQueryData(["posts"], (oldPosts: PostProtos.FullPost[] = []) => {
+                return oldPosts.filter((p) => ulidStringify(p.id) !== id)
+              })
+            }} />
           </div>
         )
       })}
