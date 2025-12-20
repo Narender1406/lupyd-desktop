@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 
 interface Member {
   id: string
@@ -31,6 +32,9 @@ export function ChannelChat({
   const [messages, setMessages] = useState<Message[]>(() => seedMessages(channelId))
   const [draft, setDraft] = useState("")
   const containerRef = useRef<HTMLDivElement | null>(null)
+
+  // Apply scroll boundary guard to the chat container
+  useScrollBoundaryGuard(containerRef)
 
   useEffect(() => {
     setMessages(seedMessages(channelId))
@@ -85,7 +89,7 @@ export function ChannelChat({
         ))}
       </div>
 
-      {/* Inline composer (used when parent doesn’t render its own) */}
+      {/* Inline composer (used when parent doesn't render its own) */}
       <div className="border-t p-2 md:hidden">
         <div className="flex items-center gap-2">
           <Input

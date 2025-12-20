@@ -5,13 +5,13 @@ import react, { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
-import { isCallRequestMessage, useFirefly } from "@/context/firefly-context"
+import { useFirefly } from "@/context/firefly-context"
 import { dateToRelativeString } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { protos as FireflyProtos, FireflyWsClient } from "firefly-client-js"
 import { UserAvatar } from "@/components/user-avatar"
 import { MessageBody } from "./[username]/page"
-import { bMessageToDMessage, EncryptionPlugin, type DMessage } from "@/context/encryption-plugin"
+import { bUserMessageToUserMessage, EncryptionPlugin, type UserMessage } from "@/context/encryption-plugin"
 
 
 // Emoji picker options
@@ -68,12 +68,12 @@ export default function MessagesPage() {
   // }
 
 
-  const [lastConversations, setLastConversations] = react.useState<DMessage[]>([])
+  const [lastConversations, setLastConversations] = react.useState<{ count: number, message: UserMessage }[]>([])
 
   const auth = useAuth()
 
 
-  const onMessageCallback = (_: FireflyWsClient, message: DMessage) => {
+  const onMessageCallback = (message: UserMessage) => {
 
     const inner = FireflyProtos.UserMessageInner.decode(message.text)
 
@@ -82,15 +82,19 @@ export default function MessagesPage() {
     }
 
     setLastConversations(lastMessages => {
-      const newLastMessages: DMessage[] = []
-      const newOther = message!.from == auth.username ? message!.to : message!.from
+      const newLastMessages: { message: UserMessage, count: number }[] = []
+      const newOther = message!.other
 
-      newLastMessages.push(message)
+      newLastMessages.push({ message, count: 1 })
       for (let i = 0; i < lastMessages.length; i++) {
         const msg = lastMessages[i]
 
-        const other = msg!.from == auth.username ? msg!.to : msg!.from
+        const other = msg!.message.other
         if (newOther == other) {
+          const newestMessage = newLastMessages[0]
+          if (newestMessage.message.other == other) {
+            newestMessage.count += msg.count
+          }
           continue;
         }
         newLastMessages.push(msg)
@@ -116,16 +120,16 @@ export default function MessagesPage() {
 
 
 
-  const addLastConversation = (convo: DMessage) => {
+  const addLastConversation = (convo: { count: number, message: UserMessage }) => {
     setLastConversations(prev => {
-      const newConversations: DMessage[] = []
+      const newConversations: { count: number, message: UserMessage }[] = []
 
       let alreadyPushed = false;
 
       for (const c of prev) {
-        const other = c.from == auth.username ? c.to : c.from
-        if (other == convo.from || other == convo.to) {
-          if (c.id > convo.id) {
+        const other = c.message.other
+        if (other == convo.message.other) {
+          if (c.message.id > convo.message.id) {
             newConversations.push(c)
           } else {
             newConversations.push(convo)
@@ -140,7 +144,7 @@ export default function MessagesPage() {
         newConversations.push(convo)
       }
 
-      return newConversations.sort((a, b) => b.id - a.id)
+      return newConversations.sort((a, b) => b.message.id - a.message.id)
     })
   }
 
@@ -153,24 +157,26 @@ export default function MessagesPage() {
       const messages = result.result
       // could be more efficient if batch processed
       for (const message of messages) {
-        addLastConversation(bMessageToDMessage(message))
+        addLastConversation({ count: message.count, message: bUserMessageToUserMessage(message.message) })
       }
     })
 
 
-    firefly.service.getConversations().then(conversations => {
-      for (const conversation of conversations.conversations) {
-        addLastConversation(
-          {
-            id: 0,
-            convoId: Number(conversation.id),
-            from: conversation.startedBy,
-            to: conversation.other,
-            text: FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create()).finish()
-          }
-        )
-      }
-    })
+    // firefly.service.getConversations().then(conversations => {
+    //   for (const conversation of conversations.conversations) {
+    //     addLastConversation(
+    //       {
+    //         count: 0,
+    //         message: {
+    //           id: 0,
+    //           other: conversation.other,
+    //           sentByOther: false,
+    //           text: FireflyProtos.UserMessageInner.encode(FireflyProtos.UserMessageInner.create()).finish()
+    //         }
+    //       }
+    //     )
+    //   }
+    // })
   }, [auth])
 
   // Scroll to bottom of messages when conversation changes or new message is added
@@ -194,7 +200,7 @@ export default function MessagesPage() {
 
 
   return (<DashboardLayout>
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
       <div className="divide-y w-full">
         {lastConversations.length == 0 &&
           <div className="flex items-center justify-center h-screen">
@@ -212,38 +218,18 @@ export default function MessagesPage() {
 }
 
 
-function ConversationElement(props: { conversation: DMessage, sender: string, index: number }) {
+function ConversationElement(props: { conversation: { count: number, message: UserMessage}, sender: string, index: number }) {
 
   const { conversation, sender, index } = props
 
-  console.log({ conversation })
+  const username = conversation.message.other
+  const lastTs = new Date(Number(conversation.message.id / 1000))
+  // const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
 
+  // const unread = useMemo(() => unreadMessagesCount > 0, [unreadMessagesCount])
 
-  const username = sender == conversation.from ? conversation.to : conversation.from
+  const unread = conversation.count
 
-  const lastTs = new Date(Number(conversation.id / 1000))
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
-
-  const unread = useMemo(() => unreadMessagesCount > 0, [unreadMessagesCount])
-
-  useEffect(() => {
-
-    (async () => {
-
-      const result = await EncryptionPlugin.getLastSeenUserMessageTimestamp({ username })
-      if (result && "ts" in result && typeof result["ts"] == "number") {
-        const { count } = await EncryptionPlugin.getNumberOfMessagesInBetweenSince({
-          from: conversation.from,
-          to: conversation.to,
-          since: result.ts
-        })
-
-        setUnreadMessagesCount(count)
-
-      }
-
-    })()
-  }, [])
 
 
   return (
@@ -253,9 +239,9 @@ function ConversationElement(props: { conversation: DMessage, sender: string, in
           <div className="flex items-center space-x-3">
             <div className="relative">
               <UserAvatar username={username} />
-              {false && (
+              {/* {false && (
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-green-500 border-2 border-white"></span>
-              )}
+              )} */}
             </div>
             <div className="flex-1">
               <div className="w-full">
@@ -269,7 +255,7 @@ function ConversationElement(props: { conversation: DMessage, sender: string, in
               <p
                 className={`text-sm truncate ${unread ? "text-black font-medium" : "text-muted-foreground"}`}
               >
-                <MessageBody inner={conversation.text}></MessageBody>
+                <MessageBody inner={conversation.message.text}></MessageBody>
               </p>
             </div>
           </div>

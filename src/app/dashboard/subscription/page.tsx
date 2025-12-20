@@ -34,7 +34,7 @@ export default function SubscriptionPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Contact Us</h1>
           <p className="text-muted-foreground">Get in touch with our team. We're here to help you succeed.</p>

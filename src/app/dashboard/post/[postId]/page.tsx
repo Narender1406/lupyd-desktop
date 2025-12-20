@@ -23,7 +23,7 @@ export default function PostPage() {
   return (
 
     <DashboardLayout>
-      <div className="flex justify-center">
+      <div className="flex justify-center" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="w-fit">
           {post ? <PostCard post={post} /> : <div />}
         </div>

@@ -6,8 +6,8 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { protos as FireflyProtos } from "firefly-client-js"
 import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff } from "lucide-react"
 import { UserAvatar } from "@/components/user-avatar"
-import { EncryptionPlugin } from "@/context/encryption-plugin"
-import { toBase64 } from "@/lib/utils"
+import { EncryptionPlugin, userMessageToBUserMessage } from "@/context/encryption-plugin"
+
 
 enum SessionInitiationStatus {
   initiating,
@@ -113,7 +113,7 @@ export default function UserCallPage() {
 
       const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish()
 
-      firefly.encryptAndSendViaWebSocket(BigInt(convoId), other, payload).then((response) => {
+      firefly.encryptAndSend(BigInt(convoId), other, payload).then((response) => {
         console.log(`Sent [${randomId}] ${response.id}`)
       }).catch(console.error)
     }
@@ -163,24 +163,16 @@ export default function UserCallPage() {
 
 
   useEffect(() => {
-    const cb: fireflyContext.MessageCallbackType = (_, message) => {
+    const cb: fireflyContext.MessageCallbackType = (message) => {
 
       const msg = FireflyProtos.UserMessageInner.decode(message.text)
 
       if (msg.messagePayload && msg.messagePayload!.text.length > 0) {
-        EncryptionPlugin.showUserNotification({
-          from: message.from,
-          to: message.to,
-          me: auth.username!,
-          textB64:
-            toBase64(message.text),
-          conversationId: message.convoId,
-          id: message.id
-        })
+        EncryptionPlugin.showUserNotification(userMessageToBUserMessage(message))
 
         return
       }
-      if (message.from != other) {
+      if (message.other != other) {
         return
       }
 
@@ -292,7 +284,7 @@ export default function UserCallPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
       <div className="relative w-full h-full flex items-center justify-center">
 
         {/* MAIN DISPLAY */}

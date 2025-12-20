@@ -1,20 +1,13 @@
 package com.lupyd.app
 
-import android.app.Notification
-import android.app.NotificationChannel
+
 import android.app.NotificationManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.Typeface
+
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.os.Build
+
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
@@ -25,26 +18,19 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.json.JSONArray
 import org.json.JSONObject
 import androidx.core.net.toUri
-import androidx.core.graphics.createBitmap
 import com.google.protobuf.ByteString
-import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID
-import com.lupyd.app.MyFirebaseMessagingService.Companion.GROUP_KEY_MESSAGES
-import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
-import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsBytes
-import io.ktor.client.statement.bodyAsChannel
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.isSuccess
-import io.ktor.utils.io.jvm.javaio.toInputStream
+import uniffi.firefly_signal.UserMessage
+
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var db: AppDatabase
-    lateinit var encryptionWrapper: EncryptionWrapper
+//    lateinit var encryptionWrapper: EncryptionWrapper
 
     lateinit var notificationHandler: NotificationHandler
+
+    lateinit var fireflyClient: FireflyClient
 
     @OptIn(DelicateCoroutinesApi::class)
     private val scope = GlobalScope
@@ -55,15 +41,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onCreate()
 
         db = getDatabase(this)
-        encryptionWrapper = EncryptionWrapper(this, this::handleDecryptedMessage)
+//        encryptionWrapper = EncryptionWrapper(this, this::handleDecryptedMessage)
         notificationHandler = NotificationHandler(this)
+        fireflyClient = FireflyClient.getInstance(this)
 
+        fireflyClient.addOnMessageCallback (this::handleDecryptedMessage)
 
     }
 
     override fun onDestroy() {
 //        scope.cancel()
         super.onDestroy()
+        fireflyClient.removeOnMessageCallback (this::handleDecryptedMessage)
     }
 
 
@@ -82,7 +71,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (data["ty"] == "umsg") {
             scope.launch {
                 try {
-                    encryptionWrapper.syncUserMessages()
+                    fireflyClient.initialize(this@MyFirebaseMessagingService)
+//                    fireflyClient.handleMessage(data)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to Sync Messages ${e}")
                 }
@@ -150,22 +140,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     private fun showLocalNotification(title: String, body: String) {}
 
-    fun handleDecryptedMessage(msg: DMessage) {
+    fun handleDecryptedMessage(msg: UserMessage) {
 
         Log.i(TAG, "Showing decrypted message notification ${msg}");
 
-        val inner = Message.UserMessageInner.parseFrom(msg.text)
-
-
-
+        val inner = Message.UserMessageInner.parseFrom(msg.message)
 
         if (inner.hasMessagePayload()) {
             Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
-            val me = runBlocking {
-                encryptionWrapper.getUsernameFromToken(encryptionWrapper.getAccessToken())
-            }
-
-            notificationHandler.showUserBundledNotification(msg, me!!)
+            notificationHandler.showUserBundledNotification(msg)
         }
 
 
@@ -527,12 +510,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Implement this method to send token to your app server
         Log.d(TAG, "Sending token to server: " + token)
 
-
-
         scope.launch {
             try {
-                db.keyValueDao().put(KeyValueEntry("fcmToken", token))
-                encryptionWrapper.sendFcmTokenToServer()
+                fireflyClient.initialize(this@MyFirebaseMessagingService)
+                fireflyClient.sendFcmTokenToServer(token)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to send fcm token to server ${e}")
             }
@@ -709,7 +690,8 @@ class ReplyReceiver : BroadcastReceiver() {
             val replyText = remoteInput?.getCharSequence(KEY_TEXT_REPLY)?.toString()
 
             val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(context)
+//            val encryptionWrapper = EncryptionWrapper(context)
+            val fireflyClient = FireflyClient.getInstance(context)
 
             if (replyText != null) {
                 Log.d(TAG, "Reply received for $sender: $replyText")
@@ -717,14 +699,19 @@ class ReplyReceiver : BroadcastReceiver() {
                 val failedToSend = runBlocking{
                     try {
                         Log.i(TAG, "Getting access token ${sender} ${conversationId}")
-                        val token = encryptionWrapper.getAccessToken()
+//                        val token = encryptionWrapper.getAccessToken()
                         Log.i(TAG, "Encrypting reply for ${sender} ${conversationId}")
                         val payload = Message.UserMessageInner.newBuilder().setMessagePayload(
                             Message.MessagePayload.newBuilder().setText(replyText).build()
                         ).build().toByteArray()
-                        val msg = encryptionWrapper.encryptAndSend(sender, conversationId, payload, token)
 
-                        db.userMessageNotificationsDao().put(DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, msg.text, true))
+                        fireflyClient.initialize(context)
+
+                        fireflyClient.waitUntilConnected(5000)
+
+                        val msg = fireflyClient.encryptAndSend(payload,  sender)
+
+                        db.userMessageNotificationsDao().put(DMessageNotification(msg.id.toLong(), msg.other,  msg.message, true))
 
                         Log.i(TAG, "Encrypted reply sent for ${sender} ${msg}")
 
@@ -739,10 +726,10 @@ class ReplyReceiver : BroadcastReceiver() {
                     return
                 }
 
-                runBlocking {
-                    val notification = buildUserNotification(context, sender)
-
-                }
+//                runBlocking {
+//                    val notification = buildUserNotification(context, sender)
+//
+//                }
                 // Update notification to show reply but keep it visible with reply action
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -837,16 +824,17 @@ class CallActionReceiver : BroadcastReceiver() {
 
             Log.d(TAG, "Call action received: $action from $caller, sessionId: $sessionId")
             val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(context)
+            val fireflyClient = FireflyClient.getInstance(context)
+//            val encryptionWrapper = EncryptionWrapper(context)
 
-            val (token, me) = runBlocking {
-                val token = encryptionWrapper.getAccessToken()
-                val username = encryptionWrapper.getUsernameFromToken(token)
-                token to username
-            }
-            if (me == null) {
-                throw Exception("User not logged in")
-            }
+//            val (token, me) = runBlocking {
+//                val token = encryptionWrapper.getAccessToken()
+//                val username = encryptionWrapper.getUsernameFromToken(token)
+//                token to username
+//            }
+//            if (me == null) {
+//                throw Exception("User not logged in")
+//            }
             when (action) {
                 ACTION_ACCEPT_CALL -> {
                     Log.d(TAG, "Call accepted from $caller")
@@ -886,13 +874,15 @@ class CallActionReceiver : BroadcastReceiver() {
                     val payload = Message.UserMessageInner.newBuilder().setCallMessage(Message.CallMessage.newBuilder().setMessage(
                         ByteString.copyFrom(JSONObject()
                             .put("sessionId", sessionId)
-                            .put("from", me)
+//                            .put("from", me)
                             .put("type", "reject")
                             .toString().toByteArray())).build()
                     ).build().toByteArray()
 
                     runBlocking {
-                        encryptionWrapper.encryptAndSend(caller, conversationId, payload, token)
+                        fireflyClient.initialize(context)
+                        fireflyClient.waitUntilConnected(5000)
+                        fireflyClient.encryptAndSend(payload,  caller)
                     }
                 }
             }

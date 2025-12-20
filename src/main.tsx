@@ -51,6 +51,7 @@ configureStatusBar();
 import { ApiServiceProvider } from "@/context/apiService"
 import { BrowserRouter } from 'react-router-dom'
 import { NotificationProvider } from './context/notification-context.tsx'
+import FireflyProvider from './context/firefly-context.tsx'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -64,9 +65,11 @@ createRoot(document.getElementById('root')!).render(
               <ApiServiceProvider>
                 <UserImageProvider>
                   <UserDataProvider>
+                    <FireflyProvider>
                       <div className="flex min-h-screen flex-col">
                         <App />
                       </div>
+                    </FireflyProvider>
                   </UserDataProvider>
                 </UserImageProvider>
               </ApiServiceProvider>

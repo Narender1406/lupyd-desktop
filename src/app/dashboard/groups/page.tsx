@@ -183,7 +183,7 @@ export default function GroupsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row min-h-[70vh] gap-3 lg:gap-4">
+      <div className="flex flex-col md:flex-row min-h-[70vh] gap-3 lg:gap-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         {/* Discord-like rail (desktop) */}
         <aside className="hidden md:flex md:w-20 shrink-0 flex-col gap-3 items-center py-3 border rounded-lg bg-white">
           {/* Top actions */}

@@ -111,7 +111,7 @@ export default function DiscoverPage() {
     }
 
 
-    const promises: Array<Promise<any>> = []
+    const promises: Array<Promise<unknown>> = []
     // posts
     {
       if (query.length > 3) {
@@ -165,7 +165,7 @@ export default function DiscoverPage() {
   }
 
 
-  const [searchParams, _] = useSearchParams()
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
     const query = searchParams.get("q")
@@ -211,7 +211,7 @@ export default function DiscoverPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden pb-24 md:pb-0">
+      <div className="container mx-auto px-4 max-w-full overflow-hidden pb-24 md:pb-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-muted-foreground">Explore new content, people, and communities</p>

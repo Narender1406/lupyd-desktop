@@ -53,7 +53,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout >
-      <Tabs defaultValue="feed" className="w-full">
+      <Tabs defaultValue="feed" className="w-full" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <TabsList className="mb-6 bg-transparent border-b w-full justify-start rounded-none p-0 h-auto overflow-x-auto">
           <TabsTrigger
             value="feed"

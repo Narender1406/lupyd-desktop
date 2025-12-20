@@ -1,52 +1,46 @@
 'use client'
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-import { FireflyWsClient, protos as FireflyProtos } from "firefly-client-js"
+import { protos as FireflyProtos } from "firefly-client-js"
 
-import { useAuth } from '@/context/auth-context';
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from '@/context/auth-context'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from "react-router-dom"
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { UserAvatar } from '@/components/user-avatar';
+} from "@/components/ui/dropdown-menu"
+import { UserAvatar } from '@/components/user-avatar'
+import { useFirefly } from "@/context/firefly-context"
 import {
   ArrowLeft,
   Camera,
+  ChevronDown,
   File,
-  Forward,
-  ImageIcon,
-  Info,
   Loader,
-  Mic,
-  MoreHorizontal,
   MoreVertical,
   Paperclip,
   Phone,
-  Reply,
   Send,
   Smile,
   Video,
   X,
-  ChevronDown,
-} from "lucide-react";
-import { useFirefly } from "@/context/firefly-context";
-import InfiniteScroll from "react-infinite-scroll-component";
-import { toast } from "@/hooks/use-toast";
-import { bMessageToDMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type DMessage } from "@/context/encryption-plugin";
-import { useApiService } from "@/context/apiService";
-import { encryptBlobV1, formatNumber, SIZE_LOOKUP_TABLE, toBase64 } from "@/lib/utils";
+} from "lucide-react"
+
+import { useApiService } from "@/context/apiService"
+import { bUserMessageToUserMessage, checkIfFileExists, decryptStreamAndSave, EncryptionPlugin, getFileUrl, type UserMessage } from "@/context/encryption-plugin"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+import { toast } from "@/hooks/use-toast"
+import { encryptBlobV1, formatNumber, SIZE_LOOKUP_TABLE } from "@/lib/utils"
+import InfiniteScroll from "react-infinite-scroll-component"
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
-
-
 
 enum ContentType {
   Unknown = 0,
@@ -54,26 +48,59 @@ enum ContentType {
   Video = 2,
 }
 
-
-
-
 export default function UserMessagePage() {
-  const params = useParams();
-  const receiver = params.username?.toString();
+  const params = useParams()
+  const receiver = params.username?.toString()
   const auth = useAuth()
   const navigate = useNavigate();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
 
-  const [messages, setMessages] = useState<DMessage[]>([])
+  const [messages, setMessages] = useState<UserMessage[]>([])
 
   const [files, setFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   const firefly = useFirefly()
 
-  function addMessage(prev: DMessage[], msg: DMessage) {
+
+  const [sendingMessage, setSendingMessage] = useState(false)
+  // NEW: Track the exact height of the visible screen
+  const [viewportHeight, setViewportHeight] = useState('100%')
+  const { api, cdnUrl } = useApiService()
+  const sender = useMemo(() => auth.username, [auth])
+
+  // NEW: Handle Viewport Resizing (Keyboard Open/Close)
+  useEffect(() => {
+    if (!window.visualViewport) return
+
+    const handleResize = () => {
+      // Set the container height to the exact visual viewport height
+      // This automatically shrinks the UI when keyboard opens
+      setViewportHeight(`${window.visualViewport?.height}px`)
+      
+      // Optional: Scroll to bottom if keyboard opened
+      if (document.activeElement === document.querySelector('input')) {
+        setTimeout(scrollToBottom, 100)
+      }
+    }
+
+    window.visualViewport.addEventListener('resize', handleResize)
+    window.visualViewport.addEventListener('scroll', handleResize) // Handle scroll offset on iOS
+    
+    // Initial set
+    handleResize()
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize)
+      window.visualViewport?.removeEventListener('scroll', handleResize)
+    }
+  }, [])
+
+  // Apply the scroll boundary guard hook
+  useScrollBoundaryGuard(messagesContainerRef)
+
+  function addMessage(prev: UserMessage[], msg: UserMessage) {
     const message = FireflyProtos.UserMessageInner.decode(msg.text)
     if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
 
@@ -86,7 +113,7 @@ export default function UserMessagePage() {
       if (prev[prev.length - 1].id < msg.id) {
         return [...prev, msg]
       } else {
-        let i = 0;
+        let i = 0
         for (; i < prev.length; i++) {
           if (prev[i].id > msg.id) {
             break
@@ -105,69 +132,66 @@ export default function UserMessagePage() {
   // Check if user is at bottom of messages
   const checkIfAtBottom = () => {
     if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-      const isBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px threshold
-      setIsAtBottom(isBottom);
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+      const isBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      setIsAtBottom(isBottom)
 
       // Reset new messages count when user scrolls to bottom
       if (isBottom) {
-        setNewMessagesCount(0);
+        setNewMessagesCount(0)
       }
     }
-  };
+  }
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      setNewMessagesCount(0);
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+      setNewMessagesCount(0)
     }
-  };
+  }
 
   // Handle file selection
   const handleFileSelect = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.click();
+      fileInputRef.current.click()
     }
-  };
+  }
 
   // Show attachment options
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
 
   const handleCameraSelect = () => {
-    setShowAttachmentMenu(false);
+    setShowAttachmentMenu(false)
     // TODO: Implement photo capture functionality
-    console.log('Taking photo');
-    // For now, we'll just show an alert
-    alert('Camera functionality would open here');
-
-
-  };
+    console.log('Taking photo')
+    alert('Camera functionality would open here')
+  }
 
   const handleFilesSelect = () => {
-    setShowAttachmentMenu(false);
-    handleFileSelect();
-  };
+    setShowAttachmentMenu(false)
+    handleFileSelect()
+  }
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...newFiles]);
+      const newFiles = Array.from(e.target.files)
+      setFiles(prev => [...prev, ...newFiles])
     }
     // Reset input value to allow selecting the same file again
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''
     }
-  };
+  }
 
   useEffect(() => {
     getOlderMessages()
     // Add scroll listener
-    const container = messagesContainerRef.current;
+    const container = messagesContainerRef.current
     if (container) {
-      container.addEventListener('scroll', checkIfAtBottom);
-      return () => container.removeEventListener('scroll', checkIfAtBottom);
+      container.addEventListener('scroll', checkIfAtBottom)
+      return () => container.removeEventListener('scroll', checkIfAtBottom)
     }
   }, [])
 
@@ -177,21 +201,23 @@ export default function UserMessagePage() {
 
     // TODO: this is not good
 
-    const { result } = await EncryptionPlugin.getLastMessagesInBetween({ from: receiver!, to: sender!, limit: count, before: lastTs })
+
+    console.log({ getLastMessages: { other: receiver!, limit: count, before: lastTs }})
+
+    const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: count, before: lastTs })
 
     setMessages((prev) => {
       let newMessages = prev
 
       // not the most efficient way, but good enough
       for (const msg of result) {
-        newMessages = addMessage(newMessages, bMessageToDMessage(msg))
+        newMessages = addMessage(newMessages, bUserMessageToUserMessage(msg))
       }
 
       return newMessages
     })
   }
 
-  const currentConvoId = useMemo(() => messages.length == 0 ? 0 : messages[messages.length - 1].convoId, [messages]);
 
   // const myCallSession = new CallSession({
   //   onSendMessage: (callMessage) => {
@@ -200,7 +226,7 @@ export default function UserMessagePage() {
   // })
 
   useEffect(() => {
-    const callback = async (_: FireflyWsClient, message: DMessage) => {
+    const callback = async (message: UserMessage) => {
 
 
       // if (msg.callMessage) {
@@ -220,47 +246,26 @@ export default function UserMessagePage() {
       //   return
       // }
 
-      if (!(message.from == receiver || message.to == receiver)) {
+      if (message.other != receiver) {
 
-        const msg = FireflyProtos.UserMessageInner.decode(message.text)
-        if (msg.messagePayload && msg.messagePayload.text.length > 0) {
-          EncryptionPlugin.showUserNotification({
-            from: message.from,
-            to: message.to,
-            me: auth.username!,
-            textB64:
-              toBase64(message.text),
-            conversationId: message.convoId,
-            id: message.id
-          })
-
-        }
         return
       }
-      // const decryptedMessage = FireflyProtos.UserMessageInner.decode(msg.text)
-
-      // if (decryptedMessage.callMessage) {
-      //   myCallSession.handleCallMessage(decryptedMessage.callMessage)
-      // }
 
       setMessages(prev => addMessage(prev, message))
 
       // Increment new messages counter if not at bottom
       if (!isAtBottom) {
-        setNewMessagesCount(prev => prev + 1);
+        setNewMessagesCount(prev => prev + 1)
       }
 
-      const other = message.from == sender ? message.to : message.from
 
-      EncryptionPlugin.markAsReadUntil({ username: other, ts: message.id })
+      EncryptionPlugin.markAsReadUntil({ username: message.other, ts: message.id })
 
     }
 
     firefly.addEventListener(callback)
-
     return () => firefly.removeEventListener(callback)
   }, [auth, isAtBottom])
-
 
   useEffect(() => {
     getOlderMessages()
@@ -269,15 +274,15 @@ export default function UserMessagePage() {
 
 
   const [messageText, setMessageText] = useState("")
-  const [replyingTo, setReplyingTo] = useState<DMessage | null>(null)
+  const [replyingTo, setReplyingTo] = useState<UserMessage | null>(null)
 
   const [endOfOlderMessages] = useState(false)
-  function handleReaction(_msg: DMessage, _emoji: string): void {
+  function handleReaction(_msg: UserMessage, _emoji: string): void {
     // TODO: Implement reaction functionality
     console.log('Adding reaction', _emoji, 'to message', _msg);
   }
 
-  function handleReply(message: DMessage): void {
+  function handleReply(message: UserMessage): void {
     setReplyingTo(message)
   }
 
@@ -287,19 +292,15 @@ export default function UserMessagePage() {
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
-
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
     }
-
   }
-
-  const sender = useMemo(() => auth.username, [auth])
 
   function addEmoji(_emoji: string) {
     // TODO: Implement emoji functionality
-    console.log('Adding emoji', _emoji);
+    console.log('Adding emoji', _emoji)
   }
 
   async function sendMessage(userMessageInner: FireflyProtos.UserMessageInner) {
@@ -307,25 +308,20 @@ export default function UserMessagePage() {
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
     // const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
 
-    const msg = await firefly.encryptAndSendViaWebSocket(BigInt(currentConvoId), receiver!, payload)
+    const msg = await firefly.encryptAndSend( receiver!, payload)
 
     setMessages(prev => addMessage(prev, msg))
   }
-
-  const [sendingMessage, setSendingMessage] = useState(false);
-
-  const { api, cdnUrl } = useApiService()
 
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0) return
 
     if (sendingMessage) {
-      return;
+      return
     }
-    setSendingMessage(true);
+    setSendingMessage(true)
     try {
-
       const encryptedFiles = FireflyProtos.EncryptedFiles.create()
       for (const file of files) {
         const { reader, key } = encryptBlobV1(file)
@@ -346,15 +342,12 @@ export default function UserMessagePage() {
         }))
       }
 
-      // TODO: can just send files away immediately individually, instead of sending all of them at once
-
-      const userMessage =
-        FireflyProtos.UserMessageInner.create({
-          messagePayload: FireflyProtos.MessagePayload.create({
-            text: msg,
-            files: encryptedFiles,
-          })
+      const userMessage = FireflyProtos.UserMessageInner.create({
+        messagePayload: FireflyProtos.MessagePayload.create({
+          text: msg,
+          files: encryptedFiles,
         })
+      })
       await sendMessage(userMessage)
       setMessageText("")
       setReplyingTo(null)
@@ -369,53 +362,13 @@ export default function UserMessagePage() {
     } finally {
       setSendingMessage(false)
     }
-
   }
 
   function startCall() {
-    navigate(`/messages/${receiver}/call?requested=true&convoId=${currentConvoId}&sessionId=${Math.floor(Math.random() * 99999)}`)
+    navigate(`/messages/${receiver}/call?requested=true&sessionId=${Math.floor(Math.random() * 99999)}`)
   }
-  // Create fake conversation for testing
-  const createFakeConversation = () => {
-    const fakeMessages: DMessage[] = [];
-    const now = Date.now() * 1000;
 
-    // Create different types of messages
-    const messageTypes = [
-      'Hello there! 👋 How are you doing today? I hope you are having a great day!',
-      'Check out this image [image]',
-      'Here\'s a video for you [video]',
-      'I\'ve attached the project requirements document [file]',
-      'This is a longer message to test how the text wrapping works in our chat interface. It should wrap properly without breaking words too early.',
-      'This is another image [image]',
-      'Meeting notes from our discussion today [file]',
-      'Tutorial video showing how to use the new features [video]',
-      'Quick update: We\'ve made some changes to the design and functionality.',
-      'Can you review this quarterly_report_final_v3.pdf when you have a chance? [file]'
-    ];
 
-    for (let i = 0; i < 20; i++) {
-      const isSender = i % 2 === 0;
-      const messageType = messageTypes[i % messageTypes.length];
-
-      const fakeMessage: DMessage = {
-        id: now - (i * 1000000),
-        convoId: 1,
-        from: isSender ? sender! : receiver!,
-        to: isSender ? receiver! : sender!,
-        text: FireflyProtos.UserMessageInner.encode(
-          FireflyProtos.UserMessageInner.create({
-            messagePayload: FireflyProtos.MessagePayload.create({
-              text: messageType
-            })
-          })
-        ).finish()
-      };
-      fakeMessages.push(fakeMessage);
-    }
-
-    setMessages(fakeMessages.reverse());
-  };
 
   // Set viewport meta tag for mobile optimization
   useEffect(() => {
@@ -429,125 +382,87 @@ export default function UserMessagePage() {
     (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
   }, []);
 
-  // Prevent page jump on keyboard open
-  useEffect(() => {
-    if (!window.visualViewport) return;
-
-    const handleResize = () => {
-      const container = messagesContainerRef.current;
-      const inputContainer = document.querySelector('.message-input-container') as HTMLElement;
-
-      // Get viewport and keyboard height
-      const viewport = window.visualViewport!;
-      const keyboardHeight = window.innerHeight - viewport.height - viewport.offsetTop;
-
-      // When keyboard is visible
-      if (keyboardHeight > 100) {
-        // Keep chat content visible
-        if (container) {
-          container.style.height = `calc(100vh - ${keyboardHeight + 60}px)`; // adjust for input height
-          container.scrollTop = container.scrollHeight; // keep at bottom
-        }
-        if (inputContainer) {
-          inputContainer.style.bottom = `${keyboardHeight}px`;
-        }
-        document.body.style.overflow = "hidden";
-      } else {
-        // Reset after keyboard closes
-        if (container) {
-          container.style.height = "calc(100vh - 120px)";
-        }
-        if (inputContainer) {
-          inputContainer.style.bottom = "0px";
-        }
-        document.body.style.overflow = "";
-      }
-    };
-
-    window.visualViewport.addEventListener("resize", handleResize);
-    return () => window.visualViewport!.removeEventListener("resize", handleResize);
-  }, []);
 
   return (
-    <div
-      className="flex-1 flex flex-col h-full relative overflow-hidden"
+    <div 
+      className="flex flex-col bg-gray-50 w-full"
       style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        // APPLY: The dynamic height here
+        height: viewportHeight,
+        overflow: 'hidden', // Prevent outer scrolling
+        position: 'fixed', // Ensures it stays in viewport
+        inset: 0
       }}
     >
-      {/* Chat Header - Fixed at top with safe area padding */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b px-2 sm:px-4 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 flex items-center justify-between shadow-sm w-full md:w-[calc(100%-16rem)] fixed-header">
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Back button on mobile */}
+      {/* Header - Changed from fixed to standard flex item */}
+      <div 
+        // ADDED: 'touch-none' to the class list below
+        className="flex-none bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm z-20 touch-none"
+        style={{ 
+          paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', 
+        }}
+      >
+        <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden mr-1"
+            className="md:hidden"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-
-          <UserAvatar username={receiver || ""} />
-
+          <div className="h-10 w-10">
+            <UserAvatar username={receiver || ""} />
+          </div>
           <div>
-            <p className="font-medium text-sm sm:text-base">{receiver}</p>
-            {/*            <p className="text-xs text-muted-foreground">
-              {selectedConversationData?.user.isOnline ? "Online" : "Offline"}
-            </p>*/}
+            <p className="font-semibold">{receiver}</p>
+            <p className="text-xs text-muted-foreground">Online</p>
           </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div className="flex items-center space-x-1">
           <Button variant="ghost" size="icon" onClick={startCall}>
             <Phone className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon">
             <Video className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex">
-            <Info className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={createFakeConversation}>
+          <Button variant="ghost" size="icon" onClick={undefined}>
             <MoreVertical className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Messages container with fixed height */}
-      <div className="flex-1 relative overflow-hidden pt-16">
+      {/* Messages Container */}
+      <div className="flex-1 min-h-0 relative w-full">
         <div
+          id="chat-scroll"
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3 lupyd-message-container"
-          style={{
-            height: "calc(100vh - 130px)", // keeps consistent spacing
-            paddingBottom: replyingTo ? "90px" : "75px", // reduced to close the gap
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch",
-            scrollBehavior: "smooth",
-          }}
+          className="h-full overflow-y-auto p-4 w-full overscroll-y-none touch-pan-y"
         >
-
-          <InfiniteScroll next={getOlderMessages}
+          <InfiniteScroll
+            scrollableTarget="chat-scroll"
+            next={getOlderMessages}
             hasMore={!endOfOlderMessages}
-            loader={<Loader />}
+            loader={<Loader className="mx-auto my-4" />}
             dataLength={messages.length}
-            inverse={true}
+            inverse={false}
+            style={{ display: 'flex', flexDirection: 'column' }}
           >
-            {messages.map((message) =>
-              <MessageElement key={message.id.toString()} message={message} handleReaction={handleReaction} handleReply={handleReply} sender={sender!} />
-            )}
+            {messages.map((message) => (
+              <div key={message.id.toString()} className="space-y-4">
+                <MessageElement message={message} sender={sender!} />
+              </div>
+            ))}
           </InfiniteScroll>
-
-
-
-          <div />
+          
+          {/* Dummy div to ensure scroll to bottom works nicely with spacing */}
+          <div className="h-2"></div>
         </div>
 
-        {/* Scroll to bottom button - only show when not at bottom and there are new messages */}
+        {/* Scroll to bottom button */}
         {!isAtBottom && newMessagesCount > 0 && (
           <Button
-            className="absolute bottom-24 right-4 rounded-full bg-black text-white hover:bg-gray-800 z-40 shadow-lg"
+            className="absolute bottom-4 right-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg w-10 h-10 z-30"
             size="icon"
             onClick={scrollToBottom}
           >
@@ -561,274 +476,138 @@ export default function UserMessagePage() {
         )}
       </div>
 
-      {/* Message Input Area - Fixed at bottom */}
+      {/* Input Area - Flex-none ensures it stays at bottom, no 'fixed' needed */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 w-full md:w-[calc(100%-16rem)] message-input-container shadow-[0_-1px_4px_rgba(0,0,0,0.08)]"
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          transform: 'translateZ(0)',
+        className="flex-none bg-white border-t p-2 shadow-lg z-20 w-full touch-none"
+        style={{ 
+          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' 
         }}
       >
         {replyingTo && (
-          <div className="px-2 sm:px-4 py-2 bg-gray-50 flex items-center justify-between">
+          <div className="px-2 py-1 bg-gray-100 rounded-lg mb-1 flex items-center justify-between">
             <div className="flex items-center flex-1 overflow-hidden">
-              <div className="w-1 h-6 bg-black mr-2 flex-shrink-0"></div>
+              <div className="w-1 h-4 bg-primary mr-1 flex-shrink-0 rounded-full"></div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium">
-                  Replying to {replyingTo.from === sender ? "yourself" : sender}
+                  Replying to {!replyingTo.sentByOther ? "yourself" : receiver}
                 </p>
-                <p className="text-xs text-muted-foreground truncate"><MessageBody inner={replyingTo.text}></MessageBody></p>
+                <p className="text-xs text-muted-foreground truncate">
+                  <MessageBody inner={replyingTo.text} />
+                </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={cancelReply}>
-              <X className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={cancelReply}>
+              <X className="h-3 w-3" />
             </Button>
           </div>
         )}
 
-        <div className="p-2 sm:p-4 pb-4">
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <div className="hidden sm:flex space-x-1">
-              <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={5}>
-                  <DropdownMenuItem onClick={handleCameraSelect}>
-                    <Camera className="h-4 w-4 mr-2" />
-                    Camera
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleFilesSelect}>
-                    <File className="h-4 w-4 mr-2" />
-                    Files
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <ImageIcon className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={5}>
-                  <DropdownMenuItem onClick={handleCameraSelect}>
-                    <Camera className="h-4 w-4 mr-2" />
-                    Take Photo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleFilesSelect}>
-                    <File className="h-4 w-4 mr-2" />
-                    Choose from Files
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="ghost" size="icon">
-                <Mic className="h-5 w-5" />
+        <div className="flex items-center space-x-1">
+          <DropdownMenu open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Paperclip className="h-4 w-4" />
               </Button>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="sm:hidden">
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={5}>
-                <DropdownMenuItem onClick={handleCameraSelect}>
-                  <Camera className="h-4 w-4 mr-2" />
-                  Camera
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleFilesSelect}>
-                  <File className="h-4 w-4 mr-2" />
-                  Files
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Input
-              placeholder="Type a message..."
-              className="bg-gray-100 border-none text-sm sm:text-base"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Smile className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-2" align="end" sideOffset={5}>
-                <div className="grid grid-cols-5 gap-2">
-                  {emojiOptions.map((emoji) => (
-                    <button
-                      key={emoji}
-                      className="text-2xl hover:bg-gray-100 p-2 rounded"
-                      onClick={() => {
-                        addEmoji(emoji)
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Button
-              size="icon"
-              className="bg-black text-white hover:bg-gray-800"
-              onClick={handleSendMessage}
-              disabled={!messageText.trim()}
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-            multiple
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" sideOffset={5}>
+              <DropdownMenuItem onClick={handleCameraSelect}>
+                <Camera className="h-4 w-4 mr-2" />
+                Camera
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleFilesSelect}>
+                <File className="h-4 w-4 mr-2" />
+                Files
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Input
+            placeholder="Type a message..."
+            className="flex-1 bg-gray-100 border-none rounded-full py-2 px-3 text-sm"
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            // Prevent auto-zoom on iOS inputs by ensuring font-size is at least 16px in CSS or here
+            style={{ fontSize: '16px' }}
           />
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Smile className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2" align="end" sideOffset={5}>
+              <div className="grid grid-cols-5 gap-1">
+                {emojiOptions.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="text-lg hover:bg-gray-100 p-1 rounded-full"
+                    onClick={() => addEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Button
+            size="icon"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10"
+            onClick={handleSendMessage}
+            disabled={!messageText.trim() && files.length === 0}
+          >
+            {sendingMessage ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
         </div>
+        
+        {/* hidden file input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          multiple
+        />
       </div>
     </div>
   )
-
-
-
 }
 
 
-export function MessageElement(props: { message: DMessage, sender: string, handleReply?: (message: DMessage) => void, handleReaction?: (message: DMessage, emoji: string) => void }) {
-  const { message, sender, handleReaction, handleReply } = props;
-  const isMine = message.from === sender;
-
-  // const [relativeTimestamp, setRelativeTimestamp] = useState(dateToRelativeString(new Date(Number(message.id / 1000))))
-
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setRelativeTimestamp(dateToRelativeString(new Date(Number(message.id / 1000))))
-  //   }, 1000)
-
-  //   return () => { clearInterval(interval) }
-  // }, [])
+export function MessageElement(props: { message: UserMessage, sender: string, handleReply?: (message: UserMessage) => void, handleReaction?: (message: UserMessage, emoji: string) => void }) {
+  const { message, handleReaction, handleReply } = props;
+  const isMine = !message.sentByOther;
 
 
   const date = new Date(message.id / 1000)
-  const timestamp = `${date.getHours() % 12}:${date.getMinutes()}`
+  const timestamp = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
 
   return (
-    <div
-      key={message.id}
-      className={`px-4 py-2 flex flex-col ${isMine ? "items-end" : "items-start"} "lupyd-message"`}
-    >
-      <div className={`flex items-end space-x-2 max-w-full ${isMine ? "flex-row-reverse space-x-reverse" : ""}`}>
-        <div className="max-w-[75%] sm:max-w-[80%] md:max-w-[85%] w-auto min-w-[100px]">
-          {/* Message content */}
-          <div
-            className={`${isMine ? "bg-black text-white" : "bg-gray-100"
-              } rounded-lg p-2 sm:p-3 relative group overflow-hidden`}
-          >
-            <div className="text-xs sm:text-sm break-words whitespace-normal overflow-hidden min-w-[40px]">
-              <MessageBody inner={message.text}></MessageBody>
-            </div>
-            <p
-              className={`text-[10px] sm:text-xs ${isMine ? "text-gray-300" : "text-muted-foreground"} mt-1`}
-            >
-              {timestamp}
-            </p>
-
-            {/* Message actions - Fixed position for better visibility */}
-            <div
-              className={`absolute ${isMine ? "left-0 translate-x-[-50%]" : "right-0 translate-x-[50%]"} top-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white rounded-full shadow-md flex items-center scale-75 md:scale-100 z-10`}
-            >
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Smile className="h-3 w-3" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-2"
-                  side={isMine ? "left" : "right"}
-                  align="center"
-                  sideOffset={5}
-                >
-                  <div className="flex gap-1">
-                    {emojiOptions.map((emoji) => (
-                      <button
-                        key={emoji}
-                        className="text-lg hover:bg-gray-100 p-1 rounded"
-                        onClick={handleReply ? () => handleReaction!(message, emoji) : undefined}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleReply ? () => handleReply!(message) : handleReply}
-              >
-                <Reply className="h-3 w-3" />
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side={isMine ? "left" : "right"}>
-                  <DropdownMenuItem className="flex items-center">
-                    <Forward className="h-4 w-4 mr-2" />
-                    Forward
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center">
-                    <Reply className="h-4 w-4 mr-2" />
-                    Reply
-                  </DropdownMenuItem>
-                  {isMine && (
-                    <DropdownMenuItem className="flex items-center text-red-600">
-                      <X className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Reactions
-                    {message.reactions && message.reactions.length > 0 && (
-                      <div className={`flex mt-1 ${isMine ? "justify-end" : "justify-start"}`}>
-                        <div className="bg-white rounded-full shadow-sm px-1.5 py-0.5 text-xs sm:text-sm flex items-center">
-                          {message.reactions.map((emoji, index) => (
-                            <span key={index} className="mx-0.5">
-                              {emoji}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    */}
+    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+      <div className={`max-w-[85%] ${isMine ? "bg-primary text-primary-foreground" : "bg-white border border-gray-200"} rounded-2xl px-3 py-2`}>
+        <div className="text-sm break-words">
+          <MessageBody inner={message.text}></MessageBody>
+        </div>
+        <div className={`flex items-center mt-1 ${isMine ? "text-primary-foreground/70" : "text-gray-500"} text-xs`}>
+          <span>{timestamp}</span>
         </div>
       </div>
     </div>
   )
 }
 
-
 export function MessageBody(props: { inner: Uint8Array }) {
-  const message = FireflyProtos.UserMessageInner.decode(props.inner);
+  const message = FireflyProtos.UserMessageInner.decode(props.inner)
 
   // Handle plain text messages
   if (message.plainText) {
-    const text = new TextDecoder().decode(message.plainText);
+    const text = new TextDecoder().decode(message.plainText)
     return <div className="whitespace-pre-wrap">{text}</div>
   }
 
@@ -840,32 +619,19 @@ export function MessageBody(props: { inner: Uint8Array }) {
       <div className="space-y-2">
         {cleanText && <div className="whitespace-pre-wrap">{cleanText}</div>}
         {
-          files.map(file => <MessageFileElement file={file} />
-          )
+          files.map((file, index) => <MessageFileElement key={index} file={file} />)
         }
       </div>
-    );
+    )
   }
-  // TODO: make it pretty
-  if (message.callMessage) {
-    if (message.callMessage.type == FireflyProtos.CallMessageType.ended) {
-      const { duration } = JSON.parse(message.callMessage.jsonBody)
-      const totalSeconds = Math.floor(duration / 1_000_000)
-      const minutes = Math.floor(totalSeconds / 60)
-      const seconds = totalSeconds % 60
 
-      return <div>Call {minutes}:{seconds} s</div>
-    }
-    if (message.callMessage.type == FireflyProtos.CallMessageType.rejected) {
-      return <div>Call Rejected</div>
-    }
+  if (message.callMessage) {
+    // Since we can't access the type directly, we'll just show a generic call message
+    return <div className="text-center py-2">Call message</div>
   }
 
   return <div></div>
 }
-
-
-
 
 export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile }) {
   const { file } = props
@@ -886,15 +652,16 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   useEffect(() => {
 
     (async () => {
+      const { url, token } = await EncryptionPlugin.getFileServerUrl()
       if (status == Status.uninit) {
         if (await checkIfFileExists(file)) {
-          setSrc(await getFileUrl(file.url))
+          setSrc(getFileUrl(file.url, url, token))
           setStatus(Status.downloaded)
         } else {
           setStatus(Status.downloading)
           try {
             await decryptStreamAndSave(file)
-            setSrc(await getFileUrl(file.url))
+            setSrc(getFileUrl(file.url, url, token))
             setStatus(Status.downloaded)
           } catch (err) {
             setStatus(Status.error)
@@ -921,38 +688,28 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
 
 
   if (isImage) {
-
-    return (<div className="mt-2">
-      <img
-        src={src}
-        alt="Shared content"
-        className="rounded-lg max-w-full h-auto object-contain"
-        style={{ aspectRatio: '3/2', maxHeight: '200px' }}
-      />
-    </div>
-
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden">
+        <img
+          src={src}
+          alt="Shared image"
+          className="max-w-full h-auto rounded-lg object-cover max-h-80"
+        />
+      </div>
     )
   }
 
   if (isVideo) {
     return (
-      <div className="mt-2 relative" style={{ aspectRatio: '3/2', maxHeight: '200px' }}>
+      <div className="mt-2 rounded-lg overflow-hidden max-h-80">
         <video
           src={src}
-          className="rounded-lg w-full h-full object-cover"
+          className="max-w-full h-auto rounded-lg"
           controls
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-black bg-opacity-50 rounded-full p-3">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
       </div>
     )
   }
-
 
   const segments = file.url.split("/")
   const filename = segments[segments.length - 1]
@@ -960,9 +717,9 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   const fileSize = formatNumber(file.contentLength, 2, SIZE_LOOKUP_TABLE)
 
   return (
-    <div className="mt-2 flex items-center p-3 bg-gray-100 rounded-lg max-w-xs">
-      <div className="flex-shrink-0 w-10 h-10 rounded bg-blue-100 flex items-center justify-center">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="mt-2 flex items-center p-2 bg-gray-100 rounded-lg">
+      <div className="flex-shrink-0 w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
+        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
@@ -970,6 +727,31 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
         <p className="text-sm font-medium text-gray-900 whitespace-normal">{filename}</p>
         <p className="text-xs text-gray-500">{fileSize}</p>
       </div>
+      <Button variant="ghost" size="icon">
+        <Download className="h-4 w-4" />
+      </Button>
     </div>
+  )
+}
+
+// Add missing Download icon
+function Download(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" x2="12" y1="15" y2="3" />
+    </svg>
   )
 }

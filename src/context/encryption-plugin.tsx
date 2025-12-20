@@ -1,75 +1,68 @@
-import { fromBase64 } from "@/lib/utils";
+import { fromBase64, toBase64 } from "@/lib/utils";
 
-import { type Plugin as CapacitorPlugin, registerPlugin, type PluginCallback, type PluginListenerHandle } from '@capacitor/core'
+import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core'
 import { protos as FireflyProtos } from "firefly-client-js";
 import { decryptBlobV1 } from "@/lib/utils";
 
-export interface BMessage {
+
+export interface BUserMessage {
   id: number,
-  convoId: number,
-  from: string,
-  to: string,
+  other: string,
+  sentByOther: boolean,
   textB64: string,
 }
 
 
-export function isBMessage(obj: any): obj is BMessage {
+
+export function isBUserMessage(obj: any): obj is BUserMessage {
   return (
     obj &&
     typeof obj.id === "number" &&
     typeof obj.convoId === "number" &&
-    typeof obj.from === "string" &&
-    typeof obj.to === "string" &&
-    typeof obj.textB64 === "string"
+    typeof obj.textB64 === "string" &&
+    typeof obj.other == "string" &&
+    typeof obj.sentByOther == "boolean"
   );
 }
 
 
-export type DMessage = Omit<BMessage, "textB64"> & { text: Uint8Array }
+export type UserMessage = Omit<BUserMessage, "textB64"> & { text: Uint8Array }
 
-export function bMessageToDMessage(msg: BMessage): DMessage {
+
+export function bUserMessageToUserMessage(msg: BUserMessage): UserMessage {
   return {
     ...msg,
     text: fromBase64(msg.textB64)
   }
 }
 
+export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
+  const o = {
+    ...msg,
+    textB64: toBase64(msg.text)
+  };
+
+  delete (o as any)["text"]
+
+  return o
+}
+
 
 export interface EncryptionPluginType extends CapacitorPlugin {
-  onUserMessage(options: {
-    convoId: number,
-    textB64: string,
-    from: string,
-    to: string,
-    type: number,
-    id: number,
-  }): Promise<BMessage>,
+
   encryptAndSend(options: {
-    convoId: number,
     textB64: string,
     to: string,
-    token: string
-  }): Promise<BMessage>,
+  }): Promise<BUserMessage>,
 
 
   getLastMessages(options: {
-    from: string,
-    to: string,
+    other: string,
     limit: number,
     before: number
-  }): Promise<{ result: BMessage[] }>
+  }): Promise<{ result: BUserMessage[] }>
 
-  getLastMessagesFromAllConversations(): Promise<{ result: BMessage[] }>
-  getLastMessagesInBetween(
-    options: {
-      from: string,
-      to: string,
-      limit: number,
-      before: number
-    }
-  ): Promise<{ result: BMessage[] }>
-
-  checkSetup(): Promise<void>,
+  getLastMessagesFromAllConversations(): Promise<{ result: { message: BUserMessage, count: number }[] }>
 
   saveTokens(options: {
     accessToken: string,
@@ -77,27 +70,9 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   }): Promise<void>
 
 
-  syncUserMessages(): Promise<void>,
-
-  testMethod(obj: any): Promise<any>,
-
-
   markAsReadUntil(options: { username: string, ts: number }): Promise<void>,
 
-  getLastSeenUserMessageTimestamp(options: { username: string }): Promise<{ ts: number }>
-
-
-  getNumberOfMessagesInBetweenSince(options: { from: string, to: string, since: number }): Promise<{ count: number }>
-
-
-  showUserNotification(options: {
-    from: string,
-    to: string,
-    me: string,
-    textB64: string,
-    conversationId: number,
-    id: number,
-  }): Promise<void>
+  showUserNotification(options: BUserMessage): Promise<void>
 
   showCallNotification(options: {
     caller: string,
@@ -108,28 +83,18 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
   requestAllPermissions(options: { permissions: string[] }): Promise<any>
 
-  encrypt(options: { to: string, textB64: string, }): Promise<{ messageType: number, cipherTextB64: string }>
+  handleMessage(msg: BUserMessage): Promise<void>,
 
-
-
-  processPreKeyBundle(options: { owner: string, preKeyBundleB64: string }): Promise<void>
-
-
-  handleMessage(msg: BMessage): Promise<void>,
-
-
-  getFileServerUrl(): Promise<{ url: string }>,
+  getFileServerUrl(): Promise<{ url: string, token: string }>,
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 
 
-export const getFileUrl = async (fileUrl: string) => {
-  const { url } = await EncryptionPlugin.getFileServerUrl()
+export const getFileUrl = (fileUrl: string, fileServerUrl: string, fileServerToken: string) => {
   const pathname = new URL(fileUrl).pathname
   const filename = pathname
-  return `${url}/decrypted/${filename}`
-  
+  return `${fileServerUrl}/decrypted/${filename}?token=${fileServerToken}`
 }
 
 export const decryptStreamAndSave = async (
@@ -145,7 +110,10 @@ export const decryptStreamAndSave = async (
 
   const stream = decryptBlobV1(blob, file.secretKey);
   {
-    const response = await fetch(await getFileUrl(file.url), {
+    const { url, token } = await EncryptionPlugin.getFileServerUrl()
+
+
+    const response = await fetch(getFileUrl(file.url, url, token), {
       method: "PUT",
       body: stream
     })
@@ -159,10 +127,12 @@ export const decryptStreamAndSave = async (
 
 export const checkIfFileExists = async (file: FireflyProtos.EncryptedFile) => {
 
-  const response = await fetch(await getFileUrl(file.url), { method: "HEAD"})
+  const { url, token } = await EncryptionPlugin.getFileServerUrl()
+
+  const response = await fetch(getFileUrl(file.url, url, token), { method: "HEAD", })
   if (response.ok) {
     return true
   }
-  
+
   return false
 }

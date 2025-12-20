@@ -43,9 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = getPayloadFromAccessToken(token!)
       // setUser(user)
       setUsername(user?.uname ?? null)
-      if (user.uname) {
-        EncryptionPlugin.checkSetup()
-      }
     }
   }
 
@@ -78,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if ("refresh_token" in result && typeof result["refresh_token"] === "string") {
         const refreshToken = result.refresh_token;
+        console.log(`Saving tokens `, { accessToken,refreshToken })
         EncryptionPlugin.saveTokens({ accessToken, refreshToken })
       } else {
         console.warn(`Unable to get refresh token`, JSON.stringify(result))

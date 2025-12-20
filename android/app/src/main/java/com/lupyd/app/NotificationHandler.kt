@@ -26,6 +26,7 @@ import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
 import com.lupyd.app.NativeNotificationPlugin.Companion.ACTION_ACCEPT_CALL
 import firefly.Message
 import kotlinx.coroutines.runBlocking
+import uniffi.firefly_signal.UserMessage
 
 class NotificationHandler(private val context: Context) {
 
@@ -53,7 +54,7 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun showCallNotification(caller: String, conversationId: Long, sessionId: Int) {
+    fun showCallNotification(caller: String, sessionId: Int) {
         try {
             createCallNotificationChannel()
 
@@ -70,7 +71,6 @@ class NotificationHandler(private val context: Context) {
             fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             fullScreenIntent.putExtra("type", "call")
             fullScreenIntent.putExtra("caller", caller)
-            fullScreenIntent.putExtra("conversationId", conversationId)
             fullScreenIntent.putExtra("sessionId", sessionId)
 
             val fullScreenPendingIntent = PendingIntent.getActivity(
@@ -83,7 +83,6 @@ class NotificationHandler(private val context: Context) {
             val acceptIntent = Intent(context, CallActionReceiver::class.java).apply {
                 action = MyFirebaseMessagingService.ACTION_ACCEPT_CALL
                 putExtra("caller", caller)
-                putExtra("conversationId", conversationId)
                 putExtra("sessionId", sessionId)
             }
 
@@ -97,7 +96,6 @@ class NotificationHandler(private val context: Context) {
             val declineIntent = Intent(context, CallActionReceiver::class.java)
             declineIntent.action = MyFirebaseMessagingService.ACTION_DECLINE_CALL
             declineIntent.putExtra("caller", caller)
-            declineIntent.putExtra("conversationId", conversationId)
             declineIntent.putExtra("sessionId", sessionId)
 
             val declinePendingIntent = PendingIntent.getBroadcast(
@@ -190,11 +188,12 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun addMessageToHistory(msg: DMessage, me: String) {
+    fun addMessageToHistory(msg: UserMessage) {
         try {
+
             runBlocking {
                 db.userMessageNotificationsDao().put(
-                    DMessageNotification(msg.msgId, msg.conversationId, msg.mfrom, msg.mto, msg.text, msg.mfrom == me)
+                    DMessageNotification(msg.id.toLong(),  msg.other, msg.message, !msg.sentByOther)
                 )
             }
         } catch (e: Exception) {
@@ -202,9 +201,9 @@ class NotificationHandler(private val context: Context) {
         }
     }
 
-    fun showUserBundledNotification(msg: DMessage, me: String) {
+    fun showUserBundledNotification(msg: UserMessage) {
 
-        val other = if (msg.mfrom == me) msg.mto else msg.mfrom
+        val other = msg.other
         try {
             createNotificationChannel()
 
@@ -217,7 +216,7 @@ class NotificationHandler(private val context: Context) {
             Log.d(MyFirebaseMessagingService.Companion.TAG, "Showing bundled notification from: $other")
 
             // Add message to persistent storage
-            addMessageToHistory(msg, me)
+            addMessageToHistory(msg)
 
             // Get all messages from this sender
             val messages =  runBlocking {
@@ -231,7 +230,7 @@ class NotificationHandler(private val context: Context) {
 
             val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
             val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
 
             val pendingIntent = PendingIntent.getActivity(context, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -240,7 +239,6 @@ class NotificationHandler(private val context: Context) {
             // Create reply action
             val replyIntent = Intent(context, ReplyReceiver::class.java)
             replyIntent.putExtra("sender", other)
-            replyIntent.putExtra("conversationId", msg.conversationId)
             val replyPendingIntent = PendingIntent.getBroadcast(
                 context,
                 other.hashCode() + 1,
@@ -264,7 +262,7 @@ class NotificationHandler(private val context: Context) {
             // Mark as Read action
             val markAsReadIntent = Intent(context, MarkAsReadReceiver::class.java).apply {
                 putExtra("sender", other)
-                putExtra("msgId", msg.msgId)
+                putExtra("msgId", msg.id.toLong())
             }
 
             val markAsReadPendingIntent = PendingIntent.getBroadcast(
@@ -287,7 +285,7 @@ class NotificationHandler(private val context: Context) {
                 inboxStyle.addLine(text)
             }
 
-            val messageBody = Message.UserMessageInner.parseFrom(msg.text).messagePayload.text
+            val messageBody = Message.UserMessageInner.parseFrom(msg.message).messagePayload.text
 
             // No summary text - just show sender name
             inboxStyle.setBigContentTitle(other)
@@ -427,15 +425,12 @@ suspend fun buildUserNotification(ctx: Context, other: String): Notification {
     Log.d(MyFirebaseMessagingService.TAG, "Total messages from $other: $messageCount")
 
     val deepLinkUrl = "lupyd://m.lupyd.com/messages/${other}".toUri()
-    val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-    }
+    val onClickIntent = Intent(Intent.ACTION_VIEW, deepLinkUrl)
 
     val pendingIntent = PendingIntent.getActivity(ctx, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
     val replyIntent = Intent(ctx, ReplyReceiver::class.java)
     replyIntent.putExtra("sender", other)
-    replyIntent.putExtra("conversationId", lastMessage.conversationId)
     val replyPendingIntent = PendingIntent.getBroadcast(
         ctx,
         other.hashCode() + 1,

@@ -512,128 +512,128 @@ class NativeNotificationPlugin : Plugin() {
 }
 
 // Broadcast Receivers
-class ReplyReceiverNative : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
-        if (context == null || intent == null) return
-        
-        val sender = intent.getStringExtra("sender") ?: return
-        val conversationId = intent.getLongExtra("conversationId", 0L)
-        val remoteInput = RemoteInput.getResultsFromIntent(intent)
-        val replyText = remoteInput?.getCharSequence(NativeNotificationPlugin.KEY_TEXT_REPLY)?.toString()
-        
-        if (replyText != null && replyText.isNotEmpty()) {
-            Log.d("lupyd-ReplyReceiver", "Reply received for $sender: $replyText")
-
-            val db = getDatabase(context)
-            val encryptionWrapper = EncryptionWrapper(context)
-
-            runBlocking {
-                try {
-                    Log.i("lupyd-ReplyReceiver", "Getting access token ${sender} ${conversationId}")
-                    val token = encryptionWrapper.getAccessToken()
-                    Log.i("lupyd-ReplyReceiver", "Encrypting reply for ${sender} ${conversationId}")
-                    val payload = Message.UserMessageInner.newBuilder().setMessagePayload(
-                        Message.MessagePayload.newBuilder().setText(replyText).build()
-                    ).build().toByteArray()
-                    val msg = encryptionWrapper.encryptAndSend(sender, conversationId, payload, token)
-                    Log.i("lupyd-ReplyReceiver", "Encrypted reply sent for ${sender} ${msg}")
-                } catch (e: Exception) {
-                    Log.e("lupyd-ReplyReceiver", "Failed to send reply", e)
-                }
-            }
-
-            // Add reply to message history using shared preferences directly
-            val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
-            try {
-                val messagesJson = prefs.getString(sender, "[]")
-                val messagesArray = JSONArray(messagesJson)
-                
-                val messageObj = JSONObject().apply {
-                    put("text", "You: $replyText")
-                    put("timestamp", System.currentTimeMillis())
-                }
-                messagesArray.put(messageObj)
-                
-                prefs.edit().putString(sender, messagesArray.toString()).apply()
-            } catch (e: Exception) {
-                Log.e("lupyd-ReplyReceiver", "Error adding reply to history", e)
-            }
-            
-            // Update notification to show reply but keep it visible with reply action
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            
-            // Get updated messages
-            val messages = try {
-                val messagesJson = prefs.getString(sender, "[]")
-                val messagesArray = JSONArray(messagesJson)
-                (0 until messagesArray.length()).map {
-                    messagesArray.getJSONObject(it).getString("text")
-                }
-            } catch (e: Exception) {
-                Log.e("lupyd-ReplyReceiver", "Error getting messages", e)
-                emptyList<String>()
-            }
-            
-            // Create updated inbox style
-            val inboxStyle = NotificationCompat.InboxStyle()
-            messages.forEach { msg ->
-                inboxStyle.addLine(msg)
-            }
-            inboxStyle.setBigContentTitle(sender)
-            
-            // Create content intent
-            val contentIntent = Intent(context, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra("sender", sender)
-            }
-            
-            val contentPendingIntent = PendingIntent.getActivity(
-                context, sender.hashCode(), contentIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            
-            // Create reply action (keep it available)
-            val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
-                putExtra("sender", sender)
-                putExtra("conversationId", conversationId)
-            }
-            
-            val replyPendingIntent = PendingIntent.getBroadcast(
-                context, sender.hashCode() + 1, replyIntent,
-                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            
-            val remoteInput = RemoteInput.Builder(NativeNotificationPlugin.KEY_TEXT_REPLY)
-                .setLabel("Reply to $sender")
-                .build()
-            
-            val replyAction = NotificationCompat.Action.Builder(
-                android.R.drawable.ic_menu_send,
-                "Reply",
-                replyPendingIntent
-            )
-                .addRemoteInput(remoteInput)
-                .setAllowGeneratedReplies(true)
-                .build()
-            
-            // Build updated notification with reply action still available
-            val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
-                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
-                .setColor(0xFF000000.toInt())
-                .setContentTitle(sender)
-                .setContentText("You: $replyText")
-                .setAutoCancel(false) // Keep notification visible
-                .setContentIntent(contentPendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setStyle(inboxStyle)
-                .addAction(replyAction) // Keep reply action
-                .setGroup(NativeNotificationPlugin.GROUP_KEY_MESSAGES)
-                .setOnlyAlertOnce(true) // Don't alert again
-            
-            notificationManager.notify(sender.hashCode(), builder.build())
-        }
-    }
-}
+//class ReplyReceiverNative : BroadcastReceiver() {
+//    override fun onReceive(context: Context?, intent: Intent?) {
+//        if (context == null || intent == null) return
+//
+//        val sender = intent.getStringExtra("sender") ?: return
+//        val conversationId = intent.getLongExtra("conversationId", 0L)
+//        val remoteInput = RemoteInput.getResultsFromIntent(intent)
+//        val replyText = remoteInput?.getCharSequence(NativeNotificationPlugin.KEY_TEXT_REPLY)?.toString()
+//
+//        if (replyText != null && replyText.isNotEmpty()) {
+//            Log.d("lupyd-ReplyReceiver", "Reply received for $sender: $replyText")
+//
+//            val db = getDatabase(context)
+//            val encryptionWrapper = EncryptionWrapper(context)
+//
+//            runBlocking {
+//                try {
+//                    Log.i("lupyd-ReplyReceiver", "Getting access token ${sender} ${conversationId}")
+//                    val token = encryptionWrapper.getAccessToken()
+//                    Log.i("lupyd-ReplyReceiver", "Encrypting reply for ${sender} ${conversationId}")
+//                    val payload = Message.UserMessageInner.newBuilder().setMessagePayload(
+//                        Message.MessagePayload.newBuilder().setText(replyText).build()
+//                    ).build().toByteArray()
+//                    val msg = encryptionWrapper.encryptAndSend(sender, conversationId, payload, token)
+//                    Log.i("lupyd-ReplyReceiver", "Encrypted reply sent for ${sender} ${msg}")
+//                } catch (e: Exception) {
+//                    Log.e("lupyd-ReplyReceiver", "Failed to send reply", e)
+//                }
+//            }
+//
+//            // Add reply to message history using shared preferences directly
+//            val prefs = context.getSharedPreferences("lupyd_notification_messages", Context.MODE_PRIVATE)
+//            try {
+//                val messagesJson = prefs.getString(sender, "[]")
+//                val messagesArray = JSONArray(messagesJson)
+//
+//                val messageObj = JSONObject().apply {
+//                    put("text", "You: $replyText")
+//                    put("timestamp", System.currentTimeMillis())
+//                }
+//                messagesArray.put(messageObj)
+//
+//                prefs.edit().putString(sender, messagesArray.toString()).apply()
+//            } catch (e: Exception) {
+//                Log.e("lupyd-ReplyReceiver", "Error adding reply to history", e)
+//            }
+//
+//            // Update notification to show reply but keep it visible with reply action
+//            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+//
+//            // Get updated messages
+//            val messages = try {
+//                val messagesJson = prefs.getString(sender, "[]")
+//                val messagesArray = JSONArray(messagesJson)
+//                (0 until messagesArray.length()).map {
+//                    messagesArray.getJSONObject(it).getString("text")
+//                }
+//            } catch (e: Exception) {
+//                Log.e("lupyd-ReplyReceiver", "Error getting messages", e)
+//                emptyList<String>()
+//            }
+//
+//            // Create updated inbox style
+//            val inboxStyle = NotificationCompat.InboxStyle()
+//            messages.forEach { msg ->
+//                inboxStyle.addLine(msg)
+//            }
+//            inboxStyle.setBigContentTitle(sender)
+//
+//            // Create content intent
+//            val contentIntent = Intent(context, MainActivity::class.java).apply {
+//                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//                putExtra("sender", sender)
+//            }
+//
+//            val contentPendingIntent = PendingIntent.getActivity(
+//                context, sender.hashCode(), contentIntent,
+//                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+//            )
+//
+//            // Create reply action (keep it available)
+//            val replyIntent = Intent(context, ReplyReceiverNative::class.java).apply {
+//                putExtra("sender", sender)
+//                putExtra("conversationId", conversationId)
+//            }
+//
+//            val replyPendingIntent = PendingIntent.getBroadcast(
+//                context, sender.hashCode() + 1, replyIntent,
+//                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+//            )
+//
+//            val remoteInput = RemoteInput.Builder(NativeNotificationPlugin.KEY_TEXT_REPLY)
+//                .setLabel("Reply to $sender")
+//                .build()
+//
+//            val replyAction = NotificationCompat.Action.Builder(
+//                android.R.drawable.ic_menu_send,
+//                "Reply",
+//                replyPendingIntent
+//            )
+//                .addRemoteInput(remoteInput)
+//                .setAllowGeneratedReplies(true)
+//                .build()
+//
+//            // Build updated notification with reply action still available
+//            val builder = NotificationCompat.Builder(context, NativeNotificationPlugin.CHANNEL_ID)
+//                .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
+//                .setColor(0xFF000000.toInt())
+//                .setContentTitle(sender)
+//                .setContentText("You: $replyText")
+//                .setAutoCancel(false) // Keep notification visible
+//                .setContentIntent(contentPendingIntent)
+//                .setPriority(NotificationCompat.PRIORITY_HIGH)
+//                .setStyle(inboxStyle)
+//                .addAction(replyAction) // Keep reply action
+//                .setGroup(NativeNotificationPlugin.GROUP_KEY_MESSAGES)
+//                .setOnlyAlertOnce(true) // Don't alert again
+//
+//            notificationManager.notify(sender.hashCode(), builder.build())
+//        }
+//    }
+//}
 
 class CallActionReceiverNative : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -693,10 +693,15 @@ class MarkAsReadReceiver : BroadcastReceiver() {
 //        notificationManager.notify(-sender.hashCode(), builder.build())
 
         val db = getDatabase(context)
-        val encryptionWrapper = EncryptionWrapper(context)
+//        val encryptionWrapper = EncryptionWrapper(context)
+
+        val fireflyClient = FireflyClient.getInstance(context)
 
         runBlocking {
-            encryptionWrapper.markAsReadUntil(sender, msgId)
+
+            fireflyClient.initialize(context)
+
+            fireflyClient.markAsReadUntil(sender, msgId)
             db.userMessageNotificationsDao().deleteUntilOfSender(sender, msgId)
         }
     }
