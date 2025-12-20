@@ -20,6 +20,7 @@ import io.ktor.utils.io.jvm.javaio.copyTo
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Files
+import kotlin.random.Random
 
 data class ContentRange(val start: Long, val end: Long) {
     companion object {
@@ -35,7 +36,7 @@ data class ContentRange(val start: Long, val end: Long) {
 }
 
 
-class FileServer(val port: Int = 51414, val rootDir: File) {
+class FileServer(val port: Int = 0, val rootDir: File) {
     private val TAG = "FileServer"
 
     val server = embeddedServer(CIO, port = port) {
@@ -49,12 +50,19 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
             allowHeader(HttpHeaders.ContentType)
             allowHeader(HttpHeaders.ContentLength)
             allowHeader(HttpHeaders.Range)
+            allowHeader(HttpHeaders.Authorization)
         }
 
         routing {
 
 
             head("/{...}") {
+
+                if (call.queryParameters.get("token") != Constants.fileServerToken) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@head
+                }
+
                 val rel = call.parameters.getAll("...")?.joinToString("/") ?: ""
                 Log.d(TAG, "HEAD request for: $rel")
                 val file = File(rootDir, rel).canonicalFile
@@ -73,7 +81,13 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
                 }
             }
 
-            get("/{...}") { 
+            get("/{...}") {
+                if (call.queryParameters.get("token") != Constants.fileServerToken) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@get
+                }
+
+
                 val rel = call.parameters.getAll("...")?.joinToString("/") ?: ""
                 Log.d(TAG, "GET request for: $rel")
                 val file = File(rootDir, rel).canonicalFile
@@ -128,6 +142,12 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
             }
 
             put("/{...}") {
+
+                if (call.queryParameters.get("token") != Constants.fileServerToken) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@put
+                }
+
                 val rel = call.parameters.getAll("...")?.joinToString("/") ?: ""
                 Log.d(TAG, "PUT request for: $rel")
                 val file = File(rootDir, rel).canonicalFile
@@ -152,6 +172,10 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
             }
 
             delete("/{...}") {
+                if (call.queryParameters.get("token") != Constants.fileServerToken) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@delete
+                }
                 val rel = call.parameters.getAll("...")?.joinToString("/") ?: ""
                 Log.d(TAG, "DELETE request for: $rel")
                 val file = File(rootDir, rel).canonicalFile
@@ -169,9 +193,20 @@ class FileServer(val port: Int = 51414, val rootDir: File) {
         val port = server.environment.config.port
         Log.d(TAG, "FileServer started on port: $port")
         Constants.fileServerPort = port
+        Constants.fileServerToken = randomString(32)
     }
 
     fun closeServer() {
         server.stop()
+    }
+}
+
+
+fun randomString(len: Int): String {
+    val chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    return buildString(len) {
+        repeat(len) {
+            append(chars[Random.nextInt(chars.length)])
+        }
     }
 }

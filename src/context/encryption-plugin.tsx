@@ -1,6 +1,6 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 
-import { type Plugin as CapacitorPlugin, registerPlugin,  } from '@capacitor/core'
+import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core'
 import { protos as FireflyProtos } from "firefly-client-js";
 import { decryptBlobV1 } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
 
   delete (o as any)["text"]
 
-  return o 
+  return o
 }
 
 
@@ -85,18 +85,16 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
   handleMessage(msg: BUserMessage): Promise<void>,
 
-  getFileServerUrl(): Promise<{ url: string }>,
+  getFileServerUrl(): Promise<{ url: string, token: string }>,
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 
 
-export const getFileUrl = async (fileUrl: string) => {
-  const { url } = await EncryptionPlugin.getFileServerUrl()
+export const getFileUrl = (fileUrl: string, fileServerUrl: string, fileServerToken: string) => {
   const pathname = new URL(fileUrl).pathname
   const filename = pathname
-  return `${url}/decrypted/${filename}`
-
+  return `${fileServerUrl}/decrypted/${filename}?token=${fileServerToken}`
 }
 
 export const decryptStreamAndSave = async (
@@ -112,7 +110,10 @@ export const decryptStreamAndSave = async (
 
   const stream = decryptBlobV1(blob, file.secretKey);
   {
-    const response = await fetch(await getFileUrl(file.url), {
+    const { url, token } = await EncryptionPlugin.getFileServerUrl()
+
+
+    const response = await fetch(getFileUrl(file.url, url, token), {
       method: "PUT",
       body: stream
     })
@@ -126,7 +127,9 @@ export const decryptStreamAndSave = async (
 
 export const checkIfFileExists = async (file: FireflyProtos.EncryptedFile) => {
 
-  const response = await fetch(await getFileUrl(file.url), { method: "HEAD" })
+  const { url, token } = await EncryptionPlugin.getFileServerUrl()
+
+  const response = await fetch(getFileUrl(file.url, url, token), { method: "HEAD", })
   if (response.ok) {
     return true
   }

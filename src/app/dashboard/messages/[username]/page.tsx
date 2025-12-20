@@ -877,15 +877,16 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   useEffect(() => {
 
     (async () => {
+      const { url, token } = await EncryptionPlugin.getFileServerUrl()
       if (status == Status.uninit) {
         if (await checkIfFileExists(file)) {
-          setSrc(await getFileUrl(file.url))
+          setSrc(getFileUrl(file.url, url, token))
           setStatus(Status.downloaded)
         } else {
           setStatus(Status.downloading)
           try {
             await decryptStreamAndSave(file)
-            setSrc(await getFileUrl(file.url))
+            setSrc(getFileUrl(file.url, url, token))
             setStatus(Status.downloaded)
           } catch (err) {
             setStatus(Status.error)

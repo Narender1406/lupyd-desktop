@@ -360,6 +360,7 @@ class EncryptionPlugin : Plugin() {
 
     @PluginMethod
     fun getFileServerUrl(call: PluginCall) {
-        call.resolve(JSObject().put("url", "http://localhost:${Constants.fileServerPort}"))
+        call.resolve(JSObject().put("url", "http://localhost:${Constants.fileServerPort}").put("token",
+            Constants.fileServerToken))
     }
 }

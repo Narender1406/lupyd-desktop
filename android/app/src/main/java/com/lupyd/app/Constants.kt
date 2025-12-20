@@ -12,5 +12,6 @@ object Constants {
 
 
     var fileServerPort = 51414
+    var fileServerToken = ""
 
 }
