@@ -119,7 +119,7 @@ export default function ActivityPage() {
 
   return (
     <DashboardLayout >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Activity</h1>
           <p className="text-muted-foreground">Track your interactions and stay updated on your network</p>
@@ -211,7 +211,7 @@ export default function ActivityPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {reminders.map((reminder, index) => (
+                        {reminders.map((reminder) => (
                           <div key={reminder.id} className="flex items-start space-x-3">
                             <div className="bg-gray-100 rounded-full p-2">
                               <Calendar className="h-4 w-4" />

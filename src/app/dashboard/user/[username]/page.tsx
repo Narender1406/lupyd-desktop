@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Settings, MessageSquare, Grid, List, Bookmark, Camera, MoreHorizontal, UserPlus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
-import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useApiService } from "@/context/apiService"
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
-import { useApiService } from "@/context/apiService"
+import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+import { Bookmark, Grid, List, MessageSquare, MoreHorizontal, Settings, UserPlus } from "lucide-react"
+import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 
 export default function ProfilePage() {
   const router = useNavigate()
@@ -42,6 +45,12 @@ export default function ProfilePage() {
       window.removeEventListener("resize", checkIfMobile)
     }
   }, [])
+
+  // Ref for the main content area
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  // Apply scroll boundary guard to the main content area
+  useScrollBoundaryGuard(contentRef)
 
   const getUsername = () => {
     const username = params.username
@@ -95,172 +104,174 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto">
-      {/* Main Content */}
-      <div className="flex-1">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-          {/* Cover Image */}
-          <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-b-lg" />
+    <DashboardLayout>
+      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Profile Header */}
+          <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
+            {/* Cover Image */}
+            <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-b-lg" />
 
-          {/* Profile Picture & Basic Info */}
-          <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end">
-              <div className="relative">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white shadow-lg">
-                  <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
-                  <AvatarFallback className="text-2xl md:text-4xl bg-gray-200">
-                    {(user?.uname ?? "U")[0]}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-
-              <div className="mt-4 md:mt-0 md:ml-6 flex-1">
-                <div className="flex flex-col md:flex-row md:items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold">{user?.uname}</h1>
-                    <p className="text-gray-500">@{user?.uname}</p>
-                  </div>
-
-                  {/* Buttons */}
-                  <div className="flex mt-4 md:mt-0 space-x-2">
-                    {!isMobile && (
-                      <>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          <span className="hidden md:inline">Message</span>
-                        </Button>
-
-                        <Button
-                          variant={isFollowing ? "outline" : "default"}
-                          size="sm"
-                          onClick={handleFollow}
-                        >
-                          {isFollowing ? "Following" : (
-                            <>
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              <span className="hidden md:inline">Follow</span>
-                            </>
-                          )}
-                        </Button>
-
-                        {/* FINAL SETTINGS BUTTON */}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => router("/settings")}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-
-                    {/* Mobile Menu */}
-                    {isMobile && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <MoreHorizontal className="h-4 w-4 mr-2" />
-                            Actions
-                          </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router(`/messages/${getUsername()}`)}>
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Message
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem onClick={handleFollow}>
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            {isFollowing ? "Unfollow" : "Follow"}
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem onClick={() => router("/settings")}>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Settings
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
+            {/* Profile Picture & Basic Info */}
+            <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
+              <div className="flex flex-col md:flex-row md:items-end">
+                <div className="relative">
+                  <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white shadow-lg">
+                    <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
+                    <AvatarFallback className="text-2xl md:text-4xl bg-gray-200">
+                      {(user?.uname ?? "U")[0]}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
 
-                <p className="mt-2 text-sm"> 
-                  {bio ? <PostBodyElement {...bio} /> : <></>}
-                </p>
+                <div className="mt-4 md:mt-0 md:ml-6 flex-1">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold">{user?.uname}</h1>
+                      <p className="text-gray-500">@{user?.uname}</p>
+                    </div>
+
+                    {/* Buttons */}
+                    <div className="flex mt-4 md:mt-0 space-x-2">
+                      {!isMobile && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            <span className="hidden md:inline">Message</span>
+                          </Button>
+
+                          <Button
+                            variant={isFollowing ? "outline" : "default"}
+                            size="sm"
+                            onClick={handleFollow}
+                          >
+                            {isFollowing ? "Following" : (
+                              <>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                <span className="hidden md:inline">Follow</span>
+                              </>
+                            )}
+                          </Button>
+
+                          {/* FINAL SETTINGS BUTTON */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router("/settings")}
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Mobile Menu */}
+                      {isMobile && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4 mr-2" />
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router(`/messages/${getUsername()}`)}>
+                              <MessageSquare className="h-4 w-4 mr-2" />
+                              Message
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem onClick={handleFollow}>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              {isFollowing ? "Unfollow" : "Follow"}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem onClick={() => router("/settings")}>
+                              <Settings className="h-4 w-4 mr-2" />
+                              Settings
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-sm">
+                    {bio ? <PostBodyElement {...bio} /> : <></>}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Posts / Saved / Tagged */}
-        <div className="px-4 md:px-8">
-          <Tabs defaultValue="posts" className="w-full">
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger value="posts">Posts</TabsTrigger>
-                <TabsTrigger value="saved">Saved</TabsTrigger>
-                <TabsTrigger value="tagged">Tagged</TabsTrigger>
-              </TabsList>
-<div className="flex space-x-2">
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+            {/* Posts / Saved / Tagged */}
+            <div className="px-4 md:px-8">
+              <Tabs defaultValue="posts" className="w-full">
+                <div className="flex items-center justify-between mb-4">
+                  <TabsList>
+                    <TabsTrigger value="posts">Posts</TabsTrigger>
+                    <TabsTrigger value="saved">Saved</TabsTrigger>
+                    <TabsTrigger value="tagged">Tagged</TabsTrigger>
+                  </TabsList>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`
       ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("grid")}
-  >
-    <Grid className="h-4 w-4" />
-  </Button>
+                      onClick={() => setViewMode("grid")}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
 
-  <Button
-    variant="ghost"
-    size="sm"
-    className={`
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`
       ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-    onClick={() => setViewMode("list")}
-  >
-    <List className="h-4 w-4" />
-  </Button>
-</div>
+                      onClick={() => setViewMode("list")}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
 
+                </div>
+
+                <TabsContent value="posts">
+                  <div className="space-y-4">
+                    {posts.map((post) => (
+                      <PostCard key={ulidStringify(post.id)} post={post} />
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="saved">
+                  <div className="text-center py-12">
+                    <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
+                    <p className="text-gray-500 mt-4">No saved posts yet</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="tagged">
+                  <div className="text-center py-12">
+                    <UserPlus className="h-12 w-12 mx-auto text-gray-300" />
+                    <p className="text-gray-500 mt-4">No tagged posts yet</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
-
-            <TabsContent value="posts">
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <PostCard key={ulidStringify(post.id)} post={post} />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="saved">
-              <div className="text-center py-12">
-                <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
-                <p className="text-gray-500 mt-4">No saved posts yet</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="tagged">
-              <div className="text-center py-12">
-                <UserPlus className="h-12 w-12 mx-auto text-gray-300" />
-                <p className="text-gray-500 mt-4">No tagged posts yet</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

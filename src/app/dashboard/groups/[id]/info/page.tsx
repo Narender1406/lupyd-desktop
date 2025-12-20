@@ -203,7 +203,7 @@ export default function GroupInfoPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-6xl mx-auto px-4 md:px-6 min-w-0 overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-6 min-w-0 overflow-x-hidden supports-[overflow:clip]:overflow-x-clip" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate("/groups")} className="flex items-center gap-2">
