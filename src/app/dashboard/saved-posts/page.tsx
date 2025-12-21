@@ -136,24 +136,27 @@ export default function SavedPostsPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search saved posts..."
-              className="pl-10 bg-white border-none shadow-sm w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <div className="relative flex-1 w-full">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+        placeholder="Search saved posts..."
+        className="pl-10 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-sm dark:text-white"
+         value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        </div>
+
+
           <div className="flex items-center space-x-2 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="icon"
-              className={view === "list" ? "bg-gray-100" : ""}
-              onClick={() => setView("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
+           <Button
+  variant="outline"
+  size="icon"
+  className={view === "list" ? "bg-gray-100 dark:bg-zinc-800" : ""}
+  onClick={() => setView("list")}
+>
+  <List className="h-4 w-4" />
+</Button>
+
             <Button
               variant="outline"
               size="icon"

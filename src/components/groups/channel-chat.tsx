@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+import { useEffect, useRef, useState } from "react"
 
 interface Member {
   id: string
@@ -47,8 +47,12 @@ export function ChannelChat({
     el.scrollTop = el.scrollHeight
   }, [messages])
 
-  const nameById = (id: string) => members.find((m) => m.id === id)?.name || "User"
-  const avatarById = (id: string) => members.find((m) => m.id === id)?.avatar || "/abstract-geometric-shapes.png"
+  const nameById = (id: string) =>
+    members.find((m) => m.id === id)?.name || "User"
+
+  const avatarById = (id: string) =>
+    members.find((m) => m.id === id)?.avatar ||
+    "/abstract-geometric-shapes.png"
 
   function send() {
     const content = draft.trim()
@@ -68,37 +72,60 @@ export function ChannelChat({
 
   return (
     <div className="flex h-full flex-col">
-      <div ref={containerRef} className="flex-1 overflow-y-auto bg-white px-4 py-3 space-y-3">
-        {messages.map((m) => (
-          <div key={m.id} className="flex items-start gap-3">
+      {/* Chat scroll area */}
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white dark:bg-black"
+      >
+        {messages.map((m: Message) => (
+          <div
+            key={m.id}
+            className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-900 transition"
+          >
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src={avatarById(m.senderId) || "/placeholder.svg?height=32&width=32&query=avatar"}
+                src={
+                  avatarById(m.senderId) ||
+                  "/placeholder.svg?height=32&width=32"
+                }
                 alt={nameById(m.senderId)}
               />
-              <AvatarFallback>{nameById(m.senderId).slice(0, 2)}</AvatarFallback>
+              <AvatarFallback>
+                {nameById(m.senderId).slice(0, 2)}
+              </AvatarFallback>
             </Avatar>
+
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-medium truncate">{nameById(m.senderId)}</span>
-                <span className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleString()}</span>
+                <span className="text-sm font-medium dark:text-white truncate">
+                  {nameById(m.senderId)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(m.createdAt).toLocaleString()}
+                </span>
               </div>
-              <div className="text-sm">{m.content}</div>
+
+              <div className="text-sm dark:text-white break-words">
+                {m.content}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Inline composer (used when parent doesn't render its own) */}
-      <div className="border-t p-2 md:hidden">
+      {/* Inline composer (mobile only) */}
+      <div className="border-t p-2 md:hidden bg-white dark:bg-black">
         <div className="flex items-center gap-2">
           <Input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={"Message #" + channelId}
-            className="bg-gray-100 border-none"
+            className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
           />
-          <Button className="bg-black text-white hover:bg-gray-800" onClick={send}>
+          <Button
+            className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300"
+            onClick={send}
+          >
             Send
           </Button>
         </div>

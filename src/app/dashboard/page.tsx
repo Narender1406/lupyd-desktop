@@ -1,22 +1,22 @@
 "use client"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { UserCard } from "@/components/dashboard/user-card"
-import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trending-topic"
-import { PostFeed } from "@/components/dashboard/post-feed"
-import { NavBar } from "@/components/ui/tubelight-navbar"
-import { useEffect, useState } from "react"
-import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
-import { Home, MessageSquare, Compass, User, Settings, Loader2, TrendingUp } from "lucide-react"
-import InfiniteScroll from "react-infinite-scroll-component"
+import { PersistentPostFeed } from "@/components/dashboard/persistent-post-feed"
 import { PostCard } from "@/components/dashboard/post-card"
+import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trending-topic"
+import { UserCard } from "@/components/dashboard/user-card"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Compass, Home, Loader2, MessageSquare, Settings, TrendingUp, User } from "lucide-react"
+import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
+import { useEffect, useState } from "react"
+import InfiniteScroll from "react-infinite-scroll-component"
 
+import { NavBar } from "@/components/ui/tubelight-navbar"
+import { useApiService } from "@/context/apiService"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
-import { useApiService } from "@/context/apiService"
 // import NotificationTestButton from "@/components/NotificationTestButton"
 
 
@@ -82,7 +82,8 @@ export default function DashboardPage() {
               {/* Create Post - removed as per requirements */}
 
               {/* Posts Feed with Infinite Scrolling */}
-              <PostFeed />
+              <PersistentPostFeed />
+
             </div>
 
             {/* Sidebar */}

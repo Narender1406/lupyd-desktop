@@ -1,15 +1,14 @@
-import './App.css'
+import { AnimatePresence } from 'framer-motion'
 import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import './App.css'
 import { PageTransition } from './components/page-transition'
 
-import { App as CapApp } from "@capacitor/app";
-import { Browser } from "@capacitor/browser";
-import { useAuth0 } from '@auth0/auth0-react';
-import { useAuth } from './context/auth-context';
-import FireflyProvider from './context/firefly-context';
-import { EncryptionPlugin } from './context/encryption-plugin';
+import { useAuth0 } from '@auth0/auth0-react'
+import { App as CapApp } from "@capacitor/app"
+import { Browser } from "@capacitor/browser"
+import { useAuth } from './context/auth-context'
+import { EncryptionPlugin } from './context/encryption-plugin'
 
 
 
@@ -53,7 +52,7 @@ const ExperiencePage = lazy(() => import('./app/(landing)/experience/page'));
 const FeaturesPage = lazy(() => import('./app/(landing)/features/page'));
 const LandingPage = lazy(() => import('./app/(landing)/page'));
 const PrivacyPage = lazy(() => import('./app/(landing)/privacy/page'));
-const NotificationTestPage = lazy(() => import('./app/dashboard/notification-test/page'));
+const BlockedAccountsPage = lazy(() => import('./app/blocked-accounts/page'));
 
 
 const GroupChannelsPage = lazy(() => import('./app/dashboard/groups/[id]/channels/page'));
@@ -155,6 +154,7 @@ function App() {
           <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
           <Route path="/activity" element={<PageTransition><ActivityPage /></PageTransition>} />
           <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+          <Route path="/blocked-accounts" element={<PageTransition><BlockedAccountsPage /></PageTransition>} />
           <Route path="/groups" element={<PageTransition><GroupsPage /></PageTransition>} />
           <Route path="/groups/create" element={<PageTransition><CreateGroupPage /></PageTransition>} />
           <Route path="/groups/:groupid/settings" element={<PageTransition><GroupSettingsPage /></PageTransition>} />
@@ -165,7 +165,6 @@ function App() {
           <Route path="/discover" element={<PageTransition><DiscoverPage /></PageTransition>} />
           <Route path="/post/:postId" element={<PageTransition><PostPage /></PageTransition>} />
           <Route path="/user/:username" element={<PageTransition><ProfilePage /></PageTransition>} />
-          <Route path="/notification-test" element={<PageTransition><NotificationTestPage /></PageTransition>} />
           <Route path="/messages" element={<PageTransition><MessagesPage /></PageTransition>} />
           <Route path="/messages/:username" element={<PageTransition><UserMessagePage /></PageTransition>} />
           <Route path="/messages/:username/call" element={<PageTransition><UserCallPage /></PageTransition>} />

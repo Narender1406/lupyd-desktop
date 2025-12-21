@@ -1,9 +1,10 @@
+
 "use client"
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import {DashboardLayout} from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -1372,4 +1373,3 @@ export default function CreatePostPage() {
     </DashboardLayout>
   )
 }
-

@@ -1,39 +1,36 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import {
-  Camera,
-  Lock,
-  Globe,
-  Languages,
-  Shield,
-  Smartphone,
-  Mail,
-  UserMinus,
-  Megaphone,
-  Heart,
-  BellOff,
-  Accessibility,
-} from "lucide-react"
-import { useTheme } from "next-themes"
+import { AnimatedCard } from "@/components/animated-card"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { AnimatedCard } from "@/components/animated-card"
-import { useAuth } from "@/context/auth-context"
-import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
-import { Button } from "@/components/ui/button"
-import { Link } from "react-router-dom"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import { useApiService } from "@/context/apiService"
-
+import { useAuth } from "@/context/auth-context"
+import { useUserData } from "@/context/userdata-context"
+import {
+  Accessibility,
+  BellOff,
+  Camera,
+  Globe,
+  Heart,
+  Languages,
+  Lock,
+  Megaphone,
+  UserMinus,
+} from "lucide-react"
+import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 
 
 
@@ -262,9 +259,8 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <Separator />
-                    <div className="flex justify-end">
-                      <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button>
+                   <div className="flex justify-end"> 
+                    <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button> 
                     </div>
                   </CardContent>
                 </Card>
@@ -277,7 +273,7 @@ export default function SettingsPage() {
                     <CardDescription>Irreversible actions for your account</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                   {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                    {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Deactivate Account</h3>
                         <p className="text-sm text-muted-foreground">Temporarily disable your account</p>
@@ -288,14 +284,14 @@ export default function SettingsPage() {
                         <h3 className="font-medium">Delete Account</h3>
                         <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                       </div>
-                           <Button
-                            onClick={() => {
+                      <Button
+                        onClick={() => {
                           if (window.confirm("Are you sure you want to delete your account permanently?")) {
-                           deleteAccount();
-                        }
+                            deleteAccount();
+                          }
                         }}
-                      className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0">
-                          Delete
+                        className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto mt-2 sm:mt-0">
+                        Delete
                       </Button>
 
                     </div>
@@ -311,8 +307,6 @@ export default function SettingsPage() {
             <TabsContent value="notifications" className="mt-0 space-y-6">
               <NotificationsSection />
             </TabsContent>
-
-            
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <PreferencesSection />
             </TabsContent>
@@ -401,6 +395,28 @@ export default function SettingsPage() {
 
 
 function PrivacySection() {
+  const userData = useUserData();
+  const navigate = useNavigate();
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]); // Replace [] with real data when available
+  const [showModal, setShowModal] = useState(false);
+
+  
+
+
+
+
+  useEffect(() => {
+    setBlockedUsers(userData.blocked)
+  },[userData])
+  
+  const handleViewBlocked = () => {
+    if (blockedUsers.length > 0) {
+      navigate("/blocked-accounts");
+    } else {
+      setShowModal(true);
+    }
+  };
+
 
   return (
     <AnimatedCard>
@@ -436,25 +452,50 @@ function PrivacySection() {
 
           <Separator />
 
-          <div className="space-y-4">
-            <h3 className="font-medium">Blocked Accounts</h3>
+
+          <div className="space-y-4 ">
+            <h3 className="font-medium ">Blocked Accounts</h3>
+
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
               <div className="flex items-center">
-                <UserMinus className="h-5 w-5 mr-3 text-muted-foreground" />
+                <UserMinus className="h-5 w-5 mr-3 text-muted- foreground" />
                 <div>
-                  <h3 className="font-medium">Manage Blocked Users</h3>
-                  <p className="text-sm text-muted-foreground">Review and unblock accounts</p>
+                  <h4 className="font-medium">Manage Blocked Users</h4>
+                  <p className="text-sm text-muted- foreground">
+                    Review and unblock accounts anytime.
+                  </p>
                 </div>
               </div>
-              <Button
-            onClick={() => alert("No blocked accounts")}
-            className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto"
-            >
-           View Blocked Accounts
-            </Button>
 
+              <Button
+                onClick={handleViewBlocked}
+                className="hover:bg-gray-800 w-full sm:w-auto">
+
+
+                View Blocked Accounts
+              </Button>
             </div>
+
+            {/* ✅ Modal Popup */}
+            {showModal && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm shadow-lg animate-fadeIn">
+                  <h2 className="text-lg font-semibold mb-2">No Blocked Contacts</h2>
+                  <p className="text-gray-600 mb-4 text-sm">
+                    You haven’t blocked anyone yet. When you block someone, their name
+                    will appear here.
+                  </p>
+                  <Button
+                    onClick={() => setShowModal(false)}
+                    className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
+                    Okay
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
+
+
 
           <Separator />
 
@@ -488,7 +529,7 @@ function PrivacySection() {
 }
 
 function PreferencesSection() {
-  const { theme } = useTheme()
+  const { theme, setTheme } = useTheme()
   return (
     <AnimatedCard>
       <Card className="border-none shadow-sm">
@@ -509,7 +550,7 @@ function PreferencesSection() {
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light">Light</Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="dark" id="dark" />
                   <Label htmlFor="dark">Dark</Label>
