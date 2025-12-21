@@ -52,6 +52,7 @@ import { ApiServiceProvider } from "@/context/apiService"
 import { PersistenceProvider } from "@/context/persistence-provider"
 import { QueryClientProviderWrapper } from "@/context/query-client"
 import FireflyProvider from './context/firefly-context.tsx'
+import { BrowserRouter } from "react-router-dom"
 
 
 createRoot(document.getElementById('root')!).render(
@@ -61,19 +62,21 @@ createRoot(document.getElementById('root')!).render(
       <PersistenceProvider>
         <DialogProvider>
           <LupydAuth0Provider>
-            <AuthProvider>
-              <ApiServiceProvider>
-                <UserImageProvider>
-                  <UserDataProvider>
-                    <FireflyProvider>
-                      <div className="flex min-h-screen flex-col">
-                        <App />
-                      </div>
-                    </FireflyProvider>
-                  </UserDataProvider>
-                </UserImageProvider>
-              </ApiServiceProvider>
-            </AuthProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <ApiServiceProvider>
+                  <UserImageProvider>
+                    <UserDataProvider>
+                      <FireflyProvider>
+                        <div className="flex min-h-screen flex-col">
+                          <App />
+                        </div>
+                      </FireflyProvider>
+                    </UserDataProvider>
+                  </UserImageProvider>
+                </ApiServiceProvider>
+              </AuthProvider>
+            </BrowserRouter>
           </LupydAuth0Provider>
         </DialogProvider>
       </PersistenceProvider>
