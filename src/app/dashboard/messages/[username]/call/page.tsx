@@ -1,12 +1,12 @@
+import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/context/auth-context"
+import { EncryptionPlugin, userMessageToBUserMessage } from "@/context/encryption-plugin"
 import * as fireflyContext from "@/context/firefly-context"
 import { CallSession } from "@/context/user-call-context"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { protos as FireflyProtos } from "firefly-client-js"
 import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff } from "lucide-react"
-import { UserAvatar } from "@/components/user-avatar"
-import { EncryptionPlugin, userMessageToBUserMessage } from "@/context/encryption-plugin"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 
 
 enum SessionInitiationStatus {
@@ -113,7 +113,7 @@ export default function UserCallPage() {
 
       const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish()
 
-      firefly.encryptAndSend(BigInt(convoId), other, payload).then((response) => {
+      firefly.encryptAndSend(other, payload).then((response) => {
         console.log(`Sent [${randomId}] ${response.id}`)
       }).catch(console.error)
     }

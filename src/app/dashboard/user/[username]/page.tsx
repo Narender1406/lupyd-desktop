@@ -3,7 +3,6 @@
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { PostBodyElement, PostCard } from "@/components/dashboard/post-card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,12 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UserAvatar } from "@/components/user-avatar"
 import { useApiService } from "@/context/apiService"
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
-import { Bookmark, Grid, List, MessageSquare, MoreHorizontal, Settings, UserPlus } from "lucide-react"
-import { CDN_STORAGE, FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
+import { Ban, Bookmark, Grid, List, MessageSquare, MoreHorizontal, Settings, UserMinus, UserPlus } from "lucide-react"
+import { FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
@@ -97,10 +97,31 @@ export default function ProfilePage() {
     const username = getUsername()
     if (!username) return
     if (userData.follows.includes(username)) {
-      await userData.relationState.followUser(username)
-    } else {
       await userData.relationState.unfollowUser(username)
+    } else {
+      await userData.relationState.followUser(username)
     }
+  }
+
+
+  const [isBlocked, setIsBlocked] = useState(false)
+
+  useEffect(() => {
+    if (!auth.username) return
+    if (!getUsername()) return
+
+    setIsBlocked(userData.blocked.includes(getUsername()!))
+  }, [auth, userData])
+
+  async function blockUser() {
+    const username = getUsername()
+    if (!username) return
+    if (userData.blocked.includes(username)) {
+      await userData.relationState.unblockUser(username)
+    } else {
+      await userData.relationState.blockUser(username)
+    }
+
   }
 
   return (
@@ -117,12 +138,7 @@ export default function ProfilePage() {
             <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
               <div className="flex flex-col md:flex-row md:items-end">
                 <div className="relative">
-                  <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white shadow-lg">
-                    <AvatarImage src={(16 == ((user?.settings ?? 0) & 16)) ? `${CDN_STORAGE}/users/${user!.uname}` : `/placeholder.svg`} alt={user?.uname} />
-                    <AvatarFallback className="text-2xl md:text-4xl bg-gray-200">
-                      {(user?.uname ?? "U")[0]}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar username={getUsername() ?? ""} />
                 </div>
 
                 <div className="mt-4 md:mt-0 md:ml-6 flex-1">
@@ -142,7 +158,7 @@ export default function ProfilePage() {
                             onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
                           >
                             <MessageSquare className="h-4 w-4 mr-2" />
-                            <span className="hidden md:inline">Message</span>
+                            Message
                           </Button>
 
                           <Button
@@ -153,18 +169,21 @@ export default function ProfilePage() {
                             {isFollowing ? "Following" : (
                               <>
                                 <UserPlus className="h-4 w-4 mr-2" />
-                                <span className="hidden md:inline">Follow</span>
+                                Follow
                               </>
                             )}
                           </Button>
 
-                          {/* FINAL SETTINGS BUTTON */}
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router("/settings")}
-                          >
-                            <Settings className="h-4 w-4" />
+                            variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
+                            <Ban className="h-4 w-4 " strokeWidth={3.5} />
+                            {isBlocked ? (
+                              "Blocked"
+                            ) : (
+                              <>
+                                Block </>
+                            )
+                            }
                           </Button>
                         </>
                       )}
@@ -186,8 +205,16 @@ export default function ProfilePage() {
                             </DropdownMenuItem>
 
                             <DropdownMenuItem onClick={handleFollow}>
-                              <UserPlus className="h-4 w-4 mr-2" />
+                              {isFollowing ? <UserMinus className="h-4 w-4 mr-2"></UserMinus> :
+                                <UserPlus className="h-4 w-4 mr-2" />
+                              }
                               {isFollowing ? "Unfollow" : "Follow"}
+                            </DropdownMenuItem>
+
+
+                            <DropdownMenuItem onClick={blockUser}>
+                              <Ban className="h-4 w-4 mr-2" />
+                              {isBlocked ? "Unblock" : "Block"}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
@@ -202,72 +229,72 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <p className="mt-2 text-sm">
+                  <div className="mt-2 text-sm">
                     {bio ? <PostBodyElement {...bio} /> : <></>}
-                  </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Posts / Saved / Tagged */}
-            <div className="px-4 md:px-8">
-              <Tabs defaultValue="posts" className="w-full">
-                <div className="flex items-center justify-between mb-4">
-                  <TabsList>
-                    <TabsTrigger value="posts">Posts</TabsTrigger>
-                    <TabsTrigger value="saved">Saved</TabsTrigger>
-                    <TabsTrigger value="tagged">Tagged</TabsTrigger>
-                  </TabsList>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`
+              {/* Posts / Saved / Tagged */}
+              <div className="px-4 md:px-8">
+                <Tabs defaultValue="posts" className="w-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <TabsList>
+                      <TabsTrigger value="posts">Posts</TabsTrigger>
+                      <TabsTrigger value="saved">Saved</TabsTrigger>
+                      <TabsTrigger value="tagged">Tagged</TabsTrigger>
+                    </TabsList>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`
       ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-                      onClick={() => setViewMode("grid")}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </Button>
+                        onClick={() => setViewMode("grid")}
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`
       ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-800" : ""}
       rounded-xl
     `}
-                      onClick={() => setViewMode("list")}
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
+                        onClick={() => setViewMode("list")}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+
                   </div>
 
-                </div>
+                  <TabsContent value="posts">
+                    <div className="space-y-4">
+                      {posts.map((post) => (
+                        <PostCard key={ulidStringify(post.id)} post={post} />
+                      ))}
+                    </div>
+                  </TabsContent>
 
-                <TabsContent value="posts">
-                  <div className="space-y-4">
-                    {posts.map((post) => (
-                      <PostCard key={ulidStringify(post.id)} post={post} />
-                    ))}
-                  </div>
-                </TabsContent>
+                  <TabsContent value="saved">
+                    <div className="text-center py-12">
+                      <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
+                      <p className="text-gray-500 mt-4">No saved posts yet</p>
+                    </div>
+                  </TabsContent>
 
-                <TabsContent value="saved">
-                  <div className="text-center py-12">
-                    <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
-                    <p className="text-gray-500 mt-4">No saved posts yet</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="tagged">
-                  <div className="text-center py-12">
-                    <UserPlus className="h-12 w-12 mx-auto text-gray-300" />
-                    <p className="text-gray-500 mt-4">No tagged posts yet</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="tagged">
+                    <div className="text-center py-12">
+                      <UserPlus className="h-12 w-12 mx-auto text-gray-300" />
+                      <p className="text-gray-500 mt-4">No tagged posts yet</p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
           </div>
         </div>
