@@ -7,11 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Share2, MessageSquare, Settings, Zap } from "lucide-react"
 import { AnimatedCard } from "@/components/animated-card"
 import LandingLayout from "./layout"
+import ColorBends from './ColorBends';
+import './ColorBends.css'
 
 export default function LandingPage() {
 
   return (
     <LandingLayout>
+      <div className="fixed inset-0 -z-10">
+        <ColorBends
+          colors={["#000000", "#ffffff", "#808080"]}
+          rotation={30}
+          speed={0.3}
+          scale={1.2}
+          frequency={1.4}
+          warpStrength={1.2}
+          mouseInfluence={0.8}
+          parallax={0.6}
+          noise={0.08}
+          transparent
+        />
+      </div>
       {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-black text-white">
         <div className="container px-4 md:px-6">
