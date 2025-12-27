@@ -12,7 +12,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full h-screen overflow-hidden flex items-center justify-center 
+      <div className="w-full min-h-screen flex items-center justify-center 
         bg-gray-50 dark:bg-black p-4">
 
         <Card className="max-w-md w-full mx-4 shadow-2xl 

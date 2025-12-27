@@ -211,7 +211,7 @@ export default function DiscoverPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden pb-24 md:pb-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div className="container mx-auto px-4 max-w-full pb-24 md:pb-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-muted-foreground">Explore new content, people, and communities</p>
@@ -243,7 +243,7 @@ export default function DiscoverPage() {
           </Button>
         </div>
 
-        <div className="overflow-hidden">
+        <div className="">
           <Tabs defaultValue="posts" className="w-full">
             <div className="overflow-x-auto pb-2">
               <TabsList className="mb-6 bg-transparent border-b w-full justify-start rounded-none p-0 h-auto flex-nowrap">
