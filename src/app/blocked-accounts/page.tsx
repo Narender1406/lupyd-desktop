@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { UserMinus, MessageSquare, Image, FileText, Users } from "lucide-react";
 
 // Avatar elements
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserAvatar } from "@/components/user-avatar";
 
 export default function BlockedContent() {
@@ -40,7 +39,7 @@ export default function BlockedContent() {
 
     return (
         <DashboardLayout>
-            <div className="container mx-auto px-4 max-w-full overflow-hidden">
+            <div className="container mx-auto px-4 max-w-full">
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold">Blocked Content</h1>
                     <p className="text-muted-foreground">Manage your blocked users and content</p>
@@ -89,7 +88,7 @@ export default function BlockedContent() {
                         </div>
                     </div>
 
-                    <div className="w-full overflow-hidden">
+                    <div className="w-full">
                         <TabsContent value="users" className="mt-0 space-y-6 w-full">
                             <Section
                                 title="Blocked Users"
@@ -155,7 +154,7 @@ type SectionProps = {
 function Section({ title, list, onUnblock, isImage, isMessage, icon }: SectionProps) {
     return (
         <AnimatedCard>
-            <Card className="border-none shadow-sm w-full overflow-hidden">
+            <Card className="border-none shadow-sm w-full">
                 <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="flex items-center">
                         {icon && <span className="mr-2">{icon}</span>}

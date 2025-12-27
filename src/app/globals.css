@@ -57,26 +57,26 @@
   
   html {
     height: 100%;
-    overflow: hidden; /* Stop html scrolling */
+    overflow: auto; /* Allow html scrolling */
   }
 
   body {
     @apply bg-background text-foreground;
-    height: 100%;
+    min-height: 100vh;
     width: 100%;
-    position: fixed; /* CRITICAL: Locks the body in place so it can't scroll when keyboard opens */
-    overflow: hidden; /* Stop body scrolling */
+    position: relative; /* Allow body to scroll normally */
+    overflow-x: hidden; /* Only hide horizontal overflow */
     overscroll-behavior: none; /* Stop the "rubber band" effect */
     -webkit-overflow-scrolling: touch;
     padding: 0;
     margin: 0;
   }
 
-  /* Ensure root fills the space but doesn't scroll itself */
+  /* Ensure root fills the space */
   #root {
-    height: 100%;
+    min-height: 100vh;
     width: 100%;
-    overflow: hidden; 
+    overflow: visible; /* Allow content to scroll */
     padding: env(safe-area-inset-top) 
             env(safe-area-inset-right) 
             env(safe-area-inset-bottom)

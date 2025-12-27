@@ -88,9 +88,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => window.removeEventListener('resize', setSafeArea);
   }, [])
 
-  // Prevent body scrolling
+  // Allow body scrolling but handle mobile keyboard properly
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    // Don't prevent body scrolling by default
+    document.body.style.overflow = '';
     return () => {
       document.body.style.overflow = '';
     };
