@@ -78,7 +78,7 @@ export default function UserMessagePage() {
       // Set the container height to the exact visual viewport height
       // This automatically shrinks the UI when keyboard opens
       setViewportHeight(`${window.visualViewport?.height}px`)
-      
+
       // Optional: Scroll to bottom if keyboard opened
       if (document.activeElement === document.querySelector('input')) {
         setTimeout(scrollToBottom, 100)
@@ -87,7 +87,7 @@ export default function UserMessagePage() {
 
     window.visualViewport.addEventListener('resize', handleResize)
     window.visualViewport.addEventListener('scroll', handleResize) // Handle scroll offset on iOS
-    
+
     // Initial set
     handleResize()
 
@@ -103,11 +103,10 @@ export default function UserMessagePage() {
   function addMessage(prev: UserMessage[], msg: UserMessage) {
     const message = FireflyProtos.UserMessageInner.decode(msg.text)
     if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
-
-
-
       return prev;
     }
+
+    // TODO: optimize this abomination
 
     if (prev.length > 0) {
       if (prev[prev.length - 1].id < msg.id) {
@@ -202,7 +201,7 @@ export default function UserMessagePage() {
     // TODO: this is not good
 
 
-    console.log({ getLastMessages: { other: receiver!, limit: count, before: lastTs }})
+    console.log({ getLastMessages: { other: receiver!, limit: count, before: lastTs } })
 
     const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: count, before: lastTs })
 
@@ -308,7 +307,7 @@ export default function UserMessagePage() {
     const payload = FireflyProtos.UserMessageInner.encode(userMessageInner).finish();
     // const msg = await firefly.encryptAndSend(BigInt(currentConvoId), receiver!, payload)
 
-    const msg = await firefly.encryptAndSend( receiver!, payload)
+    const msg = await firefly.encryptAndSend(receiver!, payload)
 
     setMessages(prev => addMessage(prev, msg))
   }
@@ -384,7 +383,7 @@ export default function UserMessagePage() {
 
 
   return (
-    <div 
+    <div
       className="flex flex-col bg-gray-50 w-full"
       style={{
         // APPLY: The dynamic height here
@@ -395,11 +394,11 @@ export default function UserMessagePage() {
       }}
     >
       {/* Header - Changed from fixed to standard flex item */}
-      <div 
+      <div
         // ADDED: 'touch-none' to the class list below
         className="flex-none bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm z-20 touch-none"
-        style={{ 
-          paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', 
+        style={{
+          paddingTop: 'max(env(safe-area-inset-top), 0.75rem)',
         }}
       >
         <div className="flex items-center space-x-3">
@@ -454,7 +453,7 @@ export default function UserMessagePage() {
               </div>
             ))}
           </InfiniteScroll>
-          
+
           {/* Dummy div to ensure scroll to bottom works nicely with spacing */}
           <div className="h-2"></div>
         </div>
@@ -479,8 +478,8 @@ export default function UserMessagePage() {
       {/* Input Area - Flex-none ensures it stays at bottom, no 'fixed' needed */}
       <div
         className="flex-none bg-white border-t p-2 shadow-lg z-20 w-full touch-none"
-        style={{ 
-          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' 
+        style={{
+          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)'
         }}
       >
         {replyingTo && (
@@ -499,6 +498,26 @@ export default function UserMessagePage() {
             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={cancelReply}>
               <X className="h-3 w-3" />
             </Button>
+          </div>
+        )}
+
+        {/* File Preview */}
+        {files.length > 0 && (
+          <div className="px-2 py-1 mb-1 bg-gray-50 rounded-lg border">
+            <div className="flex items-center space-x-2 overflow-x-auto">
+              {files.map((file, index) => (
+                <div key={index} className="flex items-center space-x-1 bg-white px-2 py-1 rounded border min-w-0">
+                  <File className="h-3 w-3 flex-shrink-0" />
+                  <span className="text-xs truncate max-w-20">{file.name}</span>
+                  <button
+                    onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -565,7 +584,7 @@ export default function UserMessagePage() {
             )}
           </Button>
         </div>
-        
+
         {/* hidden file input */}
         <input
           type="file"

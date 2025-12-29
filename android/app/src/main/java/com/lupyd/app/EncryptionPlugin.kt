@@ -337,27 +337,6 @@ class EncryptionPlugin : Plugin() {
         }
     }
 
-//    @PluginMethod
-//    fun handleMessage(call: PluginCall) {
-//        bridge.activity.lifecycleScope.launch {
-//            try {
-//                val textB64 = call.data.getString("textB64")
-//                val convoId = call.data.getLong("convoId")
-//                val msgId = call.data.getLong("id")
-//                val from = call.data.getString("from")
-//                val to = call.data.getString("to")
-//                val msg = DMessage(msgId, convoId, from!!, to!!, Base64.decode(textB64, Base64.NO_WRAP))
-//
-//                encryptionWrapper.handleMessage(msg)
-//
-//                call.resolve()
-//            } catch (e: Exception) {
-//                call.reject(e.toString())
-//            }
-//        }
-//    }
-
-
     @PluginMethod
     fun getFileServerUrl(call: PluginCall) {
         call.resolve(JSObject().put("url", "http://localhost:${Constants.fileServerPort}").put("token",

@@ -1,14 +1,13 @@
 "use client"
 
-import * as fireflyClientJs from "firefly-client-js"
-import { createContext, useContext, useRef, useEffect, useMemo, type ReactNode } from "react"
+import * as fireflyClientJs from "firefly-client-js";
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
-import { useAuth } from "./auth-context"
-import { Outlet } from "react-router-dom";
-import { protos as FireflyProtos } from "firefly-client-js"
+import { protos as FireflyProtos } from "firefly-client-js";
+import { useAuth } from "./auth-context";
 
-import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type UserMessage } from "./encryption-plugin";
 import { toBase64 } from "@/lib/utils";
+import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -64,6 +63,7 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
               const msg = FireflyProtos.UserMessageInner.decode(dmsg.text)
 
               if (msg.messagePayload && msg.messagePayload.text.length > 0) {
+                console.log(`showing notification for message sentByOther: ${dmsg.sentByOther} other: ${dmsg.other} id: ${dmsg.id}`)
                 EncryptionPlugin.showUserNotification(userMessageToBUserMessage(dmsg))
               }
 

@@ -10,6 +10,8 @@ import org.json.JSONObject
 import uniffi.firefly_signal.ConnectionState
 import uniffi.firefly_signal.FfiFireflyWsClient
 import uniffi.firefly_signal.FireflyWsClientCallback
+import uniffi.firefly_signal.GroupInfo
+import uniffi.firefly_signal.GroupMessage
 import uniffi.firefly_signal.LastMessageAndUnreadCount
 import uniffi.firefly_signal.MessagesStore
 import uniffi.firefly_signal.TokenResponse
@@ -43,6 +45,7 @@ class FireflyClient() {
     var messagesStore: MessagesStore? = null
 
     private val onMessageCallbacks = mutableSetOf<(UserMessage) -> Unit>()
+    private val onGroupMessageCallbacks = mutableSetOf<(GroupMessage) -> Unit>()
 
     fun addOnMessageCallback(cb: (UserMessage) -> Unit) {
         onMessageCallbacks.add(cb)
@@ -51,6 +54,15 @@ class FireflyClient() {
     fun removeOnMessageCallback(cb: (UserMessage) -> Unit) {
         onMessageCallbacks.remove(cb)
     }
+
+    fun addOnGroupMessageCallback(cb: (GroupMessage) -> Unit) {
+        onGroupMessageCallbacks.add(cb)
+    }
+
+    fun removeOnGroupMessageCallback(cb: (GroupMessage) -> Unit) {
+        onGroupMessageCallbacks.remove(cb)
+    }
+
 
     suspend fun initialize(ctx: Context) {
         notificationHandler = NotificationHandler(ctx)
@@ -70,6 +82,14 @@ class FireflyClient() {
                             Log.e(tag, "failed to handle message: ${e.toString()}")
                         }
 
+                    }
+
+                    override suspend fun onGroupMessage(groupMessage: GroupMessage) {
+                        try {
+                            onGroupMessageCb(groupMessage)
+                        } catch (e: Exception) {
+                            Log.e(tag, "failed to handle group message: $e")
+                        }
                     }
                 }
                 val dbPath = ctx.getDatabasePath("firefly.db").absolutePath
@@ -114,6 +134,12 @@ class FireflyClient() {
             }
             delay(intervalInMs)
             triesLeft -= 1
+        }
+    }
+
+    suspend fun onGroupMessageCb(msg: GroupMessage) {
+        for (onMessageCb in onGroupMessageCallbacks) {
+            onMessageCb(msg)
         }
     }
 
@@ -222,13 +248,22 @@ class FireflyClient() {
 
     suspend fun encryptAndSend(message: ByteArray, to: String): UserMessage {
 
-
         val message = client!!.encryptAndSend(to, message)
         onUserMessage(message)
 
         return message
     }
 
+    suspend fun encryptAndSendGroup(message: ByteArray, groupId: Long) : Long {
+        val messageId = client!!.encryptAndSendGroup(groupId.toULong(), message)
+
+        return messageId.toLong()
+
+    }
+
+    suspend fun createGroup(name: String): GroupInfo {
+        return client!!.createGroup(name, "")
+    }
 
     suspend fun updateAuthTokens(accessToken: String, refreshToken: String) {
         val tokens = TokenResponse(accessToken, refreshToken)
