@@ -265,6 +265,14 @@ class FireflyClient() {
         return client!!.createGroup(name, "")
     }
 
+    suspend fun getAllGroups(): List<GroupInfo> {
+        return client!!.groupInfoStore().getAllFfi()
+    }
+
+    suspend fun getGroupMessages(groupId: Long, startBefore: Long, limit: Long): List<GroupMessage> {
+        return client!!.groupMessageStore().getFfi(groupId.toULong(), startBefore.toULong(), limit.toUInt())
+    }
+
     suspend fun updateAuthTokens(accessToken: String, refreshToken: String) {
         val tokens = TokenResponse(accessToken, refreshToken)
         client!!.setAuthTokens(tokens)
@@ -299,6 +307,14 @@ class FireflyClient() {
 
     suspend fun sendFcmTokenToServer(token: String?) {
         client!!.uploadFcmToken(token)
+    }
+
+    suspend fun getGroupExtension(groupId: Long): ByteArray {
+        return client!!.getGroupExtension(groupId.toULong())
+    }
+
+    suspend fun getGroupLastMessages(): List<GroupMessage> {
+        return client!!.groupMessageStore().getAllLastMessagesFfi()
     }
 
 }

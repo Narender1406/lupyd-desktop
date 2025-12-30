@@ -12,24 +12,51 @@ export interface BUserMessage {
   textB64: string,
 }
 
+export interface BGroupMessage {
+  sender: string,
+  groupId: number,
+  textB64: string,
+}
+
+
+export interface BGroupInfo {
+  name: string,
+  groupId: number,
+  description: string,
+}
 
 
 export function isBUserMessage(obj: any): obj is BUserMessage {
   return (
     obj &&
     typeof obj.id === "number" &&
-    typeof obj.convoId === "number" &&
     typeof obj.textB64 === "string" &&
     typeof obj.other == "string" &&
     typeof obj.sentByOther == "boolean"
   );
 }
+export function isBGroupMessage(obj: any): obj is BUserMessage {
+  return (
+    obj &&
+    typeof obj.id === "number" &&
+    typeof obj.textB64 === "string" &&
+    typeof obj.groupId == "number"
+  );
+}
 
 
 export type UserMessage = Omit<BUserMessage, "textB64"> & { text: Uint8Array }
+export type GroupMessage = Omit<BGroupMessage, "textB64"> & { text: Uint8Array }
 
 
 export function bUserMessageToUserMessage(msg: BUserMessage): UserMessage {
+  return {
+    ...msg,
+    text: fromBase64(msg.textB64)
+  }
+}
+
+export function bGroupMessageToGroupMessage(msg: BGroupMessage): GroupMessage {
   return {
     ...msg,
     text: fromBase64(msg.textB64)
@@ -86,6 +113,26 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   handleMessage(msg: BUserMessage): Promise<void>,
 
   getFileServerUrl(): Promise<{ url: string, token: string }>,
+
+
+
+  getLastGroupMessages(): Promise<{ result: BGroupMessage[] }>
+
+
+  encryptAndSendGroupMessage(options: BGroupMessage): Promise<{ messageId: number }>
+
+
+  getGroupExtension(options: { groupId: number }): Promise<{ resultB64: string }>
+
+
+
+  createGroup(options: { name: string, }): Promise<BGroupInfo>
+
+
+  getGroupInfos(): Promise<{ result: BGroupInfo[] }>
+
+  
+  getGroupMessages(options: { groupId: number, startBefore: number, limit: number }): Promise<{ result: BGroupMessage[]}>
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")

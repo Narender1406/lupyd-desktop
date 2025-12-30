@@ -324,7 +324,7 @@ export default function UserMessagePage() {
       const encryptedFiles = FireflyProtos.EncryptedFiles.create()
       for (const file of files) {
         const { reader, key } = encryptBlobV1(file)
-        const objectKey = await api.uploadFile(file.name, file.type, reader)
+        const objectKey = await api.uploadFile(file.name, "application/octet-stream", reader, file.size)
 
         let contentType = ContentType.Unknown
         if (file.type.startsWith("image/")) {

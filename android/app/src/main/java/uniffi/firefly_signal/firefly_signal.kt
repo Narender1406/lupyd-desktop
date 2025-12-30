@@ -687,6 +687,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_get_conversations(
     ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_get_group_extension(
+    ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_group_info_store(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_group_message_store(
@@ -734,6 +736,12 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_update_role(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_update_user(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_groupinfostore_get_ffi(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_groupinfostore_set_ffi(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi(
     ): Short
@@ -795,6 +803,8 @@ external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_encrypt_and_send
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_get_connection_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_get_conversations(`ptr`: Long,`token`: RustBuffer.ByValue,
+): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_get_group_extension(`ptr`: Long,`groupId`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_group_info_store(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -860,6 +870,12 @@ external fun uniffi_firefly_signal_fn_clone_groupinfostore(`handle`: Long,uniffi
 ): Long
 external fun uniffi_firefly_signal_fn_free_groupinfostore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_firefly_signal_fn_method_groupinfostore_get_all_ffi(`ptr`: Long,
+): Long
+external fun uniffi_firefly_signal_fn_method_groupinfostore_get_ffi(`ptr`: Long,`id`: Long,
+): Long
+external fun uniffi_firefly_signal_fn_method_groupinfostore_set_ffi(`ptr`: Long,`id`: Long,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,`groupStateId`: RustBuffer.ByValue,
+): Long
 external fun uniffi_firefly_signal_fn_clone_groupmessagesstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_firefly_signal_fn_free_groupmessagesstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1035,6 +1051,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_get_conversations() != 56684.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_get_group_extension() != 3133.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_group_info_store() != 50348.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1105,6 +1124,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_update_user() != 46712.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi() != 52813.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_get_ffi() != 49929.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_set_ffi() != 50007.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi() != 2353.toShort()) {
@@ -1748,6 +1776,8 @@ public interface FfiFireflyWsClientInterface {
     
     suspend fun `getConversations`(`token`: kotlin.String): List<FfiConversation>
     
+    suspend fun `getGroupExtension`(`groupId`: kotlin.ULong): kotlin.ByteArray
+    
     fun `groupInfoStore`(): GroupInfoStore
     
     fun `groupMessageStore`(): GroupMessagesStore
@@ -1970,6 +2000,27 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
         { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
         // lift function
         { FfiConverterSequenceTypeFfiConversation.lift(it) },
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `getGroupExtension`(`groupId`: kotlin.ULong) : kotlin.ByteArray {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_get_group_extension(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterByteArray.lift(it) },
         // Error FFI converter
         DumbException.ErrorHandler,
     )
@@ -3348,6 +3399,12 @@ public object FfiConverterTypeFfiMlsGroup: FfiConverter<FfiMlsGroup, Long> {
 //
 public interface GroupInfoStoreInterface {
     
+    suspend fun `getAllFfi`(): List<GroupInfo>
+    
+    suspend fun `getFfi`(`id`: kotlin.ULong): GroupInfo
+    
+    suspend fun `setFfi`(`id`: kotlin.ULong, `name`: kotlin.String, `description`: kotlin.String, `groupStateId`: kotlin.ByteArray)
+    
     companion object
 }
 
@@ -3445,6 +3502,70 @@ open class GroupInfoStore: Disposable, AutoCloseable, GroupInfoStoreInterface
         return uniffiRustCall() { status ->
             UniffiLib.uniffi_firefly_signal_fn_clone_groupinfostore(handle, status)
         }
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `getAllFfi`() : List<GroupInfo> {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_groupinfostore_get_all_ffi(
+                uniffiHandle,
+                
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterSequenceTypeGroupInfo.lift(it) },
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `getFfi`(`id`: kotlin.ULong) : GroupInfo {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_groupinfostore_get_ffi(
+                uniffiHandle,
+                FfiConverterULong.lower(`id`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterTypeGroupInfo.lift(it) },
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `setFfi`(`id`: kotlin.ULong, `name`: kotlin.String, `description`: kotlin.String, `groupStateId`: kotlin.ByteArray) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_groupinfostore_set_ffi(
+                uniffiHandle,
+                FfiConverterULong.lower(`id`),FfiConverterString.lower(`name`),FfiConverterString.lower(`description`),FfiConverterByteArray.lower(`groupStateId`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
     }
 
     
@@ -4948,6 +5069,34 @@ public object FfiConverterSequenceTypeFfiConversation: FfiConverterRustBuffer<Li
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiConversation.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeGroupInfo: FfiConverterRustBuffer<List<GroupInfo>> {
+    override fun read(buf: ByteBuffer): List<GroupInfo> {
+        val len = buf.getInt()
+        return List<GroupInfo>(len) {
+            FfiConverterTypeGroupInfo.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<GroupInfo>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeGroupInfo.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<GroupInfo>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeGroupInfo.write(it, buf)
         }
     }
 }
