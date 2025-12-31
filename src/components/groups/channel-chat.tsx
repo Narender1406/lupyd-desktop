@@ -1,45 +1,93 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/context/auth-context"
+import { bGroupMessageToGroupMessage, EncryptionPlugin, type GroupMessage } from "@/context/encryption-plugin"
+import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+import { toBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
 import { useEffect, useRef, useState } from "react"
+import { UserAvatar } from "../user-avatar"
 
-interface Member {
-  id: string
-  name: string
-  username: string
-  avatar: string
-  isOnline?: boolean
-}
-
-interface Message {
-  id: string
-  channelId: string
-  senderId: string
-  content: string
-  createdAt: string
-}
 
 export function ChannelChat({
-  channelId = "general",
-  members = [],
+  channelId,
+  groupId,
+  extension,
 }: {
-  channelId?: string
-  members?: Member[]
+  channelId: number
+  groupId: number,
+  extension: protos.FireflyGroupExtension
 }) {
-  const [messages, setMessages] = useState<Message[]>(() => seedMessages(channelId))
+  const [messages, setMessages] = useState<GroupMessage[]>([])
   const [draft, setDraft] = useState("")
   const containerRef = useRef<HTMLDivElement | null>(null)
+
+
+
+  const addMessage = (prev: GroupMessage[], msg: GroupMessage) => {
+    if (prev.length > 0) {
+      if (prev[prev.length - 1].id < msg.id) {
+        return [...prev, msg]
+      } else {
+        let i = 0
+        for (; i < prev.length; i++) {
+          if (prev[i].id > msg.id) {
+            break
+          }
+          if (prev[i].id == msg.id) {
+            return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
+          }
+        }
+        return [...prev.slice(0, i), msg, ...prev.slice(i)]
+      }
+    } else {
+      return [msg]
+    }
+  }
+
+  const firefly = useFirefly()
+
+  useEffect(() => {
+
+    const listener: GroupMessageCallbackType = (msg) => {
+      if (msg.groupId == groupId) {
+        const message = protos.GroupMessageInner.decode(msg.text)
+        if (message.channelId == channelId) {
+          setMessages((prev) => addMessage(prev, msg))
+        }
+      }
+    }
+
+    firefly.addGroupEventListener(listener)
+
+    return () => {
+      firefly.removeGroupEventListener(listener)
+    }
+
+  }, [])
+
+
+
 
   // Apply scroll boundary guard to the chat container
   useScrollBoundaryGuard(containerRef)
 
   useEffect(() => {
-    setMessages(seedMessages(channelId))
-    setDraft("")
-  }, [channelId])
+    const startBefore = messages.length == 0 ? Number.MAX_SAFE_INTEGER : messages[0].id
+    const limit = 100
+
+    EncryptionPlugin.getGroupMessages({ groupId, startBefore, limit }).then(({ result }) => {
+      for (const msg of result.map(bGroupMessageToGroupMessage)) {
+        const message = protos.GroupMessageInner.decode(msg.text)
+        if (message.channelId == channelId) {
+          setMessages((prev) => addMessage(prev, msg))
+        }
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const el = containerRef.current
@@ -47,26 +95,34 @@ export function ChannelChat({
     el.scrollTop = el.scrollHeight
   }, [messages])
 
-  const nameById = (id: string) =>
-    members.find((m) => m.id === id)?.name || "User"
 
-  const avatarById = (id: string) =>
-    members.find((m) => m.id === id)?.avatar ||
-    "/abstract-geometric-shapes.png"
-
-  function send() {
+  const auth = useAuth()
+  async function send() {
     const content = draft.trim()
     if (!content) return
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `m${prev.length + 1}`,
-        channelId,
-        senderId: members[0]?.id || "1",
-        content,
-        createdAt: new Date().toISOString(),
-      },
-    ])
+
+
+    const text = protos.GroupMessageInner.encode({
+      channelId,
+      messagePayload: protos.MessagePayload.create({
+        text: content,
+      })
+    }).finish();
+
+    const msg: GroupMessage = {
+      groupId,
+      text: text,
+      sender: auth.username!,
+      id: 0,
+    }
+    const msgId = await EncryptionPlugin.encryptAndSendGroupMessage({
+      textB64: toBase64(text),
+      ...msg
+    })
+
+    msg.id = msgId.messageId
+
+    setMessages((prev) => addMessage(prev, msg))
     setDraft("")
   }
 
@@ -77,36 +133,25 @@ export function ChannelChat({
         ref={containerRef}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white dark:bg-black"
       >
-        {messages.map((m: Message) => (
+        {messages.map((m: GroupMessage) => (
           <div
             key={m.id}
             className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-900 transition"
           >
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={
-                  avatarById(m.senderId) ||
-                  "/placeholder.svg?height=32&width=32"
-                }
-                alt={nameById(m.senderId)}
-              />
-              <AvatarFallback>
-                {nameById(m.senderId).slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar username={m.sender}/>
 
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-medium dark:text-white truncate">
-                  {nameById(m.senderId)}
+                  {m.sender}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(m.createdAt).toLocaleString()}
+                  {new Date(m.id / 1000).toLocaleString()}
                 </span>
               </div>
 
               <div className="text-sm dark:text-white break-words">
-                {m.content}
+                {protos.GroupMessageInner.decode(m.text).messagePayload?.text}
               </div>
             </div>
           </div>
@@ -132,31 +177,4 @@ export function ChannelChat({
       </div>
     </div>
   )
-}
-
-function seedMessages(channelId: string): Message[] {
-  const now = Date.now()
-  return [
-    {
-      id: "m1",
-      channelId,
-      senderId: "1",
-      content: `Welcome to #${channelId}!`,
-      createdAt: new Date(now - 3600_000).toISOString(),
-    },
-    {
-      id: "m2",
-      channelId,
-      senderId: "3",
-      content: "Remember to keep discussions on-topic.",
-      createdAt: new Date(now - 1800_000).toISOString(),
-    },
-    {
-      id: "m3",
-      channelId,
-      senderId: "2",
-      content: "Drop your updates below.",
-      createdAt: new Date(now - 600_000).toISOString(),
-    },
-  ]
 }

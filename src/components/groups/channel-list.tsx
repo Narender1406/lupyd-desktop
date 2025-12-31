@@ -1,7 +1,8 @@
 "use client"
 
-import { Hash, Lock, MoreVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { protos } from "firefly-client-js"
+import { MoreVertical } from "lucide-react"
 
 export interface ChannelListItem {
   id: string
@@ -16,24 +17,31 @@ export function ChannelList({
   selectedId,
   onSelect,
 }: {
-  channels: ChannelListItem[]
+  channels: protos.FireflyGroupChannel[]
   filter?: string
-  selectedId?: string
-  onSelect?: (id: string) => void
+  selectedId?: number
+  onSelect?: (id: number) => void
 }) {
-  const grouped = channels.reduce<Record<string, ChannelListItem[]>>((acc, ch) => {
-    const key = ch.category || "Text"
-    acc[key] = acc[key] || []
-    acc[key].push(ch)
-    return acc
-  }, {})
+  // const grouped = channels.reduce<Record<number, protos.FireflyGroupChannel[]>>((acc, ch) => {
+  //   const key = ch.type
+  //   acc[key] = acc[key] || []
+  //   acc[key].push(ch)
+  //   return acc
+  // }, {})
 
-  const categories = Object.keys(grouped).sort()
+  const grouped = new Map<number, protos.FireflyGroupChannel[]>()
+
+
+  for (const ch of channels) {
+    grouped.set(ch.type, grouped.get(ch.type) || [])
+    grouped.get(ch.type)!.push(ch)
+  }
+
 
   return (
     <div className="py-2">
-      {categories.map((cat) => {
-        const list = grouped[cat]
+      {Array.from(grouped.keys()).map((cat) => {
+        const list = grouped.get(cat)!
           .filter((c) => !filter || c.name.toLowerCase().includes(filter.toLowerCase()))
           .sort((a, b) => a.name.localeCompare(b.name))
         if (!list.length) return null
@@ -57,11 +65,6 @@ export function ChannelList({
                     )}
                     onClick={() => onSelect?.(ch.id)}
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      {ch.isPrivate ? <Lock className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
-                      <span className="truncate">{ch.name}</span>
-                    </div>
-
                     <MoreVertical className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )

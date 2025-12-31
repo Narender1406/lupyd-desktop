@@ -167,11 +167,6 @@ export default function UserCallPage() {
 
       const msg = FireflyProtos.UserMessageInner.decode(message.text)
 
-      if (msg.messagePayload && msg.messagePayload!.text.length > 0) {
-        EncryptionPlugin.showUserNotification(userMessageToBUserMessage(message))
-
-        return
-      }
       if (message.other != other) {
         return
       }

@@ -1,55 +1,20 @@
 "use client"
 
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { ArrowLeft, Upload, Users, Globe, Lock, Check, X, Search } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { useFirefly } from "@/context/firefly-context"
+import { ArrowLeft, Globe, Lock, Upload } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 
-const availableUsers = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    username: "@sarahc",
-    avatar: "/placeholder.svg?height=40&width=40",
-    isOnline: true,
-  },
-  {
-    id: "2",
-    name: "Marcus Johnson",
-    username: "@marcusj",
-    avatar: "/placeholder.svg?height=40&width=40",
-    isOnline: false,
-  },
-  {
-    id: "3",
-    name: "Emma Rodriguez",
-    username: "@emmar",
-    avatar: "/placeholder.svg?height=40&width=40",
-    isOnline: true,
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    username: "@davidk",
-    avatar: "/placeholder.svg?height=40&width=40",
-    isOnline: true,
-  },
-  {
-    id: "5",
-    name: "Lisa Wang",
-    username: "@lisaw",
-    avatar: "/placeholder.svg?height=40&width=40",
-    isOnline: false,
-  },
-]
+import { EncryptionPlugin } from "@/context/encryption-plugin"
+
 
 export default function CreateGroupPage() {
   const navigate = useNavigate()
@@ -59,35 +24,42 @@ export default function CreateGroupPage() {
     avatar: "",
     isPrivate: false,
   })
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
+
   const [isCreating, setIsCreating] = useState(false)
 
-  const filteredUsers = availableUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setGroupData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const toggleMember = (userId: string) => {
-    setSelectedMembers((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]))
-  }
+
+  const firefly = useFirefly()
+
 
   const handleCreateGroup = async () => {
     setIsCreating(true)
 
-    // Simulate group creation
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
 
-    // Navigate to the new group (using a mock ID)
-    navigate("/dashboard/groups/new-group-id")
+      if (groupData.name.length == 0) {
+        throw Error("Group Name is empty")
+      }
+      const groupInfo = await EncryptionPlugin.createGroup({
+        name: groupData.name,
+        //@ts-ignore
+        description: groupData.description
+      })
+
+      navigate(`/dashboard/groups/${groupInfo.groupId}`)
+
+    } catch (e) {
+      console.error(`failed to create group`, e)
+    } finally {
+      setIsCreating(false)
+    }
   }
 
-  const selectedMemberData = availableUsers.filter((user) => selectedMembers.includes(user.id))
 
   return (
     <DashboardLayout>
@@ -187,86 +159,6 @@ export default function CreateGroupPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Member Selection */}
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <CardTitle>Invite Members</CardTitle>
-                <p className="text-sm text-muted-foreground">Select people to invite to your group (optional)</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search for people to invite..."
-                    className="pl-10"
-                  />
-                </div>
-
-                {/* Selected Members */}
-                {selectedMembers.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Selected ({selectedMembers.length})</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedMemberData.map((user) => (
-                        <Badge key={user.id} variant="secondary" className="flex items-center gap-2 pr-1">
-                          <Avatar className="h-4 w-4">
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback className="text-xs">{user.name.slice(0, 2)}</AvatarFallback>
-                          </Avatar>
-                          {user.name}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 hover:bg-red-100"
-                            onClick={() => toggleMember(user.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Available Users */}
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedMembers.includes(user.id)
-                          ? "bg-black text-white border-black"
-                          : "hover:bg-gray-50 border-gray-200"
-                      }`}
-                      onClick={() => toggleMember(user.id)}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{user.name}</p>
-                          {user.isOnline && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
-                        </div>
-                        <p
-                          className={`text-sm ${
-                            selectedMembers.includes(user.id) ? "text-gray-300" : "text-muted-foreground"
-                          }`}
-                        >
-                          {user.username}
-                        </p>
-                      </div>
-                      {selectedMembers.includes(user.id) && <Check className="h-5 w-5" />}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Preview */}
@@ -297,25 +189,6 @@ export default function CreateGroupPage() {
                           {groupData.description || "Group description will appear here"}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {selectedMembers.length + 1} members
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {groupData.isPrivate ? "Private" : "Public"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Settings Summary */}
-                  <div className="space-y-2 text-sm">
-                    <h4 className="font-medium">Settings</h4>
-                    <div className="space-y-1 text-muted-foreground">
-                      <p>• {groupData.isPrivate ? "Private" : "Public"} group</p>
-                      <p>• {selectedMembers.length} initial members</p>
-                      <p>• You will be the group admin</p>
                     </div>
                   </div>
                 </div>

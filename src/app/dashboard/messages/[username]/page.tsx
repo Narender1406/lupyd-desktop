@@ -218,32 +218,9 @@ export default function UserMessagePage() {
   }
 
 
-  // const myCallSession = new CallSession({
-  //   onSendMessage: (callMessage) => {
-  //     sendMessage(FireflyProtos.UserMessageInner.create({ callMessage }))
-  //   }
-  // })
-
   useEffect(() => {
     const callback = async (message: UserMessage) => {
 
-
-      // if (msg.callMessage) {
-      //   const obj = JSON.parse(new TextDecoder().decode(msg.callMessage.message))
-
-      //   if (isCallRequestMessage(obj)) {
-      //     if (obj.exp > Date.now()) {
-      //       console.log(`Call expired ${JSON.stringify(obj)}`)
-      //       return
-      //     }
-      //     EncryptionPlugin.showCallNotification({
-      //       caller: message.from,
-      //       sessionId: obj.sessionId,
-      //       conversationId: message.convoId
-      //     })
-      //   }
-      //   return
-      // }
 
       if (message.other != receiver) {
 
@@ -314,7 +291,7 @@ export default function UserMessagePage() {
 
   async function handleSendMessage() {
     const msg = messageText.trim()
-    if (msg.length == 0) return
+    if (msg.length == 0 && files.length == 0) return
 
     if (sendingMessage) {
       return
@@ -609,7 +586,7 @@ export function MessageElement(props: { message: UserMessage, sender: string, ha
 
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[85%] ${isMine ? "bg-primary text-primary-foreground" : "bg-white border border-gray-200"} rounded-2xl px-3 py-2`}>
+      <div className={`max-w-[85%] ${isMine ? "bg-primary text-primary-foreground" : "bg-white border border-gray-200"} rounded-2xl px-3 py-2 m-0.5`}>
         <div className="text-sm break-words">
           <MessageBody inner={message.text}></MessageBody>
         </div>

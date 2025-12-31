@@ -142,17 +142,31 @@ function App() {
           <Route path="/about/creator-tools" element={<PageTransition><CreatorToolsPage /></PageTransition>} />
           <Route path="/about/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
           <Route path="/signin" element={<PageTransition><AssignUsernamePage /></PageTransition>} />
-          {/*        <Route path="/signin" element={<SignupPage />} />
-*/}
+
           <Route path="/" element={<PageTransition><DashboardPage /></PageTransition>} />
-          {/*        <Route path="/action" element={<ActionHandler />} />
-*/}
+
 
           <Route path="/saved-posts" element={<PageTransition><SavedPostsPage /></PageTransition>} />
           <Route path="/create-post" element={<PageTransition><CreatePostPage /></PageTransition>} />
           <Route path="/connections" element={<PageTransition><ConnectionsPage /></PageTransition>} />
+
+
+          {/*
+          
           <Route path="/analytics" element={<PageTransition><AnalyticsPage /></PageTransition>} />
           <Route path="/activity" element={<PageTransition><ActivityPage /></PageTransition>} />
+          <Route path="/business" element={<PageTransition><OverviewPage /></PageTransition>} />
+          <Route path="/business/clients-page" element={<PageTransition><ClientsPage /></PageTransition>} />
+          <Route path="/business/services-page" element={<PageTransition><ServicesPage /></PageTransition>} />
+          <Route path="/business/add-client-page" element={<PageTransition><AddClientPage /></PageTransition>} />
+          <Route path="/business/edit-client-page" element={<PageTransition><EditClientPage /></PageTransition>} />
+          <Route path="/business/api-key-page" element={<PageTransition><ApiKeyPage /></PageTransition>} />
+          <Route path="/business/clientdetails" element={<PageTransition><ClientDetailsPage /></PageTransition>} />
+          <Route path="/business/add-service-page" element={<PageTransition><AddServicePage /></PageTransition>} />
+          <Route path="/subscription" element={<PageTransition><SubscriptionPage /></PageTransition>} />
+          <Route path="/subscription/checkout" element={<PageTransition><CheckoutPage /></PageTransition>} />
+
+          */}
           <Route path="/settings" element={<PageTransition><SettingsPage /></PageTransition>} />
           <Route path="/blocked-accounts" element={<PageTransition><BlockedAccountsPage /></PageTransition>} />
           <Route path="/groups" element={<PageTransition><GroupsPage /></PageTransition>} />
@@ -160,8 +174,7 @@ function App() {
           <Route path="/groups/:groupid/settings" element={<PageTransition><GroupSettingsPage /></PageTransition>} />
           <Route path="/groups/:groupid/info" element={<PageTransition><GroupInfoPage /></PageTransition>} />
           <Route path="/groups/:groupid/channels" element={<PageTransition><GroupChannelsPage /></PageTransition>} />
-          <Route path="/subscription" element={<PageTransition><SubscriptionPage /></PageTransition>} />
-          <Route path="/subscription/checkout" element={<PageTransition><CheckoutPage /></PageTransition>} />
+
           <Route path="/discover" element={<PageTransition><DiscoverPage /></PageTransition>} />
           <Route path="/post/:postId" element={<PageTransition><PostPage /></PageTransition>} />
           <Route path="/user/:username" element={<PageTransition><ProfilePage /></PageTransition>} />
@@ -171,14 +184,7 @@ function App() {
           <Route path="/notification" element={<PageTransition><NotificationsPage /></PageTransition>} />
           <Route path="/terms-of-use" element={<PageTransition><TermsOfUse /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-          <Route path="/business" element={<PageTransition><OverviewPage /></PageTransition>} />
-          <Route path="/business/clients-page" element={<PageTransition><ClientsPage /></PageTransition>} />
-          <Route path="/business/services-page" element={<PageTransition><ServicesPage /></PageTransition>} />
-          <Route path="/business/add-client-page" element={<PageTransition><AddClientPage /></PageTransition>} />
-          <Route path="/business/edit-client-page" element={<PageTransition><EditClientPage /></PageTransition>} />
-          <Route path="/business/api-key-page" element={<PageTransition><ApiKeyPage /></PageTransition>} />
-          <Route path="/business/clientdetails" element={<PageTransition><ClientDetailsPage /></PageTransition>} />
-          <Route path="/business/add-service-page" element={<PageTransition><AddServicePage /></PageTransition>} />
+
         </Routes>
       </AnimatePresence>
     </Suspense>

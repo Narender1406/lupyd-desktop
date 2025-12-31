@@ -1,18 +1,20 @@
 "use client"
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Hash, Lock, Menu, Settings, Users, ListChecks } from "lucide-react"
-import { ChannelList } from "@/components/groups/channel-list"
 import { ChannelChat } from "@/components/groups/channel-chat"
+import { ChannelList } from "@/components/groups/channel-list"
 import { ChannelProjects } from "@/components/groups/channel-projects"
 import { GroupTasks, type Member as TaskMember } from "@/components/groups/group-tasks"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { useAuth } from "@/context/auth-context"
+import { EncryptionPlugin } from "@/context/encryption-plugin"
+import { fromBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
+import { ListChecks, Settings, Users } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
 
@@ -49,52 +51,68 @@ const mockMembers: Member[] = [
   { id: "5", name: "Lisa Wang", username: "@lisaw", avatar: "/lisa-avatar.jpg", role: "member" },
 ]
 
-function seedChannels(groupId: string): Channel[] {
-  return [
-    { id: "general", name: "general", topic: "Announcements and chat", category: "Text" },
-    { id: "design", name: "design", topic: "Design reviews & assets", category: "Projects" },
-    {
-      id: "engineering",
-      name: "engineering",
-      topic: "Updates & PR reviews",
-      category: "Projects",
-      isPrivate: groupId === "2",
-    },
-  ]
-}
-
 export function GroupWorkspacePane({
   groupId,
   groupName = "Group",
 }: {
-  groupId: string
+  groupId: number
   groupName?: string
 }) {
   const navigate = useNavigate()
 
-  const [channels, setChannels] = useState<Channel[]>(() => seedChannels(groupId))
-  const [selectedChannelId, setSelectedChannelId] = useState<string>(channels[0]?.id || "general")
+
+  const [extensionBytes, setExtensionBytes] = useState(new Uint8Array())
+
+
+  useEffect(() => {
+
+    EncryptionPlugin.getGroupExtension({ groupId }).then(({ resultB64 }) => {
+      const extension = fromBase64(resultB64)
+      setExtensionBytes(extension)
+    })
+
+  }, [])
+
+
+
+  const groupExtension = useMemo(() => protos.FireflyGroupExtension.decode(extensionBytes), [extensionBytes])
+
+  const [selectedChannelId, setSelectedChannelId] = useState<number | undefined>(groupExtension.channels?.channels[0]?.id)
   const [filter, setFilter] = useState("")
-  const [role, setRole] = useState<RoleKey>("member")
+
+  const auth = useAuth()
+
+  const role = useMemo(() => {
+
+    const member = groupExtension.members?.members?.find(e => e.username == auth.username)
+    if (member) {
+      const role = groupExtension.roles?.roles?.find(e => e.id == member.role)
+      if (role) {
+        return role.name
+      }
+    }
+
+    return undefined
+
+  }, [auth, groupExtension])
+
+
   const [openChannelsSheet, setOpenChannelsSheet] = useState(false)
   const [openTasks, setOpenTasks] = useState(false)
 
-  useEffect(() => {
-    const seeded = seedChannels(groupId)
-    setChannels(seeded)
-    setSelectedChannelId(seeded[0]?.id || "general")
-  }, [groupId])
 
   useEffect(() => {
     const url = new URL(window.location.href)
-    url.searchParams.set("c", selectedChannelId)
-    window.history.replaceState({}, "", url.toString())
+    if (selectedChannelId) {
+      url.searchParams.set("c", selectedChannelId!.toString())
+      window.history.replaceState({}, "", url.toString())
+    }
   }, [selectedChannelId])
 
-  const selectedChannel = useMemo(
-    () => channels.find((c) => c.id === selectedChannelId) ?? channels[0],
-    [channels, selectedChannelId],
-  )
+
+  const selectedChannel = useMemo(() =>
+    groupExtension?.channels?.channels?.find(e => e.id == selectedChannelId), [selectedChannelId, groupExtension])
+
 
   const header = (
     <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b bg-white dark:bg-black">
@@ -127,26 +145,11 @@ export function GroupWorkspacePane({
                 placeholder="Filter channels"
                 className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
               />
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Role</span>
-                <Select value={role} onValueChange={(v: RoleKey) => setRole(v)}>
-                  <SelectTrigger className="h-8 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="owner">Owner</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="guest">Guest</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="overflow-y-auto">
               <ChannelList
-                channels={channels}
+                channels={groupExtension.channels?.channels ?? []}
                 filter={filter}
                 selectedId={selectedChannelId}
                 onSelect={(id) => {
@@ -207,29 +210,17 @@ export function GroupWorkspacePane({
               className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
             />
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Role</span>
-              <Select value={role} onValueChange={(v: RoleKey) => setRole(v)}>
-                <SelectTrigger className="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="owner">Owner</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="guest">Guest</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             <ChannelList
-              channels={channels}
+              channels={groupExtension.channels?.channels ?? []}
               filter={filter}
               selectedId={selectedChannelId}
-              onSelect={setSelectedChannelId}
+              onSelect={(id) => {
+                setSelectedChannelId(id)
+                setOpenChannelsSheet(false)
+              }}
             />
           </div>
         </aside>
@@ -240,42 +231,23 @@ export function GroupWorkspacePane({
           {/* Channel header */}
           <div className="px-3 md:px-4 py-2 border-b flex items-center justify-between bg-white dark:bg-black">
             <div className="flex items-center gap-2 min-w-0">
-              {selectedChannel?.isPrivate ? (
-                <Lock className="h-5 w-5" />
-              ) : (
-                <Hash className="h-5 w-5" />
-              )}
+
               <h2 className="font-semibold truncate">{selectedChannel?.name}</h2>
 
-              {selectedChannel?.category && (
+              {selectedChannel?.type && (
                 <Badge variant="outline" className="text-xs">
-                  {selectedChannel.category}
+                  {channelTypeToText(selectedChannel.type)}
                 </Badge>
               )}
-            </div>
-
-            <div className="hidden md:flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="bg-transparent dark:text-white"
-                onClick={() => {
-                  const topic = prompt("Set channel topic", selectedChannel?.topic ?? "") ?? selectedChannel?.topic
-                  if (topic !== undefined) {
-                    setChannels((prev) =>
-                      prev.map((c) => (c.id === selectedChannelId ? { ...c, topic: topic ?? "" } : c)),
-                    )
-                  }
-                }}
-              >
-                Edit Topic
-              </Button>
             </div>
           </div>
 
           {/* Chat */}
-          <div className="flex-1 min-h-0">
-            <ChannelChat channelId={selectedChannelId} members={mockMembers} />
-          </div>
+          {
+            selectedChannelId &&
+            <div className="flex-1 min-h-0">
+              <ChannelChat channelId={selectedChannelId} groupId={groupId} extension={groupExtension} />
+            </div>}
 
           {/* Composer */}
           <div className="border-t p-2 md:p-3 sticky bottom-0 bg-white dark:bg-black hidden md:block">
@@ -308,4 +280,13 @@ export function GroupWorkspacePane({
       </div>
     </div>
   )
+}
+
+function channelTypeToText(ty: number) {
+  switch (ty) {
+    case 1:
+      return "Text"
+    case 2:
+      return "Voice"
+  }
 }

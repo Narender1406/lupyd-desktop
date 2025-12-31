@@ -11,8 +11,8 @@ android {
         applicationId "com.lupyd.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "0.0.5"
+        versionCode 7
+        versionName "0.0.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -20,6 +20,11 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+
+      lint {
+        disable "NullSafeMutableLiveData"
+      }    
 
 
     signingConfigs {
@@ -109,6 +114,8 @@ dependencies {
     implementation("io.ktor:ktor-server-core:3.3.1")
     implementation("io.ktor:ktor-server-cio:3.3.1")
     implementation("io.ktor:ktor-server-cors:3.3.1")
+    implementation("io.ktor:ktor-server-call-logging:3.3.1")
+    implementation("io.ktor:ktor-server-status-pages:3.3.1")
     implementation("io.ktor:ktor-server-host-common:3.3.1")
 
     implementation ("com.nimbusds:nimbus-jose-jwt:10.5")
@@ -121,8 +128,10 @@ dependencies {
 
 
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
+
+    implementation "androidx.lifecycle:lifecycle-process:2.10.0"
 
 
 

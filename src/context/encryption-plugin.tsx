@@ -1,8 +1,8 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 
-import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core'
-import { protos as FireflyProtos } from "firefly-client-js";
 import { decryptBlobV1 } from "@/lib/utils";
+import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core';
+import { protos as FireflyProtos } from "firefly-client-js";
 
 
 export interface BUserMessage {
@@ -16,6 +16,7 @@ export interface BGroupMessage {
   sender: string,
   groupId: number,
   textB64: string,
+  id: number,
 }
 
 
@@ -138,14 +139,44 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 
 
+
+async function streamToUint8Array(stream: ReadableStream<Uint8Array>, capacity: number = 1024) {
+  let out = new Uint8Array(Math.min(capacity, 1024))
+  const reader = stream.getReader()
+  let bytesRead = 0
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+
+
+    if (bytesRead + value.byteLength > out.byteLength) {
+      const newOut = new Uint8Array(out.byteLength + Math.max(value.byteLength, out.byteLength))
+      newOut.set(out.subarray(0, bytesRead), 0)
+      out = newOut
+    }
+    
+    out.set(value, bytesRead)
+    bytesRead += value.byteLength
+  }
+
+
+  return out.subarray(0, bytesRead)
+}
+
+
 export const getFileUrl = (fileUrl: string, fileServerUrl: string, fileServerToken: string) => {
-  const pathname = new URL(fileUrl).pathname
+  let pathname = new URL(fileUrl).pathname
+  if (pathname.startsWith("/")) {
+    pathname = pathname.substring(1)
+  }
   const filename = pathname
   return `${fileServerUrl}/decrypted/${filename}?token=${fileServerToken}`
 }
 
 export const decryptStreamAndSave = async (
   file: FireflyProtos.EncryptedFile,
+  bufferAll: boolean = true,
 ) => {
   const response = await fetch(file.url);
 
@@ -162,7 +193,9 @@ export const decryptStreamAndSave = async (
 
     const response = await fetch(getFileUrl(file.url, url, token), {
       method: "PUT",
-      body: stream
+      body: bufferAll ? await streamToUint8Array(stream, file.contentLength): stream, // stupid browsers won't let you stream request
+      //@ts-ignore
+      duplex: "half",
     })
 
     if (!response.ok) {

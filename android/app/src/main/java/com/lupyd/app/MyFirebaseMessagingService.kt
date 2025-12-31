@@ -20,13 +20,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.protobuf.ByteString
 import uniffi.firefly_signal.UserMessage
 
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var db: AppDatabase
-//    lateinit var encryptionWrapper: EncryptionWrapper
+
 
     lateinit var notificationHandler: NotificationHandler
 
@@ -35,13 +37,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @OptIn(DelicateCoroutinesApi::class)
     private val scope = GlobalScope
 
-    // SharedPreferences for persisting notification messages
+
 
     override fun onCreate() {
         super.onCreate()
 
         db = getDatabase(this)
-//        encryptionWrapper = EncryptionWrapper(this, this::handleDecryptedMessage)
+
         notificationHandler = NotificationHandler(this)
         fireflyClient = FireflyClient.getInstance(this)
 
@@ -50,7 +52,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     override fun onDestroy() {
-//        scope.cancel()
+
         super.onDestroy()
         fireflyClient.removeOnMessageCallback (this::handleDecryptedMessage)
     }
@@ -82,48 +84,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             handleNotification(remoteMessage)
         }
 
-//        // Handle notification payload (when app is in foreground)
-//        if (remoteMessage.getNotification() != null) {
-//            Log.d(
-//                TAG,
-//                "Processing notification payload: " + remoteMessage.getNotification()!!.getTitle()
-//            )
-//            val originalTitle = if (remoteMessage.getNotification()!!
-//                    .getTitle() != null
-//            ) remoteMessage.getNotification()!!.getTitle() else "Notification"
-//            val convertedTitle = originalTitle + "+++ (converted)"
-//
-//            showLocalNotification(
-//                convertedTitle,
-//                if (remoteMessage.getNotification()!!
-//                        .getBody() != null
-//                ) remoteMessage.getNotification()!!.getBody() else "You have a new message"
-//            )
-//        }
-//
-//
-//        // Handle data payload (works in all app states: foreground, background, closed)
-//        if (remoteMessage.getData().size > 0) {
-//            Log.d(TAG, "Processing data payload: " + remoteMessage.getData())
-//
-//
-//            // Extract title and body from data
-//            val title = remoteMessage.getData().get("title")
-//            val body = remoteMessage.getData().get("body")
-//            val message = remoteMessage.getData().get("message")
-//
-//
-//            // Convert to local notification
-//            val originalTitle = if (title != null) title else "Notification"
-//            val convertedTitle = originalTitle + "+++ (converted)"
-//
-//            showLocalNotification(
-//                convertedTitle,
-//                if (body != null) body else (if (message != null) message else "You have a new message")
-//            )
-//        }
-//
-//        Log.d(TAG, "=== PUSH NOTIFICATION PROCESSED ===")
     }
 
     private fun handleNotification(remoteMessage: RemoteMessage) {
@@ -146,9 +106,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val inner = Message.UserMessageInner.parseFrom(msg.message)
 
-        if (inner.hasMessagePayload()) {
-            Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
-            notificationHandler.showUserBundledNotification(msg)
+        if (inner.hasMessagePayload() && msg.sentByOther) {
+            val isForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
+                Lifecycle.State.STARTED)
+
+            if (!isForeground) {
+                Log.i(TAG, "Showing decrypted message notification ${inner.toString()}");
+                notificationHandler.showUserBundledNotification(msg)
+            }
+
         }
 
 

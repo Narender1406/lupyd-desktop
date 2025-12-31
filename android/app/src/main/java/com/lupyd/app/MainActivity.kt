@@ -82,7 +82,9 @@ class MainActivity : BridgeActivity() {
             }
 
         })
-        server = FileServer(rootDir = application.filesDir)
+
+        Log.i("lupyd-cap", "creating FileServer")
+        server = FileServer(rootDir = application.filesDir, port = 62510)
 
         serverThread = Thread {
             server.startServer()

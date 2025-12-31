@@ -7,14 +7,21 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type UserMessage } from "./encryption-plugin";
+import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
 
+export type GroupMessageCallbackType = (message: GroupMessage) => void;
+
 type FireflyContextType = {
   addEventListener: (cb: MessageCallbackType) => void,
   removeEventListener: (cb: MessageCallbackType) => void,
+
+  addGroupEventListener: (cb: GroupMessageCallbackType) => void,
+  removeGroupEventListener: (cb: GroupMessageCallbackType) => void,
+
+
   encryptAndSend: (other: string, text: Uint8Array) => Promise<UserMessage>,
   service: fireflyClientJs.FireflyService
 }
@@ -30,6 +37,8 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
 
 
   const eventListeners = useRef(new Set<MessageCallbackType>())
+
+  const groupEventListeners = useRef(new Set<GroupMessageCallbackType>())
 
 
   const apiUrl = process.env.NEXT_PUBLIC_JS_ENV_CHAT_API_URL
@@ -112,8 +121,19 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
   }
 
 
+
+  const addGroupEventListener = (cb: GroupMessageCallbackType) => {
+    groupEventListeners.current.add(cb)
+  }
+  const removeGroupEventListener = (cb: GroupMessageCallbackType) => {
+    groupEventListeners.current.delete(cb)
+  }
+
+
+
   return <FireflyContext.Provider value={{
     addEventListener, removeEventListener,
+    addGroupEventListener, removeGroupEventListener,
     service,
     encryptAndSend,
   }}> {children} </FireflyContext.Provider>
