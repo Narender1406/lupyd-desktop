@@ -320,7 +320,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Page Content */}
         <div
           className="flex-1 w-full"
-          style={{ paddingTop: '64px' }}
+          style={{ paddingTop: '16px' }}
         >
           <div className="container mx-auto p-4 max-w-full">
             {children}
