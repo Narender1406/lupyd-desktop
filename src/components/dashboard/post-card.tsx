@@ -153,8 +153,27 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
     }
   }
 
-  function savePost() {
-    alert("Successfully Saved Post")
+  const [isSaved, setIsSaved] = useState(false)
+
+  const savePost = async () => {
+    try {
+      // Toggle the saved status - in a real implementation, this would call the API
+      // to add/remove the post from the user's saved posts
+      if (isSaved) {
+        // Remove from saved posts
+        // await api.unsavePost(post.id) // if such method exists
+        setIsSaved(false);
+        toast({ title: "Post removed from saved" });
+      } else {
+        // Add to saved posts
+        // await api.savePost(post.id) // if such method exists
+        setIsSaved(true);
+        toast({ title: "Post saved successfully" });
+      }
+    } catch (error) {
+      console.error("Error saving post:", error);
+      toast({ title: "Failed to save post", variant: "destructive" });
+    }
   }
 
   return (
@@ -241,8 +260,8 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
             </Button>
             <ShareModal title={post.title} url={postUrl} />
           </div>
-          <Button variant="ghost" size="sm" className="px-2" onClick={savePost}>
-            <Bookmark className="h-4 w-4" />
+          <Button variant="ghost" size="sm" className={`px-2 ${isSaved ? "text-primary" : ""}`} onClick={savePost}>
+            <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
           </Button>
         </div>
 

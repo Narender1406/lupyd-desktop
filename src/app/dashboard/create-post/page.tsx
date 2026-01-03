@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -488,9 +487,25 @@ export default function CreatePostPage() {
 
   }
 
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect Mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkIfMobile()
+    window.addEventListener("resize", checkIfMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkIfMobile)
+    }
+  }, [])
+
   return (
     <DashboardLayout /*activeTab="create-post"*/>
-      <div className="container max-w-6xl px-4 py-6 mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div className="container max-w-6xl px-4 py-6 mx-auto" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
         <h1 className="text-2xl font-bold mb-6">
           {isDraft ? "Edit Draft" : "Create Post"}
           {isDraft && (
@@ -1282,8 +1297,7 @@ export default function CreatePostPage() {
                       type="button"
                       variant="outline"
                       className="w-full sm:w-auto bg-transparent"
-                      onClick={() => router("/")}
-                    >
+                      onClick={() => router("/")}>
                       Cancel
                     </Button>
                   </CardFooter>

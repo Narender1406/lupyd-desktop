@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { UserAvatar } from "@/components/user-avatar"
 import { useApiService } from "@/context/apiService"
 import { useAuth } from "@/context/auth-context"
@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [isMobile, setIsMobile] = useState(false)
 
   const [posts, setPosts] = useState<PostProtos.FullPost[]>([])
+  const [savedPosts, setSavedPosts] = useState<PostProtos.FullPost[]>([])
   const [user, setUser] = useState<UserProtos.User | null>(null)
 
   const params = useParams()
@@ -93,6 +94,31 @@ export default function ProfilePage() {
     setIsFollowing(userData.follows.includes(getUsername()!))
   }, [auth, userData])
 
+  // Load saved posts only when viewing own profile
+  useEffect(() => {
+    const loadSavedPosts = async () => {
+      if (auth.username === getUsername()) {
+        try {
+          // In a real implementation, this would fetch from the backend
+          // For now, we'll simulate loading saved posts from localStorage or a similar mechanism
+          // This is a placeholder implementation
+          console.log("Loading saved posts for current user");
+          
+          // For now, we'll just set an empty array since the API doesn't seem to have a method for this
+          setSavedPosts([]);
+        } catch (error) {
+          console.error("Error loading saved posts:", error);
+          setSavedPosts([]);
+        }
+      } else {
+        // If viewing another user's profile, saved posts should not be shown
+        setSavedPosts([]);
+      }
+    };
+
+    loadSavedPosts();
+  }, [auth.username, getUsername()])
+
   const handleFollow = async () => {
     const username = getUsername()
     if (!username) return
@@ -124,9 +150,12 @@ export default function ProfilePage() {
 
   }
 
+  // Check if viewing own profile to determine if saved posts should be shown
+  const isOwnProfile = auth.username === getUsername()
+
   return (
     <DashboardLayout>
-      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
         {/* Main Content */}
         <div className="flex-1">
           {/* Profile Header */}
@@ -135,7 +164,7 @@ export default function ProfilePage() {
             <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-b-lg" />
 
             {/* Profile Picture & Basic Info */}
-            <div className="px-4 md:px-8 -mt-16 md:-mt-20 relative z-10">
+            <div className="px-4 md:px-8 mt-4 relative z-10"> {/* Reduced mt-4 to mt-2 if needed */}
               <div className="flex flex-col md:flex-row md:items-end">
                 <div className="relative">
                   <UserAvatar username={getUsername() ?? ""} />
@@ -241,7 +270,7 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between mb-4">
                     <TabsList>
                       <TabsTrigger value="posts">Posts</TabsTrigger>
-                      <TabsTrigger value="saved">Saved</TabsTrigger>
+                      {isOwnProfile && <TabsTrigger value="saved">Saved</TabsTrigger>}
                       <TabsTrigger value="tagged">Tagged</TabsTrigger>
                     </TabsList>
                     <div className="flex space-x-2">
@@ -280,12 +309,22 @@ export default function ProfilePage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="saved">
-                    <div className="text-center py-12">
-                      <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
-                      <p className="text-gray-500 mt-4">No saved posts yet</p>
-                    </div>
-                  </TabsContent>
+                  {isOwnProfile && (
+                    <TabsContent value="saved">
+                      <div className="space-y-4">
+                        {savedPosts.length > 0 ? (
+                          savedPosts.map((post) => (
+                            <PostCard key={ulidStringify(post.id)} post={post} />
+                          ))
+                        ) : (
+                          <div className="text-center py-12">
+                            <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
+                            <p className="text-gray-500 mt-4">No saved posts yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                  )}
 
                   <TabsContent value="tagged">
                     <div className="text-center py-12">

@@ -1,14 +1,14 @@
 "use client"
 
 
-import react, { useEffect, useMemo, useState } from "react"
+import react from "react"
 import { Link } from "react-router-dom"
 import { AnimatedCard } from "@/components/animated-card"
 import { useAuth } from "@/context/auth-context"
 import { useFirefly } from "@/context/firefly-context"
 import { dateToRelativeString } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { protos as FireflyProtos, FireflyWsClient } from "firefly-client-js"
+import { protos as FireflyProtos } from "firefly-client-js"
 import { UserAvatar } from "@/components/user-avatar"
 import { MessageBody } from "./[username]/page"
 import { bUserMessageToUserMessage, EncryptionPlugin, type UserMessage } from "@/context/encryption-plugin"
@@ -199,8 +199,20 @@ export default function MessagesPage() {
   // )
 
 
+  const [isMobile, setIsMobile] = react.useState(false)
+
+  react.useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
   return (<DashboardLayout>
-    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
       <div className="divide-y w-full">
         {lastConversations.length == 0 &&
           <div className="flex items-center justify-center h-screen">
@@ -220,7 +232,7 @@ export default function MessagesPage() {
 
 function ConversationElement(props: { conversation: { count: number, message: UserMessage}, sender: string, index: number }) {
 
-  const { conversation, sender, index } = props
+  const { conversation, index } = props
 
   const username = conversation.message.other
   const lastTs = new Date(Number(conversation.message.id / 1000))

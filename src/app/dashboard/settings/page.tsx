@@ -152,9 +152,21 @@ export default function SettingsPage() {
   //   avatar: "/placeholder.svg?height=40&width=40",
   // }
 
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings and preferences</p>
@@ -346,7 +358,7 @@ export default function SettingsPage() {
         <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
         <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
         <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-        By using Lupyd, you agree to follow our community standards and respect others’ rights.  
+        By using Lupyd, you agree to follow our community standards and respect others' rights.  
         Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.  
         We encourage you to read and understand them carefully.
          </p>
@@ -358,7 +370,8 @@ export default function SettingsPage() {
              dark:bg-white dark:text-black dark:hover:bg-gray-200 
              transition text-sm font-medium"
             >
-          Terms Of Use
+        Terms Of Use
+        
           </Link>
           </div>
           {/* Terms Section */}
@@ -482,7 +495,7 @@ function PrivacySection() {
                 <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm shadow-lg animate-fadeIn">
                   <h2 className="text-lg font-semibold mb-2">No Blocked Contacts</h2>
                   <p className="text-gray-600 mb-4 text-sm">
-                    You haven’t blocked anyone yet. When you block someone, their name
+                    You haven't blocked anyone yet. When you block someone, their name
                     will appear here.
                   </p>
                   <Button

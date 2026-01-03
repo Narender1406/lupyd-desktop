@@ -157,7 +157,7 @@ export default function NotificationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-white" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div className="min-h-screen bg-white pb-24 md:pb-0">
         <div className="max-w-4xl mx-auto py-8 px-4">
           {/* Back Arrow */}
           <Button

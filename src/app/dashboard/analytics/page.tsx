@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { BarChart3, Crown, Download, Lock, TrendingUp, Users, Zap } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function AnalyticsPage() {
   const [showPremiumDialog, setShowPremiumDialog] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
 
   return (
     <DashboardLayout>
       <div className="w-full min-h-screen flex items-center justify-center 
-        bg-gray-50 dark:bg-black p-4">
+        bg-gray-50 dark:bg-black p-4" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 1rem)' : '0px' }}>
 
         <Card className="max-w-md w-full mx-4 shadow-2xl 
           border-2 border-black dark:border-gray-800 

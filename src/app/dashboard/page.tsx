@@ -8,12 +8,11 @@ import { UserCard } from "@/components/dashboard/user-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Compass, Home, Loader2, MessageSquare, Settings, TrendingUp, User } from "lucide-react"
+import { Loader2, TrendingUp } from "lucide-react"
 import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type GetPostsData } from "lupyd-js"
 import { useEffect, useState } from "react"
 import InfiniteScroll from "react-infinite-scroll-component"
 
-import { NavBar } from "@/components/ui/tubelight-navbar"
 import { useApiService } from "@/context/apiService"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
@@ -23,7 +22,6 @@ import store from "store2"
 export default function DashboardPage() {
   const [suggestedUsers] = useState<UserProtos.User[]>([])
   const [trendingHashtags, setTrendingHashtags] = useState<PostProtos.PostHashtag[]>([])
-  const [isMobile, setIsMobile] = useState(false)
 
   const { api } = useApiService()
 
@@ -33,27 +31,9 @@ export default function DashboardPage() {
     }).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkIsMobile()
-    window.addEventListener('resize', checkIsMobile)
-    return () => window.removeEventListener('resize', checkIsMobile)
-  }, [])
-
-  const navItems = [
-    { name: 'Home', url: '/', icon: Home },
-    { name: 'Messages', url: '/messages', icon: MessageSquare },
-    { name: 'Discover', url: '/discover', icon: Compass },
-    { name: 'Profile', url: '/user', icon: User },
-    { name: 'Settings', url: '/settings', icon: Settings },
-  ]
-
   return (
     <DashboardLayout >
-      <Tabs defaultValue="feed" className="w-full" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <Tabs defaultValue="feed" className="w-full">
         <TabsList className="mb-6 bg-transparent border-b w-full justify-start rounded-none p-0 h-auto overflow-x-auto">
           <TabsTrigger
             value="feed"
@@ -175,9 +155,6 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
       </Tabs>
-      {isMobile && (
-        <NavBar items={navItems} className="fixed bottom-0" />
-      )}
     </DashboardLayout>
   )
 }

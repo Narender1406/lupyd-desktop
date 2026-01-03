@@ -5,131 +5,52 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PostCard } from "@/components/dashboard/post-card"
 
 import { AnimatedCard } from "@/components/animated-card"
 import { Bookmark, Grid, List, Search, Filter, Clock, ImageIcon, Video, Link2 } from "lucide-react"
-
-// Mock saved posts data
-const savedPosts = [
-  {
-    id: "post1",
-    author: {
-      id: "user1",
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "SJ",
-    },
-    content: {
-      text: "Just finished working on my latest design project! Really excited about how it turned out. What do you think?",
-      image: {
-        src: "/placeholder.svg?height=400&width=600",
-        alt: "Design project",
-        width: 600,
-        height: 400,
-      },
-    },
-    stats: {
-      likes: 324,
-      comments: 56,
-    },
-    timestamp: "2 days ago",
-    savedAt: "Yesterday at 3:45 PM",
-  },
-  {
-    id: "post2",
-    author: {
-      id: "user2",
-      name: "Alex Chen",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "AC",
-    },
-    content: {
-      text: 'Just published my article on "The Future of AI in Social Networking". Check it out and let me know your thoughts!',
-      link: {
-        title: "The Future of AI in Social Networking",
-        description: "Exploring how artificial intelligence is reshaping our online social experiences...",
-        url: "#",
-      },
-    },
-    stats: {
-      likes: 189,
-      comments: 42,
-    },
-    timestamp: "1 week ago",
-    savedAt: "3 days ago at 10:15 AM",
-  },
-  {
-    id: "post3",
-    author: {
-      id: "user3",
-      name: "Emily Wong",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "EW",
-    },
-    content: {
-      text: "Here's a quick tutorial on creating responsive layouts with CSS Grid. Hope you find it useful!",
-      video: {
-        src: "#",
-        thumbnail: "/placeholder.svg?height=400&width=600",
-        alt: "CSS Grid Tutorial",
-        width: 600,
-        height: 400,
-      },
-    },
-    stats: {
-      likes: 256,
-      comments: 38,
-    },
-    timestamp: "2 weeks ago",
-    savedAt: "1 week ago at 5:30 PM",
-  },
-  {
-    id: "post4",
-    author: {
-      id: "user4",
-      name: "Michael Brown",
-      avatar: "/placeholder.svg?height=40&width=40",
-      avatarFallback: "MB",
-    },
-    content: {
-      text: "Just launched our new product! After months of hard work, I'm proud to share what our team has built. Check out the link for more details.",
-      link: {
-        title: "New Product Launch",
-        description: "Introducing our latest innovation that will change how you work...",
-        url: "#",
-      },
-    },
-    stats: {
-      likes: 412,
-      comments: 87,
-    },
-    timestamp: "3 weeks ago",
-    savedAt: "2 weeks ago at 9:20 AM",
-  },
-]
+import { PostProtos, ulidStringify } from "lupyd-js"
 
 export default function SavedPostsPage() {
   const [view, setView] = useState<"grid" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [savedPosts, setSavedPosts] = useState<PostProtos.FullPost[]>([])
+
+  // Load saved posts
+  useState(() => {
+    const loadSavedPosts = async () => {
+      try {
+        // In a real implementation, this would fetch saved posts from the API
+        // For now, we'll just set an empty array since the API doesn't seem to have a method for this
+        // This is a placeholder until the backend API is ready
+        console.log("Loading saved posts");
+        setSavedPosts([]);
+      } catch (error) {
+        console.error("Error loading saved posts:", error);
+        setSavedPosts([]);
+      }
+    };
+
+    loadSavedPosts();
+  });
 
   // Filter posts based on search query and active tab
   const filteredPosts = savedPosts.filter((post) => {
     const matchesSearch =
-      post.content.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.author.name.toLowerCase().includes(searchQuery.toLowerCase())
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.by.toLowerCase().includes(searchQuery.toLowerCase())
 
     if (activeTab === "all") return matchesSearch
-    if (activeTab === "images") return matchesSearch && post.content.image
-    if (activeTab === "videos") return matchesSearch && post.content.video
-    if (activeTab === "links") return matchesSearch && post.content.link
+    // Additional filtering logic would go here based on post content
+    // For now, since we don't have actual saved posts, this is just a placeholder
 
     return matchesSearch
   })
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 md:pb-0">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Saved Posts</h1>
           <p className="text-muted-foreground">Posts you've bookmarked for later</p>
@@ -217,10 +138,9 @@ export default function SavedPostsPage() {
             {filteredPosts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
                 {filteredPosts.map((post, index) => (
-                  <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    {/*                    <PostCard post={post} />
-                    TODO: saved posts
-*/}                  </AnimatedCard>
+                  <AnimatedCard key={ulidStringify(post.id)} delay={0.1 * (index + 1)}>
+                    <PostCard post={post} />
+                  </AnimatedCard>
                 ))}
               </div>
             ) : (
@@ -243,10 +163,15 @@ export default function SavedPostsPage() {
             {/* Similar content structure as "all" tab but filtered for images */}
             {filteredPosts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
-                {filteredPosts.map((post, index) => (
-                  <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <div/>
-                    {/**/}
+                {filteredPosts
+                  .filter(() => {
+                    // Filter for posts with images - this is a placeholder
+                    // In a real implementation, we would check the post content for images
+                    return true;
+                  })
+                  .map((post, index) => (
+                  <AnimatedCard key={ulidStringify(post.id)} delay={0.1 * (index + 1)}>
+                    <PostCard post={post} />
                   </AnimatedCard>
                 ))}
               </div>
@@ -270,9 +195,15 @@ export default function SavedPostsPage() {
             {/* Similar content structure as "all" tab but filtered for videos */}
             {filteredPosts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
-                {filteredPosts.map((post, index) => (
-                  <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <div/>
+                {filteredPosts
+                  .filter(() => {
+                    // Filter for posts with videos - this is a placeholder
+                    // In a real implementation, we would check the post content for videos
+                    return true;
+                  })
+                  .map((post, index) => (
+                  <AnimatedCard key={ulidStringify(post.id)} delay={0.1 * (index + 1)}>
+                    <PostCard post={post} />
                   </AnimatedCard>
                 ))}
               </div>
@@ -296,9 +227,15 @@ export default function SavedPostsPage() {
             {/* Similar content structure as "all" tab but filtered for links */}
             {filteredPosts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
-                {filteredPosts.map((post, index) => (
-                  <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <div/>
+                {filteredPosts
+                  .filter(() => {
+                    // Filter for posts with links - this is a placeholder
+                    // In a real implementation, we would check the post content for links
+                    return true;
+                  })
+                  .map((post, index) => (
+                  <AnimatedCard key={ulidStringify(post.id)} delay={0.1 * (index + 1)}>
+                    <PostCard post={post} />
                   </AnimatedCard>
                 ))}
               </div>
@@ -322,9 +259,14 @@ export default function SavedPostsPage() {
             {/* Similar content structure as "all" tab but sorted by savedAt date */}
             {filteredPosts.length > 0 ? (
               <div className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
-                {filteredPosts.map((post, index) => (
-                  <AnimatedCard key={post.id} delay={0.1 * (index + 1)}>
-                    <div/>
+                {filteredPosts
+                  .sort((a, b) => {
+                    // Sort by ID timestamp as a proxy for save time - this is a placeholder
+                    return ulidStringify(b.id).localeCompare(ulidStringify(a.id));
+                  })
+                  .map((post, index) => (
+                  <AnimatedCard key={ulidStringify(post.id)} delay={0.1 * (index + 1)}>
+                    <PostCard post={post} />
                   </AnimatedCard>
                 ))}
               </div>
