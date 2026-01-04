@@ -234,8 +234,8 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
           </LazyLoad>
         )}
 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -266,29 +266,29 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
         </div>
 
         {showComments && (
-          <div className={`mt-4 pt-4 border-t ${props.isComment ? 'mt-2 pt-2' : ''}`}>
-            <div className={`flex items-center space-x-2 mb-4 ${props.isComment ? 'mb-2' : ''}`}>
-              <UserAvatar username={auth.username ?? ""} />
+          <div className={`mt-1 pt-1 border-t ${props.isComment ? 'mt-2 pt-2' : ''}`}>
+            <div className={`flex items-center space-x-1 mb-1 ${props.isComment ? 'mb-2' : ''}`}>
+              <UserAvatar username={auth.username ?? ""} className="w-7 h-7" />
               <Input
                 placeholder="Write a comment..."
-                className={`flex-1 ${props.isComment ? 'text-sm' : ''}`}
+                className={`flex-1 h-8 text-sm ${props.isComment ? 'text-xs' : ''}`}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
               <Button
                 size="icon"
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-black text-white hover:bg-gray-800 h-8 w-8"
                 disabled={!commentText.trim()}
                 onClick={handleComment}
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3" />
               </Button>
             </div>
 
             {comments.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {comments.map((comment) => (
-                  <div key={ulidStringify(comment.id)} className="ml-2 pl-4 border-l-2 border-gray-200">
+                  <div key={ulidStringify(comment.id)} className="ml-1 pl-2 border-l border-gray-200">
                     <PostCard
                       post={comment}
                       onDelete={(id) => setComments((prev) => prev.filter((c) => !indexedDB.cmp(c.id, id)))}
@@ -298,7 +298,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-sm text-muted-foreground py-4">
+              <p className="text-center text-xs text-muted-foreground py-1">
                 No comments yet. Be the first to comment!
               </p>
             )}

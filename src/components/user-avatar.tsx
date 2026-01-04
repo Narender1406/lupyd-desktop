@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 import { CDN_STORAGE } from "lupyd-js"
 
@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import LazyLoad from "react-lazyload";
 
 
-export function UserAvatar(props: { username: string }) {
+export function UserAvatar(props: { username: string, className?: string }) {
   // const context = useUserImage()
 
   const src = `${CDN_STORAGE}/users/${props.username}`
@@ -39,8 +39,8 @@ export function UserAvatar(props: { username: string }) {
   const fallback = <AvatarFallback>{props.username == "" ? "U" : props.username[0].toUpperCase()}</AvatarFallback>
 
   return (<>
-    <LazyLoad placeholder={<Avatar> fallback</Avatar>}>
-      <Avatar>
+    <LazyLoad placeholder={<Avatar className={props.className}> fallback</Avatar>}>
+      <Avatar className={props.className}>
         <AvatarImage className="object-cover"  src={props.username == "" ? "" : src} alt={props.username} loading="lazy" />
         {fallback}
       </Avatar>
