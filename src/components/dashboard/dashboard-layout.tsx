@@ -250,7 +250,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <NotificationsDropdown />
               
               {/* Profile - redirect to sign in page when not authenticated, profile page when authenticated */}
-              <Link to={username ? `/user/${username}` : "/signin"} className="inline-flex items-center">
+              <Link
+                to={username ? `/user/${username}` : "#"}
+                onClick={!username ? onSigninButtonClick : undefined}
+                className="inline-flex items-center"
+              >
                 <UserAvatar username={username ?? ""} />
               </Link>
             </div>
