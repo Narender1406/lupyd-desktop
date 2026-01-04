@@ -199,20 +199,10 @@ export default function MessagesPage() {
   // )
 
 
-  const [isMobile, setIsMobile] = react.useState(false)
 
-  react.useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkIsMobile()
-    window.addEventListener('resize', checkIsMobile)
-    return () => window.removeEventListener('resize', checkIsMobile)
-  }, [])
 
   return (<DashboardLayout>
-    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
+    <div className="flex flex-1 overflow-hidden" style={{ paddingBottom: '0px' }}>
       <div className="divide-y w-full">
         {lastConversations.length == 0 &&
           <div className="flex items-center justify-center h-screen">
