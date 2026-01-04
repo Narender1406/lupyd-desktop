@@ -59,6 +59,11 @@ class MainActivity : BridgeActivity() {
         Log.i("lupyd-cap", "NativeNotification Plugin registered")
 
         super.onCreate(savedInstanceState)
+        
+        // Force Android to NEVER resize or pan the WebView
+        window.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+        )
 
 //        bridge.webView.settings.setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW)
         val webView = bridge.getWebView()
