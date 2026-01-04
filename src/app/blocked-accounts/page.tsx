@@ -37,21 +37,11 @@ export default function BlockedContent() {
         await userData.relationState.unblockUser(username)
     }
 
-    const [isMobile, setIsMobile] = useState(false)
 
-    useEffect(() => {
-        const checkIsMobile = () => {
-        setIsMobile(window.innerWidth < 768)
-        }
-
-        checkIsMobile()
-        window.addEventListener('resize', checkIsMobile)
-        return () => window.removeEventListener('resize', checkIsMobile)
-    }, [])
 
     return (
         <DashboardLayout>
-            <div className="container mx-auto px-4 max-w-full" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
+            <div className="container mx-auto px-4 max-w-full" style={{ paddingBottom: '0px' }}>
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold">Blocked Content</h1>
                     <p className="text-muted-foreground">Manage your blocked users and content</p>

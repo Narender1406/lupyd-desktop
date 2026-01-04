@@ -25,27 +25,12 @@ import { useNavigate, useParams } from "react-router-dom"
 export default function ProfilePage() {
   const router = useNavigate()
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [isMobile, setIsMobile] = useState(false)
 
   const [posts, setPosts] = useState<PostProtos.FullPost[]>([])
   const [savedPosts, setSavedPosts] = useState<PostProtos.FullPost[]>([])
   const [user, setUser] = useState<UserProtos.User | null>(null)
 
   const params = useParams()
-
-  // Detect Mobile
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkIfMobile()
-    window.addEventListener("resize", checkIfMobile)
-
-    return () => {
-      window.removeEventListener("resize", checkIfMobile)
-    }
-  }, [])
 
   // Ref for the main content area
   const contentRef = useRef<HTMLDivElement>(null)
@@ -155,7 +140,7 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
-      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
+      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: '0px' }}>
         {/* Main Content */}
         <div className="flex-1">
           {/* Profile Header */}
@@ -179,8 +164,6 @@ export default function ProfilePage() {
 
                     {/* Buttons */}
                     <div className="flex mt-4 md:mt-0 space-x-2">
-                      {!isMobile && (
-                        <>
                           <Button
                             variant="outline"
                             size="sm"
@@ -214,11 +197,8 @@ export default function ProfilePage() {
                             )
                             }
                           </Button>
-                        </>
-                      )}
 
                       {/* Mobile Menu */}
-                      {isMobile && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -254,7 +234,6 @@ export default function ProfilePage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      )}
                     </div>
                   </div>
 

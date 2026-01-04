@@ -35,18 +35,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [searchText, setSearchText] = useState("")
   const [username, setUsername] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
   const auth = useAuth()
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkIsMobile()
-    window.addEventListener('resize', checkIsMobile)
-    return () => window.removeEventListener('resize', checkIsMobile)
-  }, [])
 
   useEffect(() => {
     setUsername(auth.username)
@@ -138,8 +127,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex min-h-screen w-full">
       {/* Sidebar - Desktop Only - Hidden on mobile */}
-      {!isMobile && (
-        <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
           {/* Logo */}
           <div className="p-4 border-b dark:border-neutral-800">
             <Link to="/" className="flex items-center">
@@ -201,7 +189,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
           </div>
         </aside>
-      )}
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64 w-full">
@@ -221,8 +208,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             {/* Search - shown only on desktop */}
-            {!isMobile && (
-              <div className="relative w-full max-w-md mx-4">
+            <div className="relative w-full max-w-md mx-4">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="search"
@@ -232,8 +218,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                 />
-              </div>
-            )}
+            </div>
 
             {/* Notifications, Create Post & Profile - shown on both mobile and desktop */}
             <div className="flex items-center space-x-2 ml-auto">
@@ -332,18 +317,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         
         {/* Mobile Navbar */}
-        {isMobile && (
-          <NavBar 
-            items={[
-              { name: 'Home', url: '/', icon: Home },
-              { name: 'Messages', url: '/messages', icon: MessageSquare },
-              { name: 'Discover', url: '/discover', icon: Compass },
-              { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
-              { name: 'Settings', url: '/settings', icon: Settings },
-            ]} 
-            className="fixed bottom-0" 
-          />
-        )}
+        <NavBar 
+          items={[
+            { name: 'Home', url: '/', icon: Home },
+            { name: 'Messages', url: '/messages', icon: MessageSquare },
+            { name: 'Discover', url: '/discover', icon: Compass },
+            { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
+            { name: 'Settings', url: '/settings', icon: Settings },
+          ]} 
+          className="fixed bottom-0" 
+        />
       </main>
     </div>
   )

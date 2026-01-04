@@ -11,24 +11,14 @@ import {
   Filter,
 } from "lucide-react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { useEffect, useState } from "react"
+import React from "react"
 
 export default function ConnectionsPage() {
-  const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkIsMobile()
-    window.addEventListener('resize', checkIsMobile)
-    return () => window.removeEventListener('resize', checkIsMobile)
-  }, [])
 
   return (
     <DashboardLayout>
-      <div className="flex min-h-screen bg-gray-50" style={{ paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : '0px' }}>
+      <div className="flex min-h-screen bg-gray-50" style={{ paddingBottom: '0px' }}>
         <main className="flex-1">
           {/* Content */}
           <div className="p-4 md:p-6">

@@ -3,11 +3,10 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Bell, Heart, MessageCircle, UserPlus, AtSign, Share2  } from "lucide-react"
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {  type NotificationProtos } from "lupyd-js"
-import { NotificationItem } from "@/app/dashboard/notification/notifications-page"
 import { useAuth } from "@/context/auth-context"
 import { useApiService } from "@/context/apiService"
 
@@ -50,28 +49,11 @@ import { useApiService } from "@/context/apiService"
 //   },
 // ]
 
-function NotificationIcon({ type }: { type: string }) {
-  const iconClass = "h-4 w-4"
-  switch (type) {
-    case "like":
-      return <Heart className={`${iconClass} text-red-500`} fill="currentColor" />
-    case "comment":
-      return <MessageCircle className={`${iconClass} text-blue-500`} />
-    case "follow":
-      return <UserPlus className={`${iconClass} text-green-500`} />
-    case "mention":
-      return <AtSign className={`${iconClass} text-purple-500`} />
-    case "share":
-      return <Share2 className={`${iconClass} text-orange-500`} />
-    default:
-      return <Bell className={`${iconClass} text-gray-500`} />
-  }
-}
+
 
 export function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<NotificationProtos.Notification[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+
   const navigate = useNavigate()
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -85,41 +67,29 @@ export function NotificationsDropdown() {
     }
   }, [auth])
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
 
   const unreadCount = notifications.filter((n) => !n.seen).length
 
   const handleMouseEnter = () => {
-    if (isMobile) return
-
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current)
       hideTimeoutRef.current = null
     }
 
     hoverTimeoutRef.current = setTimeout(() => {
-      setShowDropdown(true)
+      // setShowDropdown(true)
     }, 200)
   }
 
   const handleMouseLeave = () => {
-    if (isMobile) return
-
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
     }
 
     hideTimeoutRef.current = setTimeout(() => {
-      setShowDropdown(false)
+      // setShowDropdown(false)
     }, 300)
   }
 
@@ -127,23 +97,7 @@ export function NotificationsDropdown() {
     navigate("/notification")
   }
 
-  const markAsRead = (id: Uint8Array, event: React.MouseEvent) => {
-    event.stopPropagation()
-    setNotifications((prev) => prev.map((notif) => (indexedDB.cmp(notif.id, id) ? { ...notif, read: true } : notif)))
-  }
 
-  const markAllAsRead = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
-  }
-
-  const handleNotificationClick = (notification: NotificationProtos.Notification) => {
-    // Mark as read when clicked
-    setNotifications((prev) => prev.map((notif) => (indexedDB.cmp(notif.id, notification.id) ? { ...notif, read: true } : notif)))
-
-    // Navigate to full notifications page
-    navigate("/notification")
-  }
 
   return (
     <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
