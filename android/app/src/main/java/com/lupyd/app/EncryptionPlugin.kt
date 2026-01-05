@@ -360,6 +360,59 @@ class EncryptionPlugin : Plugin() {
             }
         }
 
+    @PluginMethod
+    fun updateGroupChannel(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val delete = call.data.getBoolean("delete")!!
+                val payloadB64 = call.data.getString("payloadB64")!!
+                val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
+                
+                fireflyClient.updateGroupChannel(groupId, delete, payload)
+                call.resolve(JSObject())
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun updateGroupRole(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val roleName = call.data.getString("roleName")!!
+                val roleId = call.data.getInteger("roleId")!!
+                val permissions = call.data.getInteger("permissions")!!
+                val delete = call.data.getBoolean("delete")!!
+
+                fireflyClient.updateGroupRole(groupId, roleName, roleId, permissions, delete)
+                call.resolve(JSObject())
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+    
+    @PluginMethod
+    fun updateGroupMember(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val username = call.data.getString("username")!!
+                val roleId = call.data.getInteger("roleId")!!
+
+                 fireflyClient.updateGroupMember(groupId, username, roleId)
+                call.resolve(JSObject())
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
 
         @PluginMethod
         fun getLastGroupMessages(call: PluginCall) {

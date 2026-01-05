@@ -134,6 +134,12 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
   
   getGroupMessages(options: { groupId: number, startBefore: number, limit: number }): Promise<{ result: BGroupMessage[]}>
+
+  updateGroupChannel(options: { groupId: string, delete: boolean, payloadB64: string }): Promise<void>
+
+  updateGroupRole(options: { groupId: string, roleName: string, roleId: number, permissions: number, delete: boolean }): Promise<void>
+
+  updateGroupMember(options: { groupId: string, username: string, roleId: number }): Promise<void>
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")

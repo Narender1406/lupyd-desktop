@@ -317,4 +317,16 @@ class FireflyClient() {
         return client!!.groupMessageStore().getAllLastMessagesFfi()
     }
 
+    suspend fun updateGroupChannel(groupId: Long, delete: Boolean, payload: ByteArray) {
+        return client!!.updateGroupChannel(groupId.toULong(), delete, payload)
+    }
+
+    suspend fun updateGroupRole(groupId: Long, roleName: String, roleId: Int, permissions: Int, delete: Boolean) {
+        return client!!.updateGroupRole(groupId.toULong(), roleName, roleId.toUInt(), permissions.toUInt(), delete)
+    }
+
+    suspend fun updateGroupMember(groupId: Long, username: String, roleId: Int) {
+        return client!!.updateGroupMember(groupId.toULong(), username, roleId.toUInt())
+    }
+
 }

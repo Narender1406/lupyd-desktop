@@ -697,6 +697,12 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_set_auth_tokens(
     ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_channel(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_member(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_role(
+    ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffimlsclient_create_group(
@@ -813,6 +819,12 @@ external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_group_message_st
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_initialize_with_retrying(`ptr`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_set_auth_tokens(`ptr`: Long,`tokens`: RustBuffer.ByValue,
+): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_channel(`ptr`: Long,`groupId`: Long,`delete`: Byte,`payload`: RustBuffer.ByValue,
+): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_member(`ptr`: Long,`groupId`: Long,`username`: RustBuffer.ByValue,`roleId`: Int,
+): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_role(`ptr`: Long,`groupId`: Long,`name`: RustBuffer.ByValue,`roleId`: Int,`permissions`: Int,`delete`: Byte,
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_upload_fcm_token(`ptr`: Long,`token`: RustBuffer.ByValue,
 ): Long
@@ -1064,6 +1076,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_set_auth_tokens() != 26163.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_channel() != 16586.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_member() != 1585.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_role() != 63810.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token() != 37401.toShort()) {
@@ -1786,6 +1807,12 @@ public interface FfiFireflyWsClientInterface {
     
     suspend fun `setAuthTokens`(`tokens`: TokenResponse)
     
+    suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `delete`: kotlin.Boolean, `payload`: kotlin.ByteArray)
+    
+    suspend fun `updateGroupMember`(`groupId`: kotlin.ULong, `username`: kotlin.String, `roleId`: kotlin.UInt)
+    
+    suspend fun `updateGroupRole`(`groupId`: kotlin.ULong, `name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean)
+    
     suspend fun `uploadFcmToken`(`token`: kotlin.String?)
     
     companion object
@@ -2083,6 +2110,72 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
             UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_set_auth_tokens(
                 uniffiHandle,
                 FfiConverterTypeTokenResponse.lower(`tokens`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `delete`: kotlin.Boolean, `payload`: kotlin.ByteArray) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_channel(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),FfiConverterBoolean.lower(`delete`),FfiConverterByteArray.lower(`payload`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `updateGroupMember`(`groupId`: kotlin.ULong, `username`: kotlin.String, `roleId`: kotlin.UInt) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_member(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),FfiConverterString.lower(`username`),FfiConverterUInt.lower(`roleId`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `updateGroupRole`(`groupId`: kotlin.ULong, `name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_role(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),FfiConverterString.lower(`name`),FfiConverterUInt.lower(`roleId`),FfiConverterUInt.lower(`permissions`),FfiConverterBoolean.lower(`delete`),
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },

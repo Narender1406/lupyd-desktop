@@ -1,9 +1,6 @@
 "use client"
 import { ChannelChat } from "@/components/groups/channel-chat"
 import { ChannelList } from "@/components/groups/channel-list"
-import { ChannelProjects } from "@/components/groups/channel-projects"
-import { GroupTasks, type Member as TaskMember } from "@/components/groups/group-tasks"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,20 +33,6 @@ interface Member {
   isOnline?: boolean
 }
 
-const mockMembers: Member[] = [
-  { id: "1", name: "Sarah Chen", username: "@sarahc", avatar: "/sarah-avatar.jpg", role: "owner", isOnline: true },
-  { id: "2", name: "Marcus Johnson", username: "@marcusj", avatar: "/marcus-avatar.jpg", role: "admin" },
-  {
-    id: "3",
-    name: "Emma Rodriguez",
-    username: "@emmar",
-    avatar: "/emma-avatar.png",
-    role: "moderator",
-    isOnline: true,
-  },
-  { id: "4", name: "David Kim", username: "@davidk", avatar: "/david-avatar.png", role: "member" },
-  { id: "5", name: "Lisa Wang", username: "@lisaw", avatar: "/lisa-avatar.jpg", role: "member" },
-]
 
 export function GroupWorkspacePane({
   groupId,
@@ -77,16 +60,16 @@ export function GroupWorkspacePane({
 
   const groupExtension = useMemo(() => protos.FireflyGroupExtension.decode(extensionBytes), [extensionBytes])
 
-  const [selectedChannelId, setSelectedChannelId] = useState<number | undefined>(groupExtension.channels?.channels[0]?.id)
+  const [selectedChannelId, setSelectedChannelId] = useState<number | undefined>(groupExtension.channels[0]?.id)
   const [filter, setFilter] = useState("")
 
   const auth = useAuth()
 
   const role = useMemo(() => {
 
-    const member = groupExtension.members?.members?.find(e => e.username == auth.username)
+    const member = groupExtension.members?.find(e => e.username == auth.username)
     if (member) {
-      const role = groupExtension.roles?.roles?.find(e => e.id == member.role)
+      const role = groupExtension.roles?.find(e => e.id == member.role)
       if (role) {
         return role.name
       }
@@ -111,7 +94,7 @@ export function GroupWorkspacePane({
 
 
   const selectedChannel = useMemo(() =>
-    groupExtension?.channels?.channels?.find(e => e.id == selectedChannelId), [selectedChannelId, groupExtension])
+    groupExtension?.channels.find(e => e.id == selectedChannelId), [selectedChannelId, groupExtension])
 
 
   const header = (
@@ -149,7 +132,7 @@ export function GroupWorkspacePane({
 
             <div className="overflow-y-auto">
               <ChannelList
-                channels={groupExtension.channels?.channels ?? []}
+                channels={groupExtension.channels ?? []}
                 filter={filter}
                 selectedId={selectedChannelId}
                 onSelect={(id) => {
@@ -191,13 +174,15 @@ export function GroupWorkspacePane({
       {/* Header */}
       {header}
 
-      {/* Tasks */}
+      {/* Tasks 
+      
       <GroupTasks
         open={openTasks}
         onOpenChange={setOpenTasks}
         groupName={groupName}
-        members={mockMembers as unknown as TaskMember[]}
+        members={groupExtension.members}
       />
+      */}
 
       <div className="grid w-full max-w-full [--aside-w:260px] md:grid-cols-[minmax(240px,var(--aside-w))_minmax(0,1fr)] min-h-[70vh] md:gap-0 overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
         {/* Channel list (desktop) */}
@@ -214,7 +199,7 @@ export function GroupWorkspacePane({
 
           <div className="flex-1 overflow-y-auto">
             <ChannelList
-              channels={groupExtension.channels?.channels ?? []}
+              channels={groupExtension.channels ?? []}
               filter={filter}
               selectedId={selectedChannelId}
               onSelect={(id) => {
@@ -262,7 +247,7 @@ export function GroupWorkspacePane({
             </div>
           </div>
 
-          {/* Channel details */}
+          {/* Channel details
           <div className="border-t">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="projects">
@@ -276,6 +261,7 @@ export function GroupWorkspacePane({
               </AccordionItem>
             </Accordion>
           </div>
+          */}
         </section>
       </div>
     </div>
