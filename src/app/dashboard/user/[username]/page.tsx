@@ -16,10 +16,10 @@ import { UserAvatar } from "@/components/user-avatar"
 import { useApiService } from "@/context/apiService"
 import { useAuth } from "@/context/auth-context"
 import { useUserData } from "@/context/userdata-context"
-import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+
 import { Ban, Bookmark, Grid, List, MessageSquare, MoreHorizontal, Settings, UserMinus, UserPlus } from "lucide-react"
 import { FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 export default function ProfilePage() {
@@ -33,10 +33,7 @@ export default function ProfilePage() {
   const params = useParams()
 
   // Ref for the main content area
-  const contentRef = useRef<HTMLDivElement>(null)
 
-  // Apply scroll boundary guard to the main content area
-  useScrollBoundaryGuard(contentRef)
 
   const getUsername = () => {
     const username = params.username
@@ -138,184 +135,137 @@ export default function ProfilePage() {
   // Check if viewing own profile to determine if saved posts should be shown
   const isOwnProfile = auth.username === getUsername()
 
+  type EmptyStateProps = {
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    text: string;
+  };
+  
+  function EmptyState({ icon: Icon, text }: EmptyStateProps) {
+    return (
+      <div className="py-16 text-center text-gray-400">
+        <Icon className="h-10 w-10 mx-auto mb-3" />
+        <p>{text}</p>
+      </div>
+    )
+  }
+
   return (
     <DashboardLayout>
-      <div ref={contentRef} className="flex flex-col md:flex-row w-full max-w-6xl mx-auto" style={{ paddingBottom: '0px' }}>
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Profile Header */}
-          <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-            {/* Cover Image */}
-            <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-b-lg" />
+      <div className="w-full max-w-3xl mx-auto px-4">
+        {/* Profile Header */}
+        <section className="pb-4">
+          {/* User Info */}
+          <div className="px-4 pb-4">
+            <div className="flex items-end gap-4">
+              <UserAvatar username={getUsername() ?? ""} />
 
-            {/* Profile Picture & Basic Info */}
-            <div className="px-4 md:px-8 mt-4 relative z-10"> {/* Reduced mt-4 to mt-2 if needed */}
-              <div className="flex flex-col md:flex-row md:items-end">
-                <div className="relative">
-                  <UserAvatar username={getUsername() ?? ""} />
-                </div>
-
-                <div className="mt-4 md:mt-0 md:ml-6 flex-1">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between">
-                    <div>
-                      <h1 className="text-2xl font-bold">{user?.uname}</h1>
-                      <p className="text-gray-500">@{user?.uname}</p>
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex mt-4 md:mt-0 space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(((user?.settings ?? 0) & 1) == 1) ? () => router(`/messages/${getUsername()}`) : undefined}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Message
-                          </Button>
-
-                          <Button
-                            variant={isFollowing ? "outline" : "default"}
-                            size="sm"
-                            onClick={handleFollow}
-                          >
-                            {isFollowing ? "Following" : (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Follow
-                              </>
-                            )}
-                          </Button>
-
-                          <Button
-                            variant={isBlocked ? "outline" : "default"} size="sm" onClick={blockUser}>
-                            <Ban className="h-4 w-4 " strokeWidth={3.5} />
-                            {isBlocked ? (
-                              "Blocked"
-                            ) : (
-                              <>
-                                Block </>
-                            )
-                            }
-                          </Button>
-
-                      {/* Mobile Menu */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="h-4 w-4 mr-2" />
-                              Actions
-                            </Button>
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router(`/messages/${getUsername()}`)}>
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Message
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem onClick={handleFollow}>
-                              {isFollowing ? <UserMinus className="h-4 w-4 mr-2"></UserMinus> :
-                                <UserPlus className="h-4 w-4 mr-2" />
-                              }
-                              {isFollowing ? "Unfollow" : "Follow"}
-                            </DropdownMenuItem>
-
-
-                            <DropdownMenuItem onClick={blockUser}>
-                              <Ban className="h-4 w-4 mr-2" />
-                              {isBlocked ? "Unblock" : "Block"}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem onClick={() => router("/settings")}>
-                              <Settings className="h-4 w-4 mr-2" />
-                              Settings
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                  </div>
-
-                  <div className="mt-2 text-sm">
-                    {bio ? <PostBodyElement {...bio} /> : <></>}
-                  </div>
-                </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold truncate">
+                  {user?.uname}
+                </h1>
+                <p className="text-sm text-gray-500 truncate">
+                  @{user?.uname}
+                </p>
               </div>
 
-              {/* Posts / Saved / Tagged */}
-              <div className="px-4 md:px-8">
-                <Tabs defaultValue="posts" className="w-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <TabsList>
-                      <TabsTrigger value="posts">Posts</TabsTrigger>
-                      {isOwnProfile && <TabsTrigger value="saved">Saved</TabsTrigger>}
-                      <TabsTrigger value="tagged">Tagged</TabsTrigger>
-                    </TabsList>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`
-      ${viewMode === "grid" ? "bg-gray-200 dark:bg-gray-800" : ""}
-      rounded-xl
-    `}
-                        onClick={() => setViewMode("grid")}
-                      >
-                        <Grid className="h-4 w-4" />
-                      </Button>
+              {/* Action Menu (Mobile-first) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="outline">
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`
-      ${viewMode === "list" ? "bg-gray-200 dark:bg-gray-800" : ""}
-      rounded-xl
-    `}
-                        onClick={() => setViewMode("list")}
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router(`/messages/${getUsername()}`)}>
+                    <MessageSquare className="h-4 w-4 mr-2" /> Message
+                  </DropdownMenuItem>
 
-                  </div>
+                  <DropdownMenuItem onClick={handleFollow}>
+                    {isFollowing ? <UserMinus className="h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </DropdownMenuItem>
 
-                  <TabsContent value="posts">
-                    <div className="space-y-4">
-                      {posts.map((post) => (
-                        <PostCard key={ulidStringify(post.id)} post={post} />
-                      ))}
-                    </div>
-                  </TabsContent>
+                  <DropdownMenuItem onClick={blockUser}>
+                    <Ban className="h-4 w-4 mr-2" />
+                    {isBlocked ? "Unblock" : "Block"}
+                  </DropdownMenuItem>
 
-                  {isOwnProfile && (
-                    <TabsContent value="saved">
-                      <div className="space-y-4">
-                        {savedPosts.length > 0 ? (
-                          savedPosts.map((post) => (
-                            <PostCard key={ulidStringify(post.id)} post={post} />
-                          ))
-                        ) : (
-                          <div className="text-center py-12">
-                            <Bookmark className="h-12 w-12 mx-auto text-gray-300" />
-                            <p className="text-gray-500 mt-4">No saved posts yet</p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  )}
+                  <DropdownMenuSeparator />
 
-                  <TabsContent value="tagged">
-                    <div className="text-center py-12">
-                      <UserPlus className="h-12 w-12 mx-auto text-gray-300" />
-                      <p className="text-gray-500 mt-4">No tagged posts yet</p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                  <DropdownMenuItem onClick={() => router("/settings")}>
+                    <Settings className="h-4 w-4 mr-2" /> Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Bio */}
+            {bio && (
+              <div className="mt-3 text-sm text-gray-700 leading-relaxed">
+                <PostBodyElement {...bio} />
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Content */}
+        <section className="pb-24 pt-4">
+          <Tabs defaultValue="posts">
+            <div className="flex items-center justify-between mb-3">
+              <TabsList className="flex-1">
+                <TabsTrigger value="posts">Posts</TabsTrigger>
+                {isOwnProfile && <TabsTrigger value="saved">Saved</TabsTrigger>}
+                <TabsTrigger value="tagged">Tagged</TabsTrigger>
+              </TabsList>
+
+              <div className="flex gap-1">
+                <Button
+                  size="icon"
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid />
+                </Button>
+
+                <Button
+                  size="icon"
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  onClick={() => setViewMode("list")}
+                >
+                  <List />
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
+
+            {/* POSTS */}
+            <TabsContent value="posts">
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <PostCard key={ulidStringify(post.id)} post={post} />
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* SAVED */}
+            {isOwnProfile && (
+              <TabsContent value="saved">
+                {savedPosts.length ? (
+                  savedPosts.map((post) => (
+                    <PostCard key={ulidStringify(post.id)} post={post} />
+                  ))
+                ) : (
+                  <EmptyState icon={Bookmark} text="No saved posts yet" />
+                )}
+              </TabsContent>
+            )}
+
+            {/* TAGGED */}
+            <TabsContent value="tagged">
+              <EmptyState icon={UserPlus} text="No tagged posts yet" />
+            </TabsContent>
+          </Tabs>
+        </section>
       </div>
     </DashboardLayout>
   )
