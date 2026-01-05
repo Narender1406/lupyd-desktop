@@ -179,6 +179,10 @@ export function PostFeed() {
       releaseToRefreshContent={
         <h3 className="text-center">&#8593; Release to refresh</h3>
       }
+      style={{
+        overflowX: "hidden",
+        width: "100%",
+      }}
     >
       {data.map((post) => {
         const id = ulidStringify(post.id)

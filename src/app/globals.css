@@ -125,3 +125,15 @@ body {
   height: 64px;
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Fix for Android WebView horizontal overflow in infinite scroll */
+.infinite-scroll-component {
+  transform: translateZ(0);
+  overflow-x: hidden !important;
+  max-width: 100%;
+}
+
+.infinite-scroll-component > * {
+  min-width: 0;
+  max-width: 100%;
+}

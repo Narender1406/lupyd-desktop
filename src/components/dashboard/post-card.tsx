@@ -177,7 +177,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   }
 
   return (
-    <Card className={`border-none shadow-sm mx-auto w-full ${props.isComment ? 'max-w-[480px] sm:max-w-[560px] md:max-w-[620px]' : 'max-w-[560px] sm:max-w-[640px] md:max-w-[700px] lg:max-w-[740px]'}`}>
+    <Card className={`min-w-0 border-none shadow-sm mx-auto w-full ${props.isComment ? 'max-w-[480px] sm:max-w-[560px] md:max-w-[620px]' : 'max-w-[560px] sm:max-w-[640px] md:max-w-[700px] lg:max-w-[740px]'}`}>
       <CardHeader className={`p-4 pb-0 ${props.isComment ? 'p-2 pb-0' : ''}`}>
         <div className="flex justify-between items-center">
           <Link to={`/user/${post.by}`}>
@@ -515,11 +515,12 @@ async function buildHtmlElementFromMarkdown(
     if (buffer.length > 1) {
       // Build a horizontally scrollable track with snap
       const track = div({
-        class: "flex overflow-x-auto gap-2 snap-x snap-mandatory scroll-smooth w-full -mx-0", // use padding of CardContent
+        class: "flex overflow-x-auto gap-2 snap-x snap-mandatory scroll-smooth w-full max-w-full",
+        style: "contain: layout size;"
       })
       buffer.forEach((item) => {
         // Ensure each slide takes full width of content area
-        const slide = div({ class: "w-full shrink-0 snap-center" }, item)
+        const slide = div({ class: "min-w-full shrink-0 snap-center overflow-hidden" }, item)
         track.appendChild(slide)
       })
       const carousel = div({ class: "relative mb-4" }, track)
