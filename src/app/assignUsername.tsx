@@ -52,7 +52,10 @@ export default function AssignUsernamePage() {
     setBottomText("Username is being assigned...");
 
     setUsernameBeingAssigned(true)
-    api.assignUsername(username).then(async () => {
+
+    const ALLOW_CHAT_SETTING = 1; // document this better
+
+    api.assignUsername(username, new Uint8Array(), ALLOW_CHAT_SETTING).then(async () => {
       await auth.getToken(true)
       navigateToNext()
     }).catch((err) => {

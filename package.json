@@ -63,7 +63,7 @@
     "input-otp": "^1.4.2",
     "localforage": "^1.10.0",
     "lucide-react": "^0.540.0",
-    "lupyd-js": "https://github.com/lupyd/lupyd-js.git#ApiService",
+    "lupyd-js": "https://github.com/lupyd/lupyd-js.git",
     "micromark": "^4.0.2",
     "micromark-extension-gfm-strikethrough": "^2.1.0",
     "micromark-extension-gfm-table": "^2.1.1",

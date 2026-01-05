@@ -1,7 +1,7 @@
 "use client"
 
 import { UserRelationsState } from "lupyd-js"
-import { createContext, type ReactNode, useContext, useEffect, useState, useCallback, useMemo } from "react"
+import { createContext, type ReactNode, useContext, useEffect, useState,  useMemo } from "react"
 import { useAuth } from "./auth-context"
 
 

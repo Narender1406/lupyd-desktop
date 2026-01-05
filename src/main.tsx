@@ -3,6 +3,7 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider, LupydAuth0Provider } from "@/context/auth-context"
 import { UserDataProvider } from "@/context/userdata-context"
+import { SavedPostsDataProvider } from "@/context/saved-posts"
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
@@ -67,11 +68,13 @@ createRoot(document.getElementById('root')!).render(
                 <ApiServiceProvider>
                   <UserImageProvider>
                     <UserDataProvider>
+                      <SavedPostsDataProvider>
                       <FireflyProvider>
                         <div className="flex min-h-screen flex-col">
                           <App />
                         </div>
                       </FireflyProvider>
+                      </SavedPostsDataProvider>
                     </UserDataProvider>
                   </UserImageProvider>
                 </ApiServiceProvider>

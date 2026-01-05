@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -9,31 +9,35 @@ import { PostCard } from "@/components/dashboard/post-card"
 
 import { AnimatedCard } from "@/components/animated-card"
 import { Bookmark, Grid, List, Search, Filter, Clock, ImageIcon, Video, Link2 } from "lucide-react"
-import { PostProtos, ulidStringify } from "lupyd-js"
+import { FetchType, PostProtos, ulidStringify } from "lupyd-js"
+import { useApiService } from "@/context/apiService"
+import { useSavedPosts } from "@/context/saved-posts"
 
 export default function SavedPostsPage() {
   const [view, setView] = useState<"grid" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [savedPosts, setSavedPosts] = useState<PostProtos.FullPost[]>([])
+  const apiService = useApiService()
+  const savedPostsData = useSavedPosts()
 
-  // Load saved posts
-  useState(() => {
-    const loadSavedPosts = async () => {
-      try {
-        // In a real implementation, this would fetch saved posts from the API
-        // For now, we'll just set an empty array since the API doesn't seem to have a method for this
-        // This is a placeholder until the backend API is ready
-        console.log("Loading saved posts");
-        setSavedPosts([]);
-      } catch (error) {
-        console.error("Error loading saved posts:", error);
-        setSavedPosts([]);
-      }
-    };
 
-    loadSavedPosts();
-  });
+  useEffect(() => {
+    const savedPostIds = savedPostsData.savedPostIds
+
+    if (savedPostIds.length == 0) {
+      return
+    }
+    // TODO: proper pagination if they exceed the limit
+
+    apiService.api.getPosts({
+        fetchType: FetchType.Ids,
+        fetchTypeFields: savedPostIds
+    }).then(posts => {
+      setSavedPosts(posts)
+    }).catch(console.error)
+    
+  }, [savedPostsData])
 
   // Filter posts based on search query and active tab
   const filteredPosts = savedPosts.filter((post) => {

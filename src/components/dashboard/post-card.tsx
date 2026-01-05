@@ -1,7 +1,7 @@
 "use client"
 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +28,7 @@ import type { Extension, HtmlExtension } from "micromark-util-types"
 import { useApiService } from "@/context/apiService"
 import { formatNumber } from "@/lib/utils"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
+import { useSavedPosts } from "@/context/saved-posts"
 
 type FullPost = PostProtos.FullPost
 type PostBodies = PostProtos.PostBodies
@@ -139,9 +140,14 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const report = async () => {
-    await api.reportPost(post.id, "")
-    setIsDropdownOpen(false)
-    toast({ title: "Post has been reported" })
+    try {
+      await api.reportPost(post.id, "")
+      setIsDropdownOpen(false)
+      toast({ title: "Post has been reported" })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Failed to report post" })
+    }
 
   }
 
@@ -152,8 +158,9 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
       props.onDelete(post.id)
     }
   }
+  const savedPostsData = useSavedPosts()
 
-  const [isSaved, setIsSaved] = useState(false)
+  const isSaved =useMemo(() =>  savedPostsData.savedPostIds.includes(ulidStringify( post.id)) , [savedPostsData])
 
   const savePost = async () => {
     try {
@@ -162,12 +169,11 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
       if (isSaved) {
         // Remove from saved posts
         // await api.unsavePost(post.id) // if such method exists
-        setIsSaved(false);
         toast({ title: "Post removed from saved" });
       } else {
+        savedPostsData.savePost(ulidStringify(post.id))
         // Add to saved posts
         // await api.savePost(post.id) // if such method exists
-        setIsSaved(true);
         toast({ title: "Post saved successfully" });
       }
     } catch (error) {
@@ -206,7 +212,6 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
               </DropdownMenuItem>*/}
               <DropdownMenuItem onClick={() => {
                 report();
-                alert("Successfully reported!");
               }}>
                 <div className="flex items-center cursor-pointer">
                   <Flag className="mr-2 h-4 w-4" />
