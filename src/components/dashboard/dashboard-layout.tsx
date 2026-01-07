@@ -309,7 +309,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page Content */}
         <div
-          className="flex-1 w-full"
+          className="flew-full px-3 overflow-x-hiddenx-1 w-full"
           style={{ paddingTop: '16px' }}
         >
           <div className="container mx-auto p-4 max-w-full">
