@@ -918,7 +918,7 @@ external fun uniffi_firefly_signal_fn_init_callback_vtable_fireflywsclientcallba
 ): Unit
 external fun uniffi_firefly_signal_fn_func_add(`a`: Int,`b`: Int,uniffi_out_err: UniffiRustCallStatus, 
 ): Int
-external fun uniffi_firefly_signal_fn_func_init_logger(uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_firefly_signal_fn_func_init_logger(`filePath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun ffi_firefly_signal_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
@@ -1042,7 +1042,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_func_add() != 63795.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_func_init_logger() != 44355.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_func_init_logger() != 21709.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_create_group() != 41744.toShort()) {
@@ -5294,12 +5294,12 @@ public object FfiConverterSequenceTypeUserMessage: FfiConverterRustBuffer<List<U
     )
     }
     
- fun `initLogger`()
+ fun `initLogger`(`filePath`: kotlin.String)
         = 
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_firefly_signal_fn_func_init_logger(
     
-        _status)
+        FfiConverterString.lower(`filePath`),_status)
 }
     
     

@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NavBar } from "@/components/ui/tubelight-navbar"
 import { useAuth } from "@/context/auth-context"
 import {
   Bookmark,
   Compass,
+  Group,
   Home,
   LogIn,
   LogOut,
@@ -13,8 +15,8 @@ import {
   PlusSquare,
   Search,
   Settings,
-  X,
-  User
+  User,
+  X
 } from "lucide-react"
 import { getPayloadFromAccessToken } from "lupyd-js"
 import type React from "react"
@@ -22,7 +24,6 @@ import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
 import { NotificationsDropdown } from "./notifications-dropdown"
-import { NavBar } from "@/components/ui/tubelight-navbar"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -128,67 +129,67 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex min-h-screen w-full">
       {/* Sidebar - Desktop Only - Hidden on mobile */}
       <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
-          {/* Logo */}
-          <div className="p-4 border-b dark:border-neutral-800">
-            <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
-            </Link>
-          </div>
+        {/* Logo */}
+        <div className="p-4 border-b dark:border-neutral-800">
+          <Link to="/" className="flex items-center">
+            <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
+          </Link>
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 p-4 space-y-1">
-            {dedupedNavItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`flex items-center px-3 py-2 rounded-md ${isActive
-                      ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
-                    }`}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Profile / Sign In or Out */}
-          <div className="p-4 border-t dark:border-neutral-800">
-            {username ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Link to={`/user/${username}`}>
-                    <UserAvatar username={username} />
-                  </Link>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onSigninButtonClick}
-                  className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                onClick={onSigninButtonClick}
+        {/* Navigation Links */}
+        <nav className="flex-1 p-4 space-y-1">
+          {dedupedNavItems.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={index}
+                to={item.path}
+                className={`flex items-center px-3 py-2 rounded-md ${isActive
+                  ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
+                  : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
+                  }`}
               >
-                <LogIn className="mr-2 h-4 w-4" />
-                <span>Sign In</span>
+                <Icon className="mr-3 h-5 w-5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Profile / Sign In or Out */}
+        <div className="p-4 border-t dark:border-neutral-800">
+          {username ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Link to={`/user/${username}`}>
+                  <UserAvatar username={username} />
+                </Link>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onSigninButtonClick}
+                className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
+              >
+                <LogOut className="h-5 w-5" />
               </Button>
-            )}
-          </div>
-        </aside>
+            </div>
+          ) : (
+            <Button
+              className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              onClick={onSigninButtonClick}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
+        </div>
+      </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64 w-full">
@@ -209,31 +210,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Search - shown only on desktop */}
             <div className="relative w-full max-w-md mx-4">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  className="pl-8 bg-gray-100 dark:bg-black border-none text-gray-900 dark:text-white"
-                  onKeyDown={searchSubmit}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-8 bg-gray-100 dark:bg-black border-none text-gray-900 dark:text-white"
+                onKeyDown={searchSubmit}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
             </div>
 
             {/* Notifications, Create Post & Profile - shown on both mobile and desktop */}
             <div className="flex items-center space-x-2 ml-auto">
               {/* Create Post button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigate("/create-post")}
                 className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
               >
                 <PlusSquare className="h-5 w-5" />
               </Button>
-              
+
               <NotificationsDropdown />
-              
+
               {/* Profile - redirect to sign in page when not authenticated, profile page when authenticated */}
               <Link
                 to={username ? `/user/${username}` : "#"}
@@ -315,17 +316,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {children}
           </div>
         </div>
-        
+
         {/* Mobile Navbar */}
-        <NavBar 
+        <NavBar
           items={[
             { name: 'Home', url: '/', icon: Home },
             { name: 'Messages', url: '/messages', icon: MessageSquare },
+            { name: 'Groups', url: '/groups', icon: Group },
             { name: 'Discover', url: '/discover', icon: Compass },
             { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
             { name: 'Settings', url: '/settings', icon: Settings },
-          ]} 
-          className="fixed bottom-0" 
+          ]}
+          className="fixed bottom-0"
         />
       </main>
     </div>

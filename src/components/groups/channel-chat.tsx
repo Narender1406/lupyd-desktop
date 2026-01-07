@@ -75,6 +75,7 @@ export function ChannelChat({
   // Apply scroll boundary guard to the chat container
   useScrollBoundaryGuard(containerRef)
 
+  // TODO: load older messages as they scroll
   useEffect(() => {
     const startBefore = messages.length == 0 ? Number.MAX_SAFE_INTEGER : messages[0].id
     const limit = 100

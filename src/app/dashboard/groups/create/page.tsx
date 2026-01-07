@@ -46,7 +46,7 @@ export default function CreateGroupPage() {
         throw Error("Group Name is empty")
       }
       const groupInfo = await EncryptionPlugin.createGroup({
-        name: groupData.name,
+        groupName: groupData.name,
         //@ts-ignore
         description: groupData.description
       })
@@ -210,6 +210,8 @@ export default function CreateGroupPage() {
                 "Create Group"
               )}
             </Button>
+            <div className="h-[20vh]"></div>
+
           </div>
         </div>
       </div>

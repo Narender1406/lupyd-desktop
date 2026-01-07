@@ -17,6 +17,7 @@ import uniffi.firefly_signal.MessagesStore
 import uniffi.firefly_signal.TokenResponse
 import uniffi.firefly_signal.UserMessage
 import uniffi.firefly_signal.initLogger
+import java.io.File
 
 class FireflyClient() {
 
@@ -25,7 +26,9 @@ class FireflyClient() {
 
         fun getInstance(ctx: Context): FireflyClient {
             if (instance == null) {
-                initLogger()
+                val logPath = File(ctx.filesDir, "libfirefly.log").canonicalPath
+                Log.i(TAG, "using logpath: ${logPath}")
+                initLogger(logPath)
                 instance = FireflyClient(ctx)
             }
             return instance!!

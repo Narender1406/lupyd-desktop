@@ -313,7 +313,7 @@ class EncryptionPlugin : Plugin() {
 
                     call.resolve(groupInfoToJSObj(group))
                 } catch (e: Exception) {
-                    Log.e(tag, "failed to get group messages ${e}")
+                    Log.e(tag, "failed to create group ${e}")
                     call.reject(e.toString())
                 }
             }

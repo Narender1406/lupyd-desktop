@@ -17,15 +17,6 @@ import { useNavigate } from "react-router-dom"
 import { fromBase64 } from "@/lib/utils"
 import { protos as FireflyProtos } from "firefly-client-js"
 
-type GroupItem = {
-  id: string
-  name: string
-  description: string
-  members: number
-  isPrivate?: boolean
-  cover?: string
-  tags?: string[]
-}
 
 
 export default function GroupsPage() {
@@ -140,7 +131,7 @@ export default function GroupsPage() {
           <div className="min-w-0">
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {groupExtension.members?.members.length.toLocaleString()}
+              {groupExtension.members.length.toLocaleString()}
             </div>
           </div>
         </div>
@@ -201,6 +192,16 @@ export default function GroupsPage() {
                     />
                   </div>
                 </div>
+                <button
+                  className="h-12 w-12 grid place-items-center rounded-2xl bg-gray-100 hover:bg-gray-200 transition"
+                  onClick={() => navigate("/groups/create")}
+                  aria-label="Create group"
+                  title="Create group"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+                <Separator className="w-10" />
+
                 <div className="p-2 space-y-1 overflow-y-auto">
                   {groupInfos.map((g) => (
                     <GroupListItem key={g.groupId} g={g} />

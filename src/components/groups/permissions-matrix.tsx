@@ -2,30 +2,39 @@
 
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { protos } from "firefly-client-js"
 
-export type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
-export type PermissionKey =
-  | "viewChannel"
-  | "sendMessages"
-  | "manageMessages"
-  | "attachFiles"
-  | "pinMessages"
-  | "createThreads"
-  | "manageChannel"
-  | "manageRoles"
+
+
 export type OverrideValue = "inherit" | "allow" | "deny"
+
+enum UserPermission {
+    AddMessage = 4,
+    ManageChannel = 8,
+    ManageRole = 16,
+    ManageMember = 32,
+}
+
+export type PermissionKey = UserPermission
+
 
 export function PermissionsMatrix({
   roles,
-  permissions,
   overrides,
   onChange,
 }: {
-  roles: { id: RoleKey; name: string }[]
-  permissions: PermissionKey[]
-  overrides: Record<RoleKey, Partial<Record<PermissionKey, OverrideValue>>>
-  onChange: (roleId: RoleKey, perm: PermissionKey, value: OverrideValue) => void
+  roles: protos.FireflyGroupRole[]
+  overrides: Record<number, Partial<Record<PermissionKey, OverrideValue>>>
+  onChange: (role: protos.FireflyGroupRole, perm: PermissionKey, value: OverrideValue) => void
 }) {
+  const permissions = [
+    UserPermission.AddMessage,
+    UserPermission.ManageChannel,
+    UserPermission.ManageRole,
+    UserPermission.ManageMember,
+  ]
+
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full text-sm">
@@ -47,7 +56,7 @@ export function PermissionsMatrix({
                 <td key={r.id} className="py-2 px-2">
                   <Select
                     value={(overrides?.[r.id]?.[p] as OverrideValue) || "inherit"}
-                    onValueChange={(v: OverrideValue) => onChange(r.id, p, v)}
+                    onValueChange={(v: OverrideValue) => onChange(r, p, v)}
                   >
                     <SelectTrigger className="h-8 w-[120px]">
                       <SelectValue />
@@ -73,21 +82,13 @@ export function PermissionsMatrix({
 
 function label(p: PermissionKey) {
   switch (p) {
-    case "viewChannel":
-      return "View channel"
-    case "sendMessages":
-      return "Send messages"
-    case "manageMessages":
-      return "Manage messages"
-    case "attachFiles":
-      return "Attach files"
-    case "pinMessages":
-      return "Pin messages"
-    case "createThreads":
-      return "Create threads"
-    case "manageChannel":
+    case UserPermission.AddMessage:
+      return "Add message"
+    case UserPermission.ManageChannel:
       return "Manage channel"
-    case "manageRoles":
-      return "Manage roles"
+    case UserPermission.ManageRole:
+      return "Manage role"
+    case UserPermission.ManageMember:
+      return "Manage member"
   }
 }

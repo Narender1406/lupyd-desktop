@@ -127,7 +127,7 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
 
 
-  createGroup(options: { name: string, }): Promise<BGroupInfo>
+  createGroup(options: { groupName: string, }): Promise<BGroupInfo>
 
 
   getGroupInfos(): Promise<{ result: BGroupInfo[] }>
