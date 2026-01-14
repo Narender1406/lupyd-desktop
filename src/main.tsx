@@ -43,7 +43,7 @@ createRoot(document.getElementById('root')!).render(
                   <UserImageProvider>
                     <UserDataProvider>
                       <FireflyProvider>
-                        <div className="flex min-h-screen flex-col">
+                        <div>
                           <App />
                         </div>
                       </FireflyProvider>

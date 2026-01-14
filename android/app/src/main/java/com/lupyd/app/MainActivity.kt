@@ -7,11 +7,13 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
 import com.getcapacitor.BridgeActivity
 
 
@@ -50,6 +52,20 @@ class MainActivity : BridgeActivity() {
     lateinit var serverThread: Thread
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // ✅ Android 13–16
+            // Prevent the window (header + page) from moving
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            window.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+            )
+        } else {
+            // ✅ Older Android (works correctly with resize)
+            window.setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            )
+        }
 
         window.setBackgroundDrawableResource(android.R.color.white)
 

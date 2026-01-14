@@ -125,9 +125,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen w-full">
-      {/* Sidebar - Desktop Only - Hidden on mobile */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
+    <>
+      {/* Header stays visible */}
+      <header className="sticky top-0 z-50 bg-white dark:bg-black">
+        {/* Sidebar - Desktop Only - Hidden on mobile */}
+        <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
           {/* Logo */}
           <div className="p-4 border-b dark:border-neutral-800">
             <Link to="/" className="flex items-center">
@@ -145,8 +147,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   key={index}
                   to={item.path}
                   className={`flex items-center px-3 py-2 rounded-md ${isActive
-                      ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
+                    ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
                     }`}
                 >
                   <Icon className="mr-3 h-5 w-5" />
@@ -190,16 +192,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64 w-full">
         {/* Top Bar - No sidebar toggle on mobile in header anymore */}
         <div
-          className="sticky top-0 z-20 border-b bg-white dark:bg-black"
+          className="border-b bg-white dark:bg-black"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
           }}
         >
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-4 md:ml-64">
             {/* Logo - shown on both mobile and desktop */}
             <div className="flex items-center">
               <Link to="/" className="font-bold text-xl">
@@ -209,31 +209,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Search - shown only on desktop */}
             <div className="relative w-full max-w-md mx-4">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  className="pl-8 bg-gray-100 dark:bg-black border-none text-gray-900 dark:text-white"
-                  onKeyDown={searchSubmit}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-8 bg-gray-100 dark:bg-black border-none text-gray-900 dark:text-white"
+                onKeyDown={searchSubmit}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
             </div>
 
             {/* Notifications, Create Post & Profile - shown on both mobile and desktop */}
             <div className="flex items-center space-x-2 ml-auto">
               {/* Create Post button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigate("/create-post")}
                 className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
               >
                 <PlusSquare className="h-5 w-5" />
               </Button>
-              
+
               <NotificationsDropdown />
-              
+
               {/* Profile - redirect to sign in page when not authenticated, profile page when authenticated */}
               <Link
                 to={username ? `/user/${username}` : "#"}
@@ -305,29 +305,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </aside>
         )}
+      </header>
 
-        {/* Page Content */}
-        <div
-          className="flew-full px-3 overflow-x-hiddenx-1 w-full"
-          style={{ paddingTop: '16px' }}
-        >
-          <div className="container mx-auto p-4 max-w-full">
-            {children}
-          </div>
+      {/* Content flows normally */}
+      <main>
+        <div className="container mx-auto p-4 max-w-full md:ml-64">
+          {children}
         </div>
-        
+
         {/* Mobile Navbar */}
-        <NavBar 
+        <NavBar
           items={[
             { name: 'Home', url: '/', icon: Home },
             { name: 'Messages', url: '/messages', icon: MessageSquare },
             { name: 'Discover', url: '/discover', icon: Compass },
             { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
             { name: 'Settings', url: '/settings', icon: Settings },
-          ]} 
-          className="fixed bottom-0" 
+          ]}
+          className="fixed bottom-0"
         />
       </main>
-    </div>
+    </>
   )
 }
