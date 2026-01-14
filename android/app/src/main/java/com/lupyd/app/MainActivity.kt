@@ -3,8 +3,10 @@ package com.lupyd.app
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -47,8 +49,20 @@ class MainActivity : BridgeActivity() {
         }
     lateinit var serverThread: Thread
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-//        bridge.getWebView().getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
+        window.setBackgroundDrawableResource(android.R.color.white)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            @Suppress("DEPRECATION")
+            window.insetsController?.setSystemBarsAppearance(
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.decorView.systemUiVisibility =
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        }
 
         System.setProperty("kotlinx.coroutines.debug", "on")
 
@@ -58,12 +72,9 @@ class MainActivity : BridgeActivity() {
         Log.i("lupyd-cap", "Encryption Plugin registered")
         Log.i("lupyd-cap", "NativeNotification Plugin registered")
 
-        super.onCreate(savedInstanceState)
-        
-        // Force Android to NEVER resize or pan the WebView
-        window.setSoftInputMode(
-            android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
-        )
+
+//        bridge.getWebView().getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
+
 
 //        bridge.webView.settings.setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW)
         val webView = bridge.getWebView()

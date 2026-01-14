@@ -29,6 +29,11 @@ const config: CapacitorConfig = {
     },
 
     EncryptionPlugin: {},
+    StatusBar: {
+      backgroundColor: '#ffffff',
+      style: 'DARK',
+      overlaysWebView: false
+    },
   },
   // server: {
   //   androidScheme: "http",
