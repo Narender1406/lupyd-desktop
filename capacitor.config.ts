@@ -24,8 +24,8 @@ const config: CapacitorConfig = {
     //   iconColor: "#000000",
     // },
     Keyboard: {
-      resize: 'none',
-      resizeOnFullScreen: false,
+      resize: 'native',
+      resizeOnFullScreen: true,
     },
 
     EncryptionPlugin: {},

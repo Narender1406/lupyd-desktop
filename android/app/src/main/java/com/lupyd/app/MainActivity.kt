@@ -14,6 +14,8 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.getcapacitor.BridgeActivity
 
 
@@ -53,18 +55,32 @@ class MainActivity : BridgeActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // ✅ Android 13–16
-            // Prevent the window (header + page) from moving
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-            window.setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
+        // ✅ Unified approach for all Android versions
+        // Enable edge-to-edge to allow manual inset handling
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
+        // Use ADJUST_RESIZE for compatibility (enhanced by WindowInsets on newer versions)
+        window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        )
+        
+        // Apply WindowInsets listener to handle IME and system bars properly
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            
+            // Calculate the bottom inset (either IME or navigation bar, whichever is larger)
+            val bottomInset = maxOf(ime.bottom, systemBars.bottom)
+            
+            // Apply padding to prevent content from going behind system UI
+            view.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                bottomInset
             )
-        } else {
-            // ✅ Older Android (works correctly with resize)
-            window.setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
-            )
+            
+            WindowInsetsCompat.CONSUMED
         }
 
         window.setBackgroundDrawableResource(android.R.color.white)
