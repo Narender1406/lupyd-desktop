@@ -137,3 +137,12 @@ body {
   min-width: 0;
   max-width: 100%;
 }
+
+html {
+  background-color: white;
+}
+
+
+.dark html {
+  background-color: black;
+}
