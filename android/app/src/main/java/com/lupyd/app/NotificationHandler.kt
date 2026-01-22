@@ -16,14 +16,12 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
-import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import com.lupyd.app.MyFirebaseMessagingService.Companion.CALL_NOTIFICATION_ID_BASE
 import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID
 import com.lupyd.app.MyFirebaseMessagingService.Companion.CHANNEL_ID_CALL
 import com.lupyd.app.MyFirebaseMessagingService.Companion.GROUP_KEY_MESSAGES
 import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
-import com.lupyd.app.NativeNotificationPlugin.Companion.ACTION_ACCEPT_CALL
 import firefly.Message
 import kotlinx.coroutines.runBlocking
 import uniffi.firefly_signal.UserMessage
@@ -31,28 +29,6 @@ import uniffi.firefly_signal.UserMessage
 class NotificationHandler(private val context: Context) {
 
     private val db = getDatabase(context)
-
-    fun showBundledNotification(other: String) {
-        try {
-            createNotificationChannel()
-
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager?
-            if (notificationManager == null) {
-                Log.e(TAG, "Failed to show bundled notification: notificationManager is null")
-                return
-            }
-
-            val notification = runBlocking {
-                buildUserNotification(context, other)
-            }
-
-            val notificationId = other.hashCode()
-            Log.d(TAG, "Showing bundled notification with ID: $notificationId")
-            notificationManager.notify(notificationId, notification)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error showing bundled notification", e)
-        }
-    }
 
     fun showCallNotification(caller: String, sessionId: Int) {
         try {

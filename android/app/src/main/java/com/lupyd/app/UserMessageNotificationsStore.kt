@@ -34,17 +34,5 @@ interface UserMessageNotificationsDao {
     @Query("DELETE FROM user_message_notifications WHERE other = :sender AND msgId <= :messageId")
     suspend fun deleteUntilOfSender(sender: String, messageId: Long)
 
-//    @Query("""
-//        WITH ranked_messages AS (
-//          SELECT
-//            *,
-//            ROW_NUMBER() OVER(PARTITION BY (CASE WHEN mfrom < mto THEN mfrom || mto ELSE mto || mfrom END) ORDER BY msgId DESC) as rn
-//          FROM user_message_notifications
-//        )
-//        SELECT *
-//        FROM ranked_messages
-//        WHERE rn <= :limit
-//        ORDER BY mfrom, msgId DESC
-//    """)
-//    suspend fun getLastNPerSender(limit: Int): List<DMessageNotification>
+
 }

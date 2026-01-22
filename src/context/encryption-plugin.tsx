@@ -5,6 +5,23 @@ import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core
 import { protos as FireflyProtos } from "firefly-client-js";
 
 
+export interface UpdateRoleProposal {
+  name: string;
+  roleId: number;
+  permissions: number;
+  delete: boolean;
+}
+
+export interface UpdateUserProposal {
+  username: string;
+  roleId: number;
+}
+
+export interface Conversation {
+  other: string;
+  settings: number;
+}
+
 export interface BUserMessage {
   id: number,
   other: string,
@@ -140,11 +157,34 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   
   getGroupMessages(options: { groupId: number, startBefore: number, limit: number }): Promise<{ result: BGroupMessage[]}>
 
-  updateGroupChannel(options: { groupId: number, delete: boolean, payloadB64: string }): Promise<void>
+  updateGroupChannel(options: { 
+    groupId: number, 
+    id: number, 
+    delete: boolean, 
+    name: string, 
+    channelTy: number, 
+    defaultPermissions: number 
+  }): Promise<{ messageId: number }>
 
-  updateGroupRole(options: { groupId: number, roleName: string, roleId: number, permissions: number, delete: boolean }): Promise<void>
+  updateGroupRoles(options: { 
+    groupId: number, 
+    roles: UpdateRoleProposal[] 
+  }): Promise<{ messageId: number }>
 
-  updateGroupMember(options: { groupId: number, username: string, roleId: number }): Promise<void>
+  updateGroupRolesInChannel(options: { 
+    groupId: number, 
+    channelId: number, 
+    roles: UpdateRoleProposal[] 
+  }): Promise<{ messageId: number }>
+
+  updateGroupUsers(options: { 
+    groupId: number, 
+    users: UpdateUserProposal[] 
+  }): Promise<{ messageId: number }>
+
+  getConversations(options: { token: string }): Promise<{ result: Conversation[] }>
+
+  dispose(): Promise<void>
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")

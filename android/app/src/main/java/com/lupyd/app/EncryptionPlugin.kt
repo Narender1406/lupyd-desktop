@@ -18,12 +18,16 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uniffi.firefly_signal.FfiConversation
 import uniffi.firefly_signal.GroupInfo
 import uniffi.firefly_signal.GroupMessage
+import uniffi.firefly_signal.UpdateRoleProposalFfi
+import uniffi.firefly_signal.UpdateUserProposalFfi
 import uniffi.firefly_signal.UserMessage
 
 
-@CapacitorPlugin(name = "EncryptionPlugin",
+@CapacitorPlugin(
+    name = "EncryptionPlugin",
     permissions = [
         Permission(
             alias = "camera",
@@ -31,10 +35,10 @@ import uniffi.firefly_signal.UserMessage
         ),
         Permission(
             alias = "mic",
-            strings = [ Manifest.permission.RECORD_AUDIO ]
+            strings = [Manifest.permission.RECORD_AUDIO]
         )
     ]
-    )
+)
 class EncryptionPlugin : Plugin() {
 
 
@@ -285,92 +289,102 @@ class EncryptionPlugin : Plugin() {
         }
 
     }
-        @PluginMethod
-        fun getGroupInfos(call: PluginCall) {
 
-            bridge.activity.lifecycleScope.launch {
-                try {
-                    val groups = fireflyClient.getAllGroups()
+    @PluginMethod
+    fun getGroupInfos(call: PluginCall) {
 
-                    val arr = JSArray()
-                    for (group in groups) {
-                        arr.put(groupInfoToJSObj(group))
-                    }
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groups = fireflyClient.getAllGroups()
 
-                    call.resolve(JSObject().put("result", arr))
-                } catch (e: Exception) {
-                    Log.e(tag, "failed to get group messages ${e}")
+                val arr = JSArray()
+                for (group in groups) {
+                    arr.put(groupInfoToJSObj(group))
                 }
-            }
 
-        }
-
-        @PluginMethod
-        fun createGroup(call: PluginCall) {
-            bridge.activity.lifecycleScope.launch {
-                try {
-                    val group = fireflyClient.createGroup(call.data.getString("groupName")!!)
-
-                    call.resolve(groupInfoToJSObj(group))
-                } catch (e: Exception) {
-                    Log.e(tag, "failed to create group ${e}")
-                    call.reject(e.toString())
-                }
+                call.resolve(JSObject().put("result", arr))
+            } catch (e: Exception) {
+                Log.e(tag, "failed to get group messages ${e}")
             }
         }
 
-        @PluginMethod
-        fun getGroupExtension(call: PluginCall) {
-            bridge.activity.lifecycleScope.launch {
-                try {
-                    val groupId = call.data.getLong("groupId")
-                    val group = fireflyClient.getGroupExtension(groupId)
+    }
 
-                    call.resolve(
-                        JSObject().put(
-                            "resultB64",
-                            Base64.encodeToString(group, Base64.NO_WRAP)
-                        )
+    @PluginMethod
+    fun createGroup(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val group = fireflyClient.createGroup(call.data.getString("groupName")!!)
+
+                call.resolve(groupInfoToJSObj(group))
+            } catch (e: Exception) {
+                Log.e(tag, "failed to create group ${e}")
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun getGroupExtension(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getLong("groupId")
+                val group = fireflyClient.getGroupExtension(groupId)
+
+                call.resolve(
+                    JSObject().put(
+                        "resultB64",
+                        Base64.encodeToString(group, Base64.NO_WRAP)
                     )
-                } catch (e: Exception) {
-                    Log.e(tag, "failed to get group messages ${e}")
-                    call.reject(e.toString())
-                }
+                )
+            } catch (e: Exception) {
+                Log.e(tag, "failed to get group messages ${e}")
+                call.reject(e.toString())
             }
         }
+    }
 
-        @PluginMethod
-        fun encryptAndSendGroupMessage(call: PluginCall) {
-            bridge.activity.lifecycleScope.launch {
-                try {
-                    val payloadB64 = call.data.getString("textB64")!!
-                    val to = call.data.getLong("groupId")!!
-                    val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
+    @PluginMethod
+    fun encryptAndSendGroupMessage(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val payloadB64 = call.data.getString("textB64")!!
+                val to = call.data.getLong("groupId")!!
+                val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
 
-                    val dmsg = fireflyClient.encryptAndSendGroup(
-                        payload,
-                        to,
-                    )
-                    call.resolve(JSObject().put("messageId", dmsg))
-                } catch (e: Exception) {
-                    Log.e(tag, e.toString())
-                    call.reject(e.toString())
+                val dmsg = fireflyClient.encryptAndSendGroup(
+                    payload,
+                    to,
+                )
+                call.resolve(JSObject().put("messageId", dmsg))
+            } catch (e: Exception) {
+                Log.e(tag, e.toString())
+                call.reject(e.toString())
 
-                }
             }
         }
+    }
 
     @PluginMethod
     fun updateGroupChannel(call: PluginCall) {
         bridge.activity.lifecycleScope.launch {
             try {
                 val groupId = call.data.getString("groupId")!!.toLong()
+                val id = call.data.getInteger("id")!!
                 val delete = call.data.getBoolean("delete")!!
-                val payloadB64 = call.data.getString("payloadB64")!!
-                val payload = Base64.decode(payloadB64, Base64.NO_WRAP)
-                
-                fireflyClient.updateGroupChannel(groupId, delete, payload)
-                call.resolve(JSObject())
+                val name = call.data.getString("name")!!
+                val channelTy = call.data.getInteger("channelTy")!!.toUByte()
+                val defaultPermissions = call.data.getInteger("defaultPermissions")!!
+
+                val messageId = fireflyClient.updateGroupChannel(
+                    groupId,
+                    id,
+                    delete,
+                    name,
+                    channelTy,
+                    defaultPermissions
+                )
+                call.resolve(JSObject().put("messageId", messageId))
             } catch (e: Exception) {
                 Log.e(tag, e.toString(), e)
                 call.reject(e.toString())
@@ -379,56 +393,143 @@ class EncryptionPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun updateGroupRole(call: PluginCall) {
+    fun updateGroupRoles(call: PluginCall) {
         bridge.activity.lifecycleScope.launch {
             try {
                 val groupId = call.data.getString("groupId")!!.toLong()
-                val roleName = call.data.getString("roleName")!!
-                val roleId = call.data.getInteger("roleId")!!
-                val permissions = call.data.getInteger("permissions")!!
-                val delete = call.data.getBoolean("delete")!!
+                val rolesArray = call.data.getJSONArray("roles")
+                val roles = mutableListOf<UpdateRoleProposalFfi>()
 
-                fireflyClient.updateGroupRole(groupId, roleName, roleId, permissions, delete)
-                call.resolve(JSObject())
-            } catch (e: Exception) {
-                Log.e(tag, e.toString(), e)
-                call.reject(e.toString())
-            }
-        }
-    }
-    
-    @PluginMethod
-    fun updateGroupMember(call: PluginCall) {
-        bridge.activity.lifecycleScope.launch {
-            try {
-                val groupId = call.data.getString("groupId")!!.toLong()
-                val username = call.data.getString("username")!!
-                val roleId = call.data.getInteger("roleId")!!
-
-                 fireflyClient.updateGroupMember(groupId, username, roleId)
-                call.resolve(JSObject())
-            } catch (e: Exception) {
-                Log.e(tag, e.toString(), e)
-                call.reject(e.toString())
-            }
-        }
-    }
-
-        @PluginMethod
-        fun getLastGroupMessages(call: PluginCall) {
-            bridge.activity.lifecycleScope.launch {
-                try {
-                    val arr = JSArray()
-                    for (msg in fireflyClient.getGroupLastMessages()) {
-                        arr.put(groupMessageToJsObj(msg))
-                    }
-                    call.resolve(JSObject().put("result", arr))
-                } catch (e: Exception) {
-                    Log.e(tag, "failed to get last group messages $e")
-                    call.reject(e.toString())
+                for (i in 0 until rolesArray.length()) {
+                    val roleObj = JSObject.fromJSONObject(rolesArray.getJSONObject(i))
+                    roles.add(
+                        UpdateRoleProposalFfi(
+                            roleObj.getString("name")!!,
+                            roleObj.getInteger("roleId")!!.toUInt(),
+                            roleObj.getInteger("permissions")!!.toUInt(),
+                            roleObj.getBoolean("delete")
+                        )
+                    )
                 }
+
+                val messageId = fireflyClient.updateGroupRoles(groupId, roles)
+                call.resolve(JSObject().put("messageId", messageId))
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
             }
         }
+    }
+
+    @PluginMethod
+    fun updateGroupRolesInChannel(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val channelId = call.data.getInteger("channelId")!!
+                val rolesArray = call.data.getJSONArray("roles")!!
+                val roles = mutableListOf<UpdateRoleProposalFfi>()
+
+                for (i in 0 until rolesArray.length()) {
+                    val roleObj = JSObject.fromJSONObject(rolesArray.getJSONObject(i))
+                    roles.add(
+                        UpdateRoleProposalFfi(
+                            roleObj.getString("name")!!,
+                            roleObj.getInteger("roleId")!!.toUInt(),
+                            roleObj.getInteger("permissions")!!.toUInt(),
+                            roleObj.getBoolean("delete")!!
+                        )
+                    )
+                }
+
+                val messageId = fireflyClient.updateGroupRolesInChannel(groupId, channelId, roles)
+                call.resolve(JSObject().put("messageId", messageId))
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun updateGroupUsers(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val usersArray = call.data.getJSONArray("users")!!
+                val users = mutableListOf<UpdateUserProposalFfi>()
+
+                for (i in 0 until usersArray.length()) {
+                    val userObj = JSObject.fromJSONObject(usersArray.getJSONObject(i))
+                    users.add(
+                        UpdateUserProposalFfi(
+                            userObj.getString("username")!!,
+                            userObj.getInteger("roleId")!!.toUInt()
+                        )
+                    )
+                }
+
+                val messageId = fireflyClient.updateGroupUsers(groupId, users)
+                call.resolve(JSObject().put("messageId", messageId))
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun getConversations(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val token = call.data.getString("token")!!
+                val conversations = fireflyClient.getConversations(token)
+
+                val arr = JSArray()
+                for (conv in conversations) {
+                    arr.put(
+                        JSObject()
+                            .put("other", conv.other)
+                            .put("settings", conv.settings.toLong())
+                    )
+                }
+
+                call.resolve(JSObject().put("result", arr))
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun dispose(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                fireflyClient.dispose()
+                call.resolve()
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun getLastGroupMessages(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val arr = JSArray()
+                for (msg in fireflyClient.getGroupLastMessages()) {
+                    arr.put(groupMessageToJsObj(msg))
+                }
+                call.resolve(JSObject().put("result", arr))
+            } catch (e: Exception) {
+                Log.e(tag, "failed to get last group messages $e")
+                call.reject(e.toString())
+            }
+        }
+    }
 
 
     @PluginMethod
@@ -453,8 +554,7 @@ class EncryptionPlugin : Plugin() {
         }
     }
 
-    }
-
+}
 
 
 fun groupInfoToJSObj(groupInfo: GroupInfo): JSObject {
@@ -470,26 +570,29 @@ fun groupMessageToJsObj(msg: GroupMessage): JSObject {
         .put("sender", msg.by)
         .put("textB64", Base64.encodeToString(msg.message, Base64.NO_WRAP))
         .put("id", msg.id)
+        .put("channelId", msg.channelId)
+        .put("epoch", msg.epoch)
 }
 
-    fun userMessageToJsObj(msg: UserMessage): JSObject {
+fun userMessageToJsObj(msg: UserMessage): JSObject {
 
-        val base64 = Base64.encodeToString(msg.message, Base64.NO_WRAP)
+    val base64 = Base64.encodeToString(msg.message, Base64.NO_WRAP)
 
-        return JSObject().put("id", msg.id).put("other", msg.other).put("sentByOther", msg.sentByOther).put("textB64", base64)
+    return JSObject().put("id", msg.id).put("other", msg.other).put("sentByOther", msg.sentByOther)
+        .put("textB64", base64)
 
 
-    }
+}
 
-    fun jsObjToUserMessage(obj: JSObject): UserMessage {
-        val msg = UserMessage(
-            obj.getLong("id").toULong(),
-            obj.getString("other")!!,
+fun jsObjToUserMessage(obj: JSObject): UserMessage {
+    val msg = UserMessage(
+        obj.getLong("id").toULong(),
+        obj.getString("other")!!,
 
-            Base64.decode(obj.getString("textB64")!!, Base64.NO_WRAP),
-            obj.getBoolean("sentByOther"),
+        Base64.decode(obj.getString("textB64")!!, Base64.NO_WRAP),
+        obj.getBoolean("sentByOther"),
 
-            )
+        )
 
-        return msg
-    }
+    return msg
+}

@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import uniffi.firefly_signal.ConnectionState
+import uniffi.firefly_signal.FfiConversation
 import uniffi.firefly_signal.FfiFireflyWsClient
 import uniffi.firefly_signal.FireflyWsClientCallback
 import uniffi.firefly_signal.GroupInfo
@@ -15,6 +16,8 @@ import uniffi.firefly_signal.GroupMessage
 import uniffi.firefly_signal.LastMessageAndUnreadCount
 import uniffi.firefly_signal.MessagesStore
 import uniffi.firefly_signal.TokenResponse
+import uniffi.firefly_signal.UpdateRoleProposalFfi
+import uniffi.firefly_signal.UpdateUserProposalFfi
 import uniffi.firefly_signal.UserMessage
 import uniffi.firefly_signal.initLogger
 import java.io.File
@@ -22,6 +25,7 @@ import java.io.File
 class FireflyClient() {
 
     companion object {
+        private const val TAG = "lupyd-firefly"
         private var instance: FireflyClient? = null
 
         fun getInstance(ctx: Context): FireflyClient {
@@ -41,7 +45,7 @@ class FireflyClient() {
         notificationHandler = NotificationHandler(ctx)
     }
 
-    val tag = "lupyd-firefly"
+    private val tag = TAG
 
 
     var client: FfiFireflyWsClient? = null
@@ -324,17 +328,48 @@ class FireflyClient() {
         return client!!.groupMessageStore().getAllLastMessagesFfi()
     }
 
-    suspend fun updateGroupChannel(groupId: Long, delete: Boolean, payload: ByteArray) {
-        return client!!.updateGroupChannel(groupId.toULong(), delete, payload)
+    suspend fun updateGroupChannel(groupId: Long, id: Int, delete: Boolean, name: String, channelTy: UByte, defaultPermissions: Int): Long {
+        return client!!.updateGroupChannel(groupId.toULong(), id.toUInt(), delete, name, channelTy, defaultPermissions.toUInt()).toLong()
     }
 
-    suspend fun updateGroupRole(groupId: Long, roleName: String, roleId: Int, permissions: Int, delete: Boolean) {
-        return client!!.updateGroupRole(groupId.toULong(), roleName, roleId.toUInt(), permissions.toUInt(), delete)
+    suspend fun updateGroupRoles(groupId: Long, roles: List<UpdateRoleProposalFfi>): Long {
+        return client!!.updateGroupRoles(groupId.toULong(), roles).toLong()
     }
 
-    suspend fun updateGroupMember(groupId: Long, username: String, roleId: Int) {
-        return client!!.updateGroupMember(groupId.toULong(), username, roleId.toUInt())
+    suspend fun updateGroupRolesInChannel(groupId: Long, channelId: Int, roles: List<UpdateRoleProposalFfi>): Long {
+        return client!!.updateGroupRolesInChannel(groupId.toULong(), channelId.toUInt(), roles).toLong()
     }
 
+    suspend fun updateGroupUsers(groupId: Long, users: List<UpdateUserProposalFfi>): Long {
+        return client!!.updateGroupUsers(groupId.toULong(), users).toLong()
+    }
+
+    suspend fun dispose() {
+        client!!.dispose()
+    }
+
+    suspend fun getConversations(token: String): List<FfiConversation> {
+        return client!!.getConversations(token)
+    }
+
+    fun getConnectionState(): ConnectionState {
+        return client!!.getConnectionState()
+    }
+
+    suspend fun initializeWithRetrying() {
+        client!!.initializeWithRetrying()
+    }
+
+    fun groupInfoStore() = client!!.groupInfoStore()
+    
+    fun groupMessageStore() = client!!.groupMessageStore()
+
+    suspend fun setAuthTokens(tokens: TokenResponse) {
+        client!!.setAuthTokens(tokens)
+    }
+
+    suspend fun uploadFcmToken(token: String?) {
+        client!!.uploadFcmToken(token)
+    }
 
 }

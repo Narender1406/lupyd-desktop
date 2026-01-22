@@ -423,6 +423,7 @@ export default function UserMessagePage() {
             dataLength={messages.length}
             inverse={false}
             style={{ display: 'flex', flexDirection: 'column' }}
+            
           >
             {messages.map((message) => (
               <div key={message.id.toString()} className="space-y-4">
