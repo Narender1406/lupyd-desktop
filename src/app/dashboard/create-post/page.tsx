@@ -491,7 +491,7 @@ export default function CreatePostPage() {
 
   return (
     <DashboardLayout /*activeTab="create-post"*/>
-      <div className="container max-w-6xl px-4 py-6 mx-auto" style={{ paddingBottom: '0px' }}>
+      <div className="container max-w-6xl px-4 py-6 mx-auto" style={{ paddingBottom: 'max(4rem, calc(env(safe-area-inset-bottom, 1rem) + 80px))' }}>
         <h1 className="text-2xl font-bold mb-6">
           {isDraft ? "Edit Draft" : "Create Post"}
           {isDraft && (

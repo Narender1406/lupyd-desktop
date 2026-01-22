@@ -24,11 +24,16 @@ const config: CapacitorConfig = {
     //   iconColor: "#000000",
     // },
     Keyboard: {
-      resize: 'none',
-      resizeOnFullScreen: false,
+      resize: 'native',
+      resizeOnFullScreen: true,
     },
 
     EncryptionPlugin: {},
+    StatusBar: {
+      backgroundColor: '#ffffff',
+      style: 'DARK',
+      overlaysWebView: false
+    },
   },
   // server: {
   //   androidScheme: "http",

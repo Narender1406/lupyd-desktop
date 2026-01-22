@@ -21,33 +21,8 @@ CapacitorApp.addListener('backButton', ({ canGoBack }) => {
   }
 });
 
-// Configure status bar to be visible and styled appropriately
-const configureStatusBar = async () => {
-  try {
-    // Check if we're on a native platform
-    const { Capacitor } = await import('@capacitor/core');
-    if (Capacitor.isNativePlatform()) {
-      // Import StatusBar plugin dynamically
-      const { StatusBar, Style } = await import('@capacitor/status-bar');
-
-      // Set status bar style to light content (white text/icons)
-      await StatusBar.setStyle({ style: Style.Light });
-
-      // Set status bar background color to match app theme
-      await StatusBar.setBackgroundColor({ color: '#000000' }); // Black background
-
-      // Show status bar (in case it was hidden)
-      await StatusBar.show();
-
-      console.log('Status bar configured successfully');
-    }
-  } catch (error) {
-    console.error('Failed to configure status bar:', error);
-  }
-};
-
-// Configure status bar on app start
-configureStatusBar();
+// No status bar configuration - letting native theme control it completely
+// All JS calls removed as per instructions
 
 import { ApiServiceProvider } from "@/context/apiService"
 import { PersistenceProvider } from "@/context/persistence-provider"
@@ -70,7 +45,7 @@ createRoot(document.getElementById('root')!).render(
                     <UserDataProvider>
                       <SavedPostsDataProvider>
                       <FireflyProvider>
-                        <div className="flex min-h-screen flex-col">
+                        <div>
                           <App />
                         </div>
                       </FireflyProvider>

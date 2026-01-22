@@ -156,7 +156,7 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: '0px' }}>
+      <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: 'max(4rem, calc(env(safe-area-inset-bottom, 1rem) + 80px))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings and preferences</p>

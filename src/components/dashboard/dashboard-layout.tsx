@@ -126,36 +126,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen w-full">
-      {/* Sidebar - Desktop Only - Hidden on mobile */}
-      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
-        {/* Logo */}
-        <div className="p-4 border-b dark:border-neutral-800">
-          <Link to="/" className="flex items-center">
-            <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
-          </Link>
-        </div>
+    <>
+      {/* Header stays visible */}
+      <header className="sticky top-0 z-50 bg-white dark:bg-black">
+        {/* Sidebar - Desktop Only - Hidden on mobile */}
+        <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
+          {/* Logo */}
+          <div className="p-4 border-b dark:border-neutral-800">
+            <Link to="/" className="flex items-center">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
+            </Link>
+          </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 p-4 space-y-1">
-          {dedupedNavItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={index}
-                to={item.path}
-                className={`flex items-center px-3 py-2 rounded-md ${isActive
-                  ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
-                  : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
-                  }`}
-              >
-                <Icon className="mr-3 h-5 w-5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+          {/* Navigation Links */}
+          <nav className="flex-1 p-4 space-y-1">
+            {dedupedNavItems.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className={`flex items-center px-3 py-2 rounded-md ${isActive
+                    ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
+                    }`}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
         {/* Profile / Sign In or Out */}
         <div className="p-4 border-t dark:border-neutral-800">
@@ -191,16 +193,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-screen max-w-full md:ml-64 w-full">
         {/* Top Bar - No sidebar toggle on mobile in header anymore */}
         <div
-          className="sticky top-0 z-20 border-b bg-white dark:bg-black"
+          className="border-b bg-white dark:bg-black"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
           }}
         >
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-4 md:ml-64">
             {/* Logo - shown on both mobile and desktop */}
             <div className="flex items-center">
               <Link to="/" className="font-bold text-xl">
@@ -306,15 +306,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </aside>
         )}
+      </header>
 
-        {/* Page Content */}
-        <div
-          className="flew-full px-3 overflow-x-hiddenx-1 w-full"
-          style={{ paddingTop: '16px' }}
-        >
-          <div className="container mx-auto p-4 max-w-full">
-            {children}
-          </div>
+      {/* Content flows normally */}
+      <main>
+        <div className="container mx-auto p-4 max-w-full md:ml-64">
+          {children}
         </div>
 
         {/* Mobile Navbar */}
@@ -330,6 +327,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           className="fixed bottom-0"
         />
       </main>
-    </div>
+    </>
   )
 }
