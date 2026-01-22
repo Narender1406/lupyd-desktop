@@ -1,8 +1,10 @@
 package com.lupyd.app
 
 import android.Manifest
+import android.os.Build
 import android.util.Base64
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -11,14 +13,8 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
-import firefly.Message
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uniffi.firefly_signal.FfiConversation
 import uniffi.firefly_signal.GroupInfo
 import uniffi.firefly_signal.GroupMessage
 import uniffi.firefly_signal.UpdateRoleProposalFfi
@@ -60,7 +56,6 @@ class EncryptionPlugin : Plugin() {
         fireflyClient.addOnMessageCallback(this::sendUserMessage)
         fireflyClient.addOnGroupMessageCallback(this::sendGroupMessage)
 
-
         bridge.activity.lifecycleScope.launch {
             fireflyClient.initialize(context)
         }
@@ -88,6 +83,7 @@ class EncryptionPlugin : Plugin() {
             call.resolve(result)
         }
     }
+
 
     @PluginMethod
     fun encryptAndSend(call: PluginCall) {
