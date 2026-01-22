@@ -430,6 +430,29 @@ class EncryptionPlugin : Plugin() {
             }
         }
 
+
+    @PluginMethod
+    fun getGroupInfoAndExtension(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+
+                val groupId = call.data.getString("groupId")!!.toLong()
+                val groupInfo = fireflyClient.getGroupInfo(groupId)
+                val extension = fireflyClient.getGroupExtension(groupId)
+
+                val obj = groupInfoToJSObj(groupInfo)
+                obj.put("extensionB64", Base64.encodeToString(extension, Base64.NO_WRAP))
+
+                call.resolve(obj)
+
+            } catch (e: Exception) {
+
+                Log.e(tag, "failed to get group info $e")
+                call.reject(e.toString())
+            }
+        }
+    }
+
     }
 
 

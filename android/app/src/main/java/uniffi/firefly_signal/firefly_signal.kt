@@ -699,49 +699,13 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_channel(
     ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_member(
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_roles(
     ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_role(
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_roles_in_channel(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_users(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_create_group(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_generate_key_package(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_is_valid_until_secs(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_join_group(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_load_group(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsclient_username(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_add_member(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_encrypt(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_extension(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_group_id(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_group_identifier(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_kick_member(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_process(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_re_add_member(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_save(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_state(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_update_channel(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_update_role(
-    ): Short
-    external fun uniffi_firefly_signal_checksum_method_ffimlsgroup_update_user(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi(
     ): Short
@@ -820,11 +784,13 @@ external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_initialize_with_
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_set_auth_tokens(`ptr`: Long,`tokens`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_channel(`ptr`: Long,`groupId`: Long,`delete`: Byte,`payload`: RustBuffer.ByValue,
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_channel(`ptr`: Long,`groupId`: Long,`id`: Int,`delete`: Byte,`name`: RustBuffer.ByValue,`channelTy`: Byte,`defaultPermissions`: Int,
 ): Long
-external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_member(`ptr`: Long,`groupId`: Long,`username`: RustBuffer.ByValue,`roleId`: Int,
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_roles(`ptr`: Long,`groupId`: Long,`roles`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_role(`ptr`: Long,`groupId`: Long,`name`: RustBuffer.ByValue,`roleId`: Int,`permissions`: Int,`delete`: Byte,
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_roles_in_channel(`ptr`: Long,`groupId`: Long,`channelId`: Int,`roles`: RustBuffer.ByValue,
+): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_users(`ptr`: Long,`groupId`: Long,`users`: RustBuffer.ByValue,
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_upload_fcm_token(`ptr`: Long,`token`: RustBuffer.ByValue,
 ): Long
@@ -832,52 +798,6 @@ external fun uniffi_firefly_signal_fn_clone_ffikeystores(`handle`: Long,uniffi_o
 ): Long
 external fun uniffi_firefly_signal_fn_free_ffikeystores(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_firefly_signal_fn_clone_ffimlsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_firefly_signal_fn_free_ffimlsclient(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_create_group(`ptr`: Long,`groupName`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_generate_key_package(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_is_valid_until_secs(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_join_group(`ptr`: Long,`groupId`: Long,`welcomeMessage`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_load_group(`ptr`: Long,`groupId`: Long,`groupIdentifier`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsclient_username(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): RustBuffer.ByValue
-external fun uniffi_firefly_signal_fn_clone_ffimlsgroup(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_firefly_signal_fn_free_ffimlsgroup(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Unit
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_add_member(`ptr`: Long,`username`: RustBuffer.ByValue,`roleId`: Int,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_encrypt(`ptr`: Long,`data`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_extension(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_group_id(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_group_identifier(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_kick_member(`ptr`: Long,`username`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_process(`ptr`: Long,`message`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_re_add_member(`ptr`: Long,`username`: RustBuffer.ByValue,`address`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_save(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_state(`ptr`: Long,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_update_channel(`ptr`: Long,`delete`: Byte,`payload`: RustBuffer.ByValue,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_update_role(`ptr`: Long,`name`: RustBuffer.ByValue,`roleId`: Int,`permissions`: Int,`delete`: Byte,
-): Long
-external fun uniffi_firefly_signal_fn_method_ffimlsgroup_update_user(`ptr`: Long,`username`: RustBuffer.ByValue,`roleId`: Int,
-): Long
 external fun uniffi_firefly_signal_fn_clone_groupinfostore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
 external fun uniffi_firefly_signal_fn_free_groupinfostore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -892,13 +812,13 @@ external fun uniffi_firefly_signal_fn_clone_groupmessagesstore(`handle`: Long,un
 ): Long
 external fun uniffi_firefly_signal_fn_free_groupmessagesstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
-external fun uniffi_firefly_signal_fn_method_groupmessagesstore_add_ffi(`ptr`: Long,`id`: Long,`groupId`: Long,`by`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,
+external fun uniffi_firefly_signal_fn_method_groupmessagesstore_add_ffi(`ptr`: Long,`id`: Long,`groupId`: Long,`channelId`: Int,`epoch`: Int,`by`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,
 ): Long
 external fun uniffi_firefly_signal_fn_method_groupmessagesstore_get_all_last_messages_ffi(`ptr`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_groupmessagesstore_get_ffi(`ptr`: Long,`groupId`: Long,`startBefore`: Long,`limit`: Int,
 ): Long
-external fun uniffi_firefly_signal_fn_method_groupmessagesstore_update_cursor_ffi(`ptr`: Long,`id`: Long,`groupId`: Long,
+external fun uniffi_firefly_signal_fn_method_groupmessagesstore_update_cursor_ffi(`ptr`: Long,`id`: Long,`groupId`: Long,`epoch`: Int,
 ): Long
 external fun uniffi_firefly_signal_fn_clone_messagesstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Long
@@ -1078,73 +998,19 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_set_auth_tokens() != 26163.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_channel() != 16586.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_channel() != 31290.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_member() != 1585.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_roles() != 32108.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_role() != 63810.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_roles_in_channel() != 43371.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_update_group_users() != 11672.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token() != 37401.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_create_group() != 58591.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_generate_key_package() != 30321.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_is_valid_until_secs() != 8679.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_join_group() != 40335.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_load_group() != 49274.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsclient_username() != 48635.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_add_member() != 27284.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_encrypt() != 64583.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_extension() != 8985.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_group_id() != 47703.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_group_identifier() != 57890.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_kick_member() != 3937.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_process() != 17188.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_re_add_member() != 14374.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_save() != 38950.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_state() != 1430.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_update_channel() != 51195.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_update_role() != 53682.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_firefly_signal_checksum_method_ffimlsgroup_update_user() != 46712.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi() != 52813.toShort()) {
@@ -1156,7 +1022,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_set_ffi() != 50007.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi() != 2353.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi() != 58115.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_get_all_last_messages_ffi() != 37117.toShort()) {
@@ -1165,7 +1031,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_get_ffi() != 1294.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_update_cursor_ffi() != 6262.toShort()) {
+    if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_update_cursor_ffi() != 48090.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_messagesstore_get_last_message_from_all_conversations() != 46027.toShort()) {
@@ -1807,11 +1673,13 @@ public interface FfiFireflyWsClientInterface {
     
     suspend fun `setAuthTokens`(`tokens`: TokenResponse)
     
-    suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `delete`: kotlin.Boolean, `payload`: kotlin.ByteArray)
+    suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `id`: kotlin.UInt, `delete`: kotlin.Boolean, `name`: kotlin.String, `channelTy`: kotlin.UByte, `defaultPermissions`: kotlin.UInt): kotlin.ULong
     
-    suspend fun `updateGroupMember`(`groupId`: kotlin.ULong, `username`: kotlin.String, `roleId`: kotlin.UInt)
+    suspend fun `updateGroupRoles`(`groupId`: kotlin.ULong, `roles`: List<UpdateRoleProposalFfi>): kotlin.ULong
     
-    suspend fun `updateGroupRole`(`groupId`: kotlin.ULong, `name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean)
+    suspend fun `updateGroupRolesInChannel`(`groupId`: kotlin.ULong, `channelId`: kotlin.UInt, `roles`: List<UpdateRoleProposalFfi>): kotlin.ULong
+    
+    suspend fun `updateGroupUsers`(`groupId`: kotlin.ULong, `users`: List<UpdateUserProposalFfi>): kotlin.ULong
     
     suspend fun `uploadFcmToken`(`token`: kotlin.String?)
     
@@ -2126,20 +1994,19 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
     
     @Throws(DumbException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `delete`: kotlin.Boolean, `payload`: kotlin.ByteArray) {
+    override suspend fun `updateGroupChannel`(`groupId`: kotlin.ULong, `id`: kotlin.UInt, `delete`: kotlin.Boolean, `name`: kotlin.String, `channelTy`: kotlin.UByte, `defaultPermissions`: kotlin.UInt) : kotlin.ULong {
         return uniffiRustCallAsync(
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_channel(
                 uniffiHandle,
-                FfiConverterULong.lower(`groupId`),FfiConverterBoolean.lower(`delete`),FfiConverterByteArray.lower(`payload`),
+                FfiConverterULong.lower(`groupId`),FfiConverterUInt.lower(`id`),FfiConverterBoolean.lower(`delete`),FfiConverterString.lower(`name`),FfiConverterUByte.lower(`channelTy`),FfiConverterUInt.lower(`defaultPermissions`),
             )
         },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
         // lift function
-        { Unit },
-        
+        { FfiConverterULong.lift(it) },
         // Error FFI converter
         DumbException.ErrorHandler,
     )
@@ -2148,20 +2015,19 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
     
     @Throws(DumbException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateGroupMember`(`groupId`: kotlin.ULong, `username`: kotlin.String, `roleId`: kotlin.UInt) {
+    override suspend fun `updateGroupRoles`(`groupId`: kotlin.ULong, `roles`: List<UpdateRoleProposalFfi>) : kotlin.ULong {
         return uniffiRustCallAsync(
         callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_member(
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_roles(
                 uniffiHandle,
-                FfiConverterULong.lower(`groupId`),FfiConverterString.lower(`username`),FfiConverterUInt.lower(`roleId`),
+                FfiConverterULong.lower(`groupId`),FfiConverterSequenceTypeUpdateRoleProposalFfi.lower(`roles`),
             )
         },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
         // lift function
-        { Unit },
-        
+        { FfiConverterULong.lift(it) },
         // Error FFI converter
         DumbException.ErrorHandler,
     )
@@ -2170,20 +2036,40 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
     
     @Throws(DumbException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateGroupRole`(`groupId`: kotlin.ULong, `name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean) {
+    override suspend fun `updateGroupRolesInChannel`(`groupId`: kotlin.ULong, `channelId`: kotlin.UInt, `roles`: List<UpdateRoleProposalFfi>) : kotlin.ULong {
         return uniffiRustCallAsync(
         callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_role(
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_roles_in_channel(
                 uniffiHandle,
-                FfiConverterULong.lower(`groupId`),FfiConverterString.lower(`name`),FfiConverterUInt.lower(`roleId`),FfiConverterUInt.lower(`permissions`),FfiConverterBoolean.lower(`delete`),
+                FfiConverterULong.lower(`groupId`),FfiConverterUInt.lower(`channelId`),FfiConverterSequenceTypeUpdateRoleProposalFfi.lower(`roles`),
             )
         },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
         // lift function
-        { Unit },
-        
+        { FfiConverterULong.lift(it) },
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `updateGroupUsers`(`groupId`: kotlin.ULong, `users`: List<UpdateUserProposalFfi>) : kotlin.ULong {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_update_group_users(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),FfiConverterSequenceTypeUpdateUserProposalFfi.lower(`users`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
+        // lift function
+        { FfiConverterULong.lift(it) },
         // Error FFI converter
         DumbException.ErrorHandler,
     )
@@ -2596,900 +2482,6 @@ public object FfiConverterTypeFfiKeyStores: FfiConverter<FfiKeyStores, Long> {
 
 
 //
-public interface FfiMlsClientInterface {
-    
-    suspend fun `createGroup`(`groupName`: kotlin.String): FfiMlsGroup
-    
-    suspend fun `generateKeyPackage`(): kotlin.ByteArray
-    
-    suspend fun `isValidUntilSecs`(): kotlin.ULong
-    
-    suspend fun `joinGroup`(`groupId`: kotlin.ULong, `welcomeMessage`: kotlin.ByteArray): FfiMlsGroup
-    
-    suspend fun `loadGroup`(`groupId`: kotlin.ULong, `groupIdentifier`: kotlin.ByteArray): FfiMlsGroup
-    
-    fun `username`(): kotlin.String?
-    
-    companion object
-}
-
-open class FfiMlsClient: Disposable, AutoCloseable, FfiMlsClientInterface
-{
-
-    @Suppress("UNUSED_PARAMETER")
-    /**
-     * @suppress
-     */
-    constructor(withHandle: UniffiWithHandle, handle: Long) {
-        this.handle = handle
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    /**
-     * @suppress
-     *
-     * This constructor can be used to instantiate a fake object. Only used for tests. Any
-     * attempt to actually use an object constructed this way will fail as there is no
-     * connected Rust object.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    constructor(noHandle: NoHandle) {
-        this.handle = 0
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    protected val handle: Long
-    protected val cleanable: UniffiCleaner.Cleanable
-
-    private val wasDestroyed = AtomicBoolean(false)
-    private val callCounter = AtomicLong(1)
-
-    override fun destroy() {
-        // Only allow a single call to this method.
-        // TODO: maybe we should log a warning if called more than once?
-        if (this.wasDestroyed.compareAndSet(false, true)) {
-            // This decrement always matches the initial count of 1 given at creation time.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable.clean()
-            }
-        }
-    }
-
-    @Synchronized
-    override fun close() {
-        this.destroy()
-    }
-
-    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
-        // Check and increment the call counter, to keep the object alive.
-        // This needs a compare-and-set retry loop in case of concurrent updates.
-        do {
-            val c = this.callCounter.get()
-            if (c == 0L) {
-                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
-            }
-            if (c == Long.MAX_VALUE) {
-                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
-            }
-        } while (! this.callCounter.compareAndSet(c, c + 1L))
-        // Now we can safely do the method call without the handle being freed concurrently.
-        try {
-            return block(this.uniffiCloneHandle())
-        } finally {
-            // This decrement always matches the increment we performed above.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable.clean()
-            }
-        }
-    }
-
-    // Use a static inner class instead of a closure so as not to accidentally
-    // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val handle: Long) : Runnable {
-        override fun run() {
-            if (handle == 0.toLong()) {
-                // Fake object created with `NoHandle`, don't try to free.
-                return;
-            }
-            uniffiRustCall { status ->
-                UniffiLib.uniffi_firefly_signal_fn_free_ffimlsclient(handle, status)
-            }
-        }
-    }
-
-    /**
-     * @suppress
-     */
-    fun uniffiCloneHandle(): Long {
-        if (handle == 0.toLong()) {
-            throw InternalException("uniffiCloneHandle() called on NoHandle object");
-        }
-        return uniffiRustCall() { status ->
-            UniffiLib.uniffi_firefly_signal_fn_clone_ffimlsclient(handle, status)
-        }
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `createGroup`(`groupName`: kotlin.String) : FfiMlsGroup {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_create_group(
-                uniffiHandle,
-                FfiConverterString.lower(`groupName`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterTypeFfiMlsGroup.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `generateKeyPackage`() : kotlin.ByteArray {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_generate_key_package(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterByteArray.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `isValidUntilSecs`() : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_is_valid_until_secs(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `joinGroup`(`groupId`: kotlin.ULong, `welcomeMessage`: kotlin.ByteArray) : FfiMlsGroup {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_join_group(
-                uniffiHandle,
-                FfiConverterULong.lower(`groupId`),FfiConverterByteArray.lower(`welcomeMessage`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterTypeFfiMlsGroup.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `loadGroup`(`groupId`: kotlin.ULong, `groupIdentifier`: kotlin.ByteArray) : FfiMlsGroup {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_load_group(
-                uniffiHandle,
-                FfiConverterULong.lower(`groupId`),FfiConverterByteArray.lower(`groupIdentifier`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterTypeFfiMlsGroup.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    override fun `username`(): kotlin.String? {
-            return FfiConverterOptionalString.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_firefly_signal_fn_method_ffimlsclient_username(
-        it,
-        _status)
-}
-    }
-    )
-    }
-    
-
-    
-
-    
-
-
-    
-    
-    /**
-     * @suppress
-     */
-    companion object
-    
-}
-
-
-/**
- * @suppress
- */
-public object FfiConverterTypeFfiMlsClient: FfiConverter<FfiMlsClient, Long> {
-    override fun lower(value: FfiMlsClient): Long {
-        return value.uniffiCloneHandle()
-    }
-
-    override fun lift(value: Long): FfiMlsClient {
-        return FfiMlsClient(UniffiWithHandle, value)
-    }
-
-    override fun read(buf: ByteBuffer): FfiMlsClient {
-        return lift(buf.getLong())
-    }
-
-    override fun allocationSize(value: FfiMlsClient) = 8UL
-
-    override fun write(value: FfiMlsClient, buf: ByteBuffer) {
-        buf.putLong(lower(value))
-    }
-}
-
-
-// This template implements a class for working with a Rust struct via a handle
-// to the live Rust struct on the other side of the FFI.
-//
-// There's some subtlety here, because we have to be careful not to operate on a Rust
-// struct after it has been dropped, and because we must expose a public API for freeing
-// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
-//
-//   * Each instance holds an opaque handle to the underlying Rust struct.
-//     Method calls need to read this handle from the object's state and pass it in to
-//     the Rust FFI.
-//
-//   * When an instance is no longer needed, its handle should be passed to a
-//     special destructor function provided by the Rust FFI, which will drop the
-//     underlying Rust struct.
-//
-//   * Given an instance, calling code is expected to call the special
-//     `destroy` method in order to free it after use, either by calling it explicitly
-//     or by using a higher-level helper like the `use` method. Failing to do so risks
-//     leaking the underlying Rust struct.
-//
-//   * We can't assume that calling code will do the right thing, and must be prepared
-//     to handle Kotlin method calls executing concurrently with or even after a call to
-//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
-//
-//   * We must never allow Rust code to operate on the underlying Rust struct after
-//     the destructor has been called, and must never call the destructor more than once.
-//     Doing so may trigger memory unsafety.
-//
-//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
-//     is implemented to call the destructor when the Kotlin object becomes unreachable.
-//     This is done in a background thread. This is not a panacea, and client code should be aware that
-//      1. the thread may starve if some there are objects that have poorly performing
-//     `drop` methods or do significant work in their `drop` methods.
-//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
-//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
-//
-// If we try to implement this with mutual exclusion on access to the handle, there is the
-// possibility of a race between a method call and a concurrent call to `destroy`:
-//
-//    * Thread A starts a method call, reads the value of the handle, but is interrupted
-//      before it can pass the handle over the FFI to Rust.
-//    * Thread B calls `destroy` and frees the underlying Rust struct.
-//    * Thread A resumes, passing the already-read handle value to Rust and triggering
-//      a use-after-free.
-//
-// One possible solution would be to use a `ReadWriteLock`, with each method call taking
-// a read lock (and thus allowed to run concurrently) and the special `destroy` method
-// taking a write lock (and thus blocking on live method calls). However, we aim not to
-// generate methods with any hidden blocking semantics, and a `destroy` method that might
-// block if called incorrectly seems to meet that bar.
-//
-// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
-// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
-// has been called. These are updated according to the following rules:
-//
-//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
-//      The initial value for the flag is false.
-//
-//    * At the start of each method call, we atomically check the counter.
-//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
-//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
-//
-//    * At the end of each method call, we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-//    * When `destroy` is called, we atomically flip the flag from false to true.
-//      If the flag was already true we silently fail.
-//      Otherwise we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
-// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
-//
-// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
-// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
-// of the underlying Rust code.
-//
-// This makes a cleaner a better alternative to _not_ calling `destroy()` as
-// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
-// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
-// thread may be starved, and the app will leak memory.
-//
-// In this case, `destroy`ing manually may be a better solution.
-//
-// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
-// with Rust peers are reclaimed:
-//
-// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
-// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
-// 3. The memory is reclaimed when the process terminates.
-//
-// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
-//
-
-
-//
-public interface FfiMlsGroupInterface {
-    
-    suspend fun `addMember`(`username`: kotlin.String, `roleId`: kotlin.UInt): kotlin.ULong
-    
-    suspend fun `encrypt`(`data`: kotlin.ByteArray): kotlin.ByteArray
-    
-    suspend fun `extension`(): kotlin.ByteArray
-    
-    fun `groupId`(): kotlin.ULong
-    
-    suspend fun `groupIdentifier`(): kotlin.ByteArray
-    
-    suspend fun `kickMember`(`username`: kotlin.String): kotlin.ULong
-    
-    suspend fun `process`(`message`: kotlin.ByteArray): FireflyMlsReceivedMessage
-    
-    suspend fun `reAddMember`(`username`: kotlin.String, `address`: kotlin.ULong): kotlin.ULong
-    
-    suspend fun `save`()
-    
-    suspend fun `state`(): kotlin.ByteArray
-    
-    suspend fun `updateChannel`(`delete`: kotlin.Boolean, `payload`: kotlin.ByteArray): kotlin.ULong
-    
-    suspend fun `updateRole`(`name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean): kotlin.ULong
-    
-    suspend fun `updateUser`(`username`: kotlin.String, `roleId`: kotlin.UInt): kotlin.ULong
-    
-    companion object
-}
-
-open class FfiMlsGroup: Disposable, AutoCloseable, FfiMlsGroupInterface
-{
-
-    @Suppress("UNUSED_PARAMETER")
-    /**
-     * @suppress
-     */
-    constructor(withHandle: UniffiWithHandle, handle: Long) {
-        this.handle = handle
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    /**
-     * @suppress
-     *
-     * This constructor can be used to instantiate a fake object. Only used for tests. Any
-     * attempt to actually use an object constructed this way will fail as there is no
-     * connected Rust object.
-     */
-    @Suppress("UNUSED_PARAMETER")
-    constructor(noHandle: NoHandle) {
-        this.handle = 0
-        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
-    }
-
-    protected val handle: Long
-    protected val cleanable: UniffiCleaner.Cleanable
-
-    private val wasDestroyed = AtomicBoolean(false)
-    private val callCounter = AtomicLong(1)
-
-    override fun destroy() {
-        // Only allow a single call to this method.
-        // TODO: maybe we should log a warning if called more than once?
-        if (this.wasDestroyed.compareAndSet(false, true)) {
-            // This decrement always matches the initial count of 1 given at creation time.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable.clean()
-            }
-        }
-    }
-
-    @Synchronized
-    override fun close() {
-        this.destroy()
-    }
-
-    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
-        // Check and increment the call counter, to keep the object alive.
-        // This needs a compare-and-set retry loop in case of concurrent updates.
-        do {
-            val c = this.callCounter.get()
-            if (c == 0L) {
-                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
-            }
-            if (c == Long.MAX_VALUE) {
-                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
-            }
-        } while (! this.callCounter.compareAndSet(c, c + 1L))
-        // Now we can safely do the method call without the handle being freed concurrently.
-        try {
-            return block(this.uniffiCloneHandle())
-        } finally {
-            // This decrement always matches the increment we performed above.
-            if (this.callCounter.decrementAndGet() == 0L) {
-                cleanable.clean()
-            }
-        }
-    }
-
-    // Use a static inner class instead of a closure so as not to accidentally
-    // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val handle: Long) : Runnable {
-        override fun run() {
-            if (handle == 0.toLong()) {
-                // Fake object created with `NoHandle`, don't try to free.
-                return;
-            }
-            uniffiRustCall { status ->
-                UniffiLib.uniffi_firefly_signal_fn_free_ffimlsgroup(handle, status)
-            }
-        }
-    }
-
-    /**
-     * @suppress
-     */
-    fun uniffiCloneHandle(): Long {
-        if (handle == 0.toLong()) {
-            throw InternalException("uniffiCloneHandle() called on NoHandle object");
-        }
-        return uniffiRustCall() { status ->
-            UniffiLib.uniffi_firefly_signal_fn_clone_ffimlsgroup(handle, status)
-        }
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `addMember`(`username`: kotlin.String, `roleId`: kotlin.UInt) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_add_member(
-                uniffiHandle,
-                FfiConverterString.lower(`username`),FfiConverterUInt.lower(`roleId`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `encrypt`(`data`: kotlin.ByteArray) : kotlin.ByteArray {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_encrypt(
-                uniffiHandle,
-                FfiConverterByteArray.lower(`data`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterByteArray.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `extension`() : kotlin.ByteArray {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_extension(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterByteArray.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    override fun `groupId`(): kotlin.ULong {
-            return FfiConverterULong.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_group_id(
-        it,
-        _status)
-}
-    }
-    )
-    }
-    
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `groupIdentifier`() : kotlin.ByteArray {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_group_identifier(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterByteArray.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `kickMember`(`username`: kotlin.String) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_kick_member(
-                uniffiHandle,
-                FfiConverterString.lower(`username`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `process`(`message`: kotlin.ByteArray) : FireflyMlsReceivedMessage {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_process(
-                uniffiHandle,
-                FfiConverterByteArray.lower(`message`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterTypeFireflyMlsReceivedMessage.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `reAddMember`(`username`: kotlin.String, `address`: kotlin.ULong) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_re_add_member(
-                uniffiHandle,
-                FfiConverterString.lower(`username`),FfiConverterULong.lower(`address`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `save`() {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_save(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
-        // lift function
-        { Unit },
-        
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `state`() : kotlin.ByteArray {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_state(
-                uniffiHandle,
-                
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_rust_buffer(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_rust_buffer(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
-        // lift function
-        { FfiConverterByteArray.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateChannel`(`delete`: kotlin.Boolean, `payload`: kotlin.ByteArray) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_update_channel(
-                uniffiHandle,
-                FfiConverterBoolean.lower(`delete`),FfiConverterByteArray.lower(`payload`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateRole`(`name`: kotlin.String, `roleId`: kotlin.UInt, `permissions`: kotlin.UInt, `delete`: kotlin.Boolean) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_update_role(
-                uniffiHandle,
-                FfiConverterString.lower(`name`),FfiConverterUInt.lower(`roleId`),FfiConverterUInt.lower(`permissions`),FfiConverterBoolean.lower(`delete`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-    @Throws(DumbException::class)
-    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateUser`(`username`: kotlin.String, `roleId`: kotlin.UInt) : kotlin.ULong {
-        return uniffiRustCallAsync(
-        callWithHandle { uniffiHandle ->
-            UniffiLib.uniffi_firefly_signal_fn_method_ffimlsgroup_update_user(
-                uniffiHandle,
-                FfiConverterString.lower(`username`),FfiConverterUInt.lower(`roleId`),
-            )
-        },
-        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_u64(future, callback, continuation) },
-        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_u64(future, continuation) },
-        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_u64(future) },
-        // lift function
-        { FfiConverterULong.lift(it) },
-        // Error FFI converter
-        DumbException.ErrorHandler,
-    )
-    }
-
-    
-
-    
-
-
-    
-    
-    /**
-     * @suppress
-     */
-    companion object
-    
-}
-
-
-/**
- * @suppress
- */
-public object FfiConverterTypeFfiMlsGroup: FfiConverter<FfiMlsGroup, Long> {
-    override fun lower(value: FfiMlsGroup): Long {
-        return value.uniffiCloneHandle()
-    }
-
-    override fun lift(value: Long): FfiMlsGroup {
-        return FfiMlsGroup(UniffiWithHandle, value)
-    }
-
-    override fun read(buf: ByteBuffer): FfiMlsGroup {
-        return lift(buf.getLong())
-    }
-
-    override fun allocationSize(value: FfiMlsGroup) = 8UL
-
-    override fun write(value: FfiMlsGroup, buf: ByteBuffer) {
-        buf.putLong(lower(value))
-    }
-}
-
-
-// This template implements a class for working with a Rust struct via a handle
-// to the live Rust struct on the other side of the FFI.
-//
-// There's some subtlety here, because we have to be careful not to operate on a Rust
-// struct after it has been dropped, and because we must expose a public API for freeing
-// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
-//
-//   * Each instance holds an opaque handle to the underlying Rust struct.
-//     Method calls need to read this handle from the object's state and pass it in to
-//     the Rust FFI.
-//
-//   * When an instance is no longer needed, its handle should be passed to a
-//     special destructor function provided by the Rust FFI, which will drop the
-//     underlying Rust struct.
-//
-//   * Given an instance, calling code is expected to call the special
-//     `destroy` method in order to free it after use, either by calling it explicitly
-//     or by using a higher-level helper like the `use` method. Failing to do so risks
-//     leaking the underlying Rust struct.
-//
-//   * We can't assume that calling code will do the right thing, and must be prepared
-//     to handle Kotlin method calls executing concurrently with or even after a call to
-//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
-//
-//   * We must never allow Rust code to operate on the underlying Rust struct after
-//     the destructor has been called, and must never call the destructor more than once.
-//     Doing so may trigger memory unsafety.
-//
-//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
-//     is implemented to call the destructor when the Kotlin object becomes unreachable.
-//     This is done in a background thread. This is not a panacea, and client code should be aware that
-//      1. the thread may starve if some there are objects that have poorly performing
-//     `drop` methods or do significant work in their `drop` methods.
-//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
-//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
-//
-// If we try to implement this with mutual exclusion on access to the handle, there is the
-// possibility of a race between a method call and a concurrent call to `destroy`:
-//
-//    * Thread A starts a method call, reads the value of the handle, but is interrupted
-//      before it can pass the handle over the FFI to Rust.
-//    * Thread B calls `destroy` and frees the underlying Rust struct.
-//    * Thread A resumes, passing the already-read handle value to Rust and triggering
-//      a use-after-free.
-//
-// One possible solution would be to use a `ReadWriteLock`, with each method call taking
-// a read lock (and thus allowed to run concurrently) and the special `destroy` method
-// taking a write lock (and thus blocking on live method calls). However, we aim not to
-// generate methods with any hidden blocking semantics, and a `destroy` method that might
-// block if called incorrectly seems to meet that bar.
-//
-// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
-// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
-// has been called. These are updated according to the following rules:
-//
-//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
-//      The initial value for the flag is false.
-//
-//    * At the start of each method call, we atomically check the counter.
-//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
-//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
-//
-//    * At the end of each method call, we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-//    * When `destroy` is called, we atomically flip the flag from false to true.
-//      If the flag was already true we silently fail.
-//      Otherwise we atomically decrement and check the counter.
-//      If it has reached zero then we destroy the underlying Rust struct.
-//
-// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
-// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
-//
-// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
-// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
-// of the underlying Rust code.
-//
-// This makes a cleaner a better alternative to _not_ calling `destroy()` as
-// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
-// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
-// thread may be starved, and the app will leak memory.
-//
-// In this case, `destroy`ing manually may be a better solution.
-//
-// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
-// with Rust peers are reclaimed:
-//
-// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
-// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
-// 3. The memory is reclaimed when the process terminates.
-//
-// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
-//
-
-
-//
 public interface GroupInfoStoreInterface {
     
     suspend fun `getAllFfi`(): List<GroupInfo>
@@ -3798,13 +2790,13 @@ public object FfiConverterTypeGroupInfoStore: FfiConverter<GroupInfoStore, Long>
 //
 public interface GroupMessagesStoreInterface {
     
-    suspend fun `addFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `by`: kotlin.String, `message`: kotlin.ByteArray)
+    suspend fun `addFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `channelId`: kotlin.UInt, `epoch`: kotlin.UInt, `by`: kotlin.String, `message`: kotlin.ByteArray)
     
     suspend fun `getAllLastMessagesFfi`(): List<GroupMessage>
     
     suspend fun `getFfi`(`groupId`: kotlin.ULong, `startBefore`: kotlin.ULong, `limit`: kotlin.UInt): List<GroupMessage>
     
-    suspend fun `updateCursorFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong)
+    suspend fun `updateCursorFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `epoch`: kotlin.UInt)
     
     companion object
 }
@@ -3908,12 +2900,12 @@ open class GroupMessagesStore: Disposable, AutoCloseable, GroupMessagesStoreInte
     
     @Throws(DumbException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `addFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `by`: kotlin.String, `message`: kotlin.ByteArray) {
+    override suspend fun `addFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `channelId`: kotlin.UInt, `epoch`: kotlin.UInt, `by`: kotlin.String, `message`: kotlin.ByteArray) {
         return uniffiRustCallAsync(
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_firefly_signal_fn_method_groupmessagesstore_add_ffi(
                 uniffiHandle,
-                FfiConverterULong.lower(`id`),FfiConverterULong.lower(`groupId`),FfiConverterString.lower(`by`),FfiConverterByteArray.lower(`message`),
+                FfiConverterULong.lower(`id`),FfiConverterULong.lower(`groupId`),FfiConverterUInt.lower(`channelId`),FfiConverterUInt.lower(`epoch`),FfiConverterString.lower(`by`),FfiConverterByteArray.lower(`message`),
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
@@ -3972,12 +2964,12 @@ open class GroupMessagesStore: Disposable, AutoCloseable, GroupMessagesStoreInte
     
     @Throws(DumbException::class)
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
-    override suspend fun `updateCursorFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong) {
+    override suspend fun `updateCursorFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `epoch`: kotlin.UInt) {
         return uniffiRustCallAsync(
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_firefly_signal_fn_method_groupmessagesstore_update_cursor_ffi(
                 uniffiHandle,
-                FfiConverterULong.lower(`id`),FfiConverterULong.lower(`groupId`),
+                FfiConverterULong.lower(`id`),FfiConverterULong.lower(`groupId`),FfiConverterUInt.lower(`epoch`),
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
@@ -4618,6 +3610,10 @@ data class GroupMessage (
     var `by`: kotlin.String
     , 
     var `message`: kotlin.ByteArray
+    , 
+    var `channelId`: kotlin.UInt
+    , 
+    var `epoch`: kotlin.UInt
     
 ){
     
@@ -4636,6 +3632,8 @@ public object FfiConverterTypeGroupMessage: FfiConverterRustBuffer<GroupMessage>
             FfiConverterULong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterByteArray.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
         )
     }
 
@@ -4643,7 +3641,9 @@ public object FfiConverterTypeGroupMessage: FfiConverterRustBuffer<GroupMessage>
             FfiConverterULong.allocationSize(value.`id`) +
             FfiConverterULong.allocationSize(value.`groupId`) +
             FfiConverterString.allocationSize(value.`by`) +
-            FfiConverterByteArray.allocationSize(value.`message`)
+            FfiConverterByteArray.allocationSize(value.`message`) +
+            FfiConverterUInt.allocationSize(value.`channelId`) +
+            FfiConverterUInt.allocationSize(value.`epoch`)
     )
 
     override fun write(value: GroupMessage, buf: ByteBuffer) {
@@ -4651,6 +3651,8 @@ public object FfiConverterTypeGroupMessage: FfiConverterRustBuffer<GroupMessage>
             FfiConverterULong.write(value.`groupId`, buf)
             FfiConverterString.write(value.`by`, buf)
             FfiConverterByteArray.write(value.`message`, buf)
+            FfiConverterUInt.write(value.`channelId`, buf)
+            FfiConverterUInt.write(value.`epoch`, buf)
     }
 }
 
@@ -4723,6 +3725,88 @@ public object FfiConverterTypeTokenResponse: FfiConverterRustBuffer<TokenRespons
     override fun write(value: TokenResponse, buf: ByteBuffer) {
             FfiConverterString.write(value.`accessToken`, buf)
             FfiConverterString.write(value.`refreshToken`, buf)
+    }
+}
+
+
+
+data class UpdateRoleProposalFfi (
+    var `name`: kotlin.String
+    , 
+    var `roleId`: kotlin.UInt
+    , 
+    var `permissions`: kotlin.UInt
+    , 
+    var `delete`: kotlin.Boolean
+    
+){
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeUpdateRoleProposalFfi: FfiConverterRustBuffer<UpdateRoleProposalFfi> {
+    override fun read(buf: ByteBuffer): UpdateRoleProposalFfi {
+        return UpdateRoleProposalFfi(
+            FfiConverterString.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: UpdateRoleProposalFfi) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterUInt.allocationSize(value.`roleId`) +
+            FfiConverterUInt.allocationSize(value.`permissions`) +
+            FfiConverterBoolean.allocationSize(value.`delete`)
+    )
+
+    override fun write(value: UpdateRoleProposalFfi, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterUInt.write(value.`roleId`, buf)
+            FfiConverterUInt.write(value.`permissions`, buf)
+            FfiConverterBoolean.write(value.`delete`, buf)
+    }
+}
+
+
+
+data class UpdateUserProposalFfi (
+    var `username`: kotlin.String
+    , 
+    var `roleId`: kotlin.UInt
+    
+){
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeUpdateUserProposalFfi: FfiConverterRustBuffer<UpdateUserProposalFfi> {
+    override fun read(buf: ByteBuffer): UpdateUserProposalFfi {
+        return UpdateUserProposalFfi(
+            FfiConverterString.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: UpdateUserProposalFfi) = (
+            FfiConverterString.allocationSize(value.`username`) +
+            FfiConverterUInt.allocationSize(value.`roleId`)
+    )
+
+    override fun write(value: UpdateUserProposalFfi, buf: ByteBuffer) {
+            FfiConverterString.write(value.`username`, buf)
+            FfiConverterUInt.write(value.`roleId`, buf)
     }
 }
 
@@ -5246,6 +4330,62 @@ public object FfiConverterSequenceTypeLastMessageAndUnreadCount: FfiConverterRus
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeLastMessageAndUnreadCount.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeUpdateRoleProposalFfi: FfiConverterRustBuffer<List<UpdateRoleProposalFfi>> {
+    override fun read(buf: ByteBuffer): List<UpdateRoleProposalFfi> {
+        val len = buf.getInt()
+        return List<UpdateRoleProposalFfi>(len) {
+            FfiConverterTypeUpdateRoleProposalFfi.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<UpdateRoleProposalFfi>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeUpdateRoleProposalFfi.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<UpdateRoleProposalFfi>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeUpdateRoleProposalFfi.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeUpdateUserProposalFfi: FfiConverterRustBuffer<List<UpdateUserProposalFfi>> {
+    override fun read(buf: ByteBuffer): List<UpdateUserProposalFfi> {
+        val len = buf.getInt()
+        return List<UpdateUserProposalFfi>(len) {
+            FfiConverterTypeUpdateUserProposalFfi.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<UpdateUserProposalFfi>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeUpdateUserProposalFfi.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<UpdateUserProposalFfi>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeUpdateUserProposalFfi.write(it, buf)
         }
     }
 }

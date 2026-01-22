@@ -1,120 +1,66 @@
 "use client"
 
-import { useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { UserAvatar } from "@/components/user-avatar"
+import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
+import { fromBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
 import {
-  ArrowLeft,
-  Upload,
-  Globe,
-  Lock,
-  Crown,
-  Shield,
-  UserMinus,
-  Trash2,
   AlertTriangle,
+  ArrowLeft,
   Save,
-  Bell,
-  MessageSquare,
+  Trash2,
+  Upload
 } from "lucide-react"
-import {
-  PermissionsMatrix,
-  type RoleKey,
-  type PermissionKey,
-  type OverrideValue,
-} from "@/components/groups/permissions-matrix"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 
-// Mock data for the group
-const groupData = {
-  id: "1",
-  name: "Design Enthusiasts",
-  description: "A community for designers to share ideas, get feedback, and collaborate on projects.",
-  avatar: "/placeholder.svg?height=80&width=80",
-  isPrivate: false,
-  allowMemberInvites: true,
-  allowFileSharing: true,
-  muteNotifications: false,
-  autoDeleteMessages: false,
-  messageRetention: "never",
-  members: [
-    {
-      id: "1",
-      name: "Sarah Chen",
-      username: "@sarahc",
-      avatar: "/placeholder.svg?height=40&width=40",
-      role: "admin",
-      isOnline: true,
-    },
-    {
-      id: "2",
-      name: "Marcus Johnson",
-      username: "@marcusj",
-      avatar: "/placeholder.svg?height=40&width=40",
-      role: "moderator",
-      isOnline: false,
-    },
-    {
-      id: "3",
-      name: "Emma Rodriguez",
-      username: "@emmar",
-      avatar: "/placeholder.svg?height=40&width=40",
-      role: "member",
-      isOnline: true,
-    },
-    {
-      id: "4",
-      name: "David Kim",
-      username: "@davidk",
-      avatar: "/placeholder.svg?height=40&width=40",
-      role: "member",
-      isOnline: true,
-    },
-  ],
-}
+
 
 export default function GroupSettingsPage() {
+
+
+
   const navigate = useNavigate()
   const { id } = useParams()
-  const [settings, setSettings] = useState(groupData)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [permOverrides, setPermOverrides] = useState<Record<RoleKey, Partial<Record<PermissionKey, OverrideValue>>>>({
-    owner: {},
-    admin: {},
-    moderator: {},
-    member: {},
-    guest: {},
-  })
+  const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
 
-  const allPerms: PermissionKey[] = [
-    "viewChannel",
-    "sendMessages",
-    "manageMessages",
-    "attachFiles",
-    "pinMessages",
-    "createThreads",
-    "manageChannel",
-    "manageRoles",
-  ]
+  const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
 
-  const setOverride = (roleId: RoleKey, perm: PermissionKey, value: OverrideValue) => {
-    setPermOverrides((prev) => ({
-      ...prev,
-      [roleId]: { ...(prev[roleId] || {}), [perm]: value },
-    }))
+  useEffect(() => {
+
+    updateState()
+
+  }, [id])
+
+  const updateState = () => {
+    EncryptionPlugin.getGroupInfoAndExtension({ groupId: Number(id) }).then(result => {
+
+      setGroupInfo(result)
+      setExtension(protos.FireflyGroupExtension.decode(fromBase64(result.extensionB64)))
+
+
+    })
+
   }
 
+
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+
+
+
   const handleInputChange = (field: string, value: string | boolean) => {
-    setSettings((prev) => ({ ...prev, [field]: value }))
+    // setSettings((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSave = async () => {
@@ -128,29 +74,30 @@ export default function GroupSettingsPage() {
     navigate("/groups")
   }
 
-  const handleRemoveMember = (memberId: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      members: prev.members.filter((member) => member.id !== memberId),
-    }))
+
+
+  const addMember = async (username: string, role: number) => {
+    await EncryptionPlugin.updateGroupMember({
+      groupId: Number(id),
+      username,
+      roleId: role
+    })
+    updateState()
   }
 
-  const handleChangeRole = (memberId: string, newRole: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      members: prev.members.map((member) => (member.id === memberId ? { ...member, role: newRole } : member)),
-    }))
+
+  const updateMember = (username: string, role: number) => {
+    return addMember(username, role)
   }
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Crown className="h-4 w-4 text-yellow-500" />
-      case "moderator":
-        return <Shield className="h-4 w-4 text-blue-500" />
-      default:
-        return null
-    }
+
+  const deleteMember = (username: string) => { }
+
+
+  const getRoleIcon = (role: number) => {
+    const roleObj = extension?.roles.find(e => e.id == role)
+    if (!roleObj) return null
+    return <p>{roleObj.name}</p>
   }
 
   return (
@@ -203,8 +150,8 @@ export default function GroupSettingsPage() {
                 <div className="relative">
                   <div className="relative h-20 w-20">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={settings.avatar || "/placeholder.svg?height=80&width=80"} />
-                      <AvatarFallback className="text-lg">{settings.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={"/placeholder.svg?height=80&width=80"} />
+                      <AvatarFallback className="text-lg">{groupInfo?.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Button
                       size="sm"
@@ -227,11 +174,11 @@ export default function GroupSettingsPage() {
                 <Label htmlFor="name">Group Name</Label>
                 <Input
                   id="name"
-                  value={settings.name}
+                  value={groupInfo?.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   maxLength={50}
                 />
-                <p className="text-xs text-muted-foreground">{settings.name.length}/50 characters</p>
+                <p className="text-xs text-muted-foreground">{groupInfo?.name?.length ?? 0}/50 characters</p>
               </div>
 
               {/* Description */}
@@ -239,145 +186,16 @@ export default function GroupSettingsPage() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={settings.description}
+                  value={groupInfo?.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
                   rows={3}
                   maxLength={200}
                 />
-                <p className="text-xs text-muted-foreground">{settings.description.length}/200 characters</p>
+                <p className="text-xs text-muted-foreground">{groupInfo?.description.length ?? 0}/200 characters</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Privacy & Permissions */}
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Privacy & Permissions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Group Privacy */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  {settings.isPrivate ? (
-                    <Lock className="h-5 w-5 text-gray-600 shrink-0" />
-                  ) : (
-                    <Globe className="h-5 w-5 text-gray-600 shrink-0" />
-                  )}
-                  <div>
-                    <h3 className="font-medium">{settings.isPrivate ? "Private Group" : "Public Group"}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {settings.isPrivate
-                        ? "Only invited members can see and join"
-                        : "Anyone can discover and join this group"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <Switch
-                    checked={settings.isPrivate}
-                    onCheckedChange={(checked) => handleInputChange("isPrivate", checked)}
-                  />
-                </div>
-              </div>
-
-              {/* Member Invites */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
-                <div>
-                  <h3 className="font-medium">Allow Member Invites</h3>
-                  <p className="text-sm text-muted-foreground">Let members invite others to join the group</p>
-                </div>
-                <div className="flex justify-end">
-                  <Switch
-                    checked={settings.allowMemberInvites}
-                    onCheckedChange={(checked) => handleInputChange("allowMemberInvites", checked)}
-                  />
-                </div>
-              </div>
-
-              {/* File Sharing */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
-                <div>
-                  <h3 className="font-medium">File Sharing</h3>
-                  <p className="text-sm text-muted-foreground">Allow members to share files and media</p>
-                </div>
-                <div className="flex justify-end">
-                  <Switch
-                    checked={settings.allowFileSharing}
-                    onCheckedChange={(checked) => handleInputChange("allowFileSharing", checked)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notification Settings */}
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notification Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
-                <div>
-                  <h3 className="font-medium">Mute Notifications</h3>
-                  <p className="text-sm text-muted-foreground">Turn off all notifications from this group</p>
-                </div>
-                <div className="flex justify-end">
-                  <Switch
-                    checked={settings.muteNotifications}
-                    onCheckedChange={(checked) => handleInputChange("muteNotifications", checked)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Message Settings */}
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Message Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
-                <div>
-                  <h3 className="font-medium">Auto-delete Messages</h3>
-                  <p className="text-sm text-muted-foreground">Automatically delete old messages after a set period</p>
-                </div>
-                <div className="flex justify-end">
-                  <Switch
-                    checked={settings.autoDeleteMessages}
-                    onCheckedChange={(checked) => handleInputChange("autoDeleteMessages", checked)}
-                  />
-                </div>
-              </div>
-
-              {settings.autoDeleteMessages && (
-                <div className="space-y-2">
-                  <Label htmlFor="retention">Message Retention Period</Label>
-                  <Select
-                    value={settings.messageRetention}
-                    onValueChange={(value) => handleInputChange("messageRetention", value)}
-                  >
-                    <SelectTrigger className="w-full sm:w-[220px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7days">7 days</SelectItem>
-                      <SelectItem value="30days">30 days</SelectItem>
-                      <SelectItem value="90days">90 days</SelectItem>
-                      <SelectItem value="1year">1 year</SelectItem>
-                      <SelectItem value="never">Never</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Role & Channel Permissions */}
           <Card className="border-none shadow-sm">
@@ -385,20 +203,6 @@ export default function GroupSettingsPage() {
               <CardTitle>Role & Channel Permissions</CardTitle>
               <CardDescription>Configure per-role permissions for channels in this group</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 overflow-x-auto">
-              <PermissionsMatrix
-                roles={[
-                  { id: "owner", name: "Owner" },
-                  { id: "admin", name: "Admin" },
-                  { id: "moderator", name: "Moderator" },
-                  { id: "member", name: "Member" },
-                  { id: "guest", name: "Guest" },
-                ]}
-                permissions={allPerms}
-                overrides={permOverrides}
-                onChange={setOverride}
-              />
-            </CardContent>
           </Card>
 
           {/* Member Management */}
@@ -409,30 +213,27 @@ export default function GroupSettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {settings.members.map((member) => (
+                {extension?.members?.map((member) => (
                   <div
-                    key={member.id}
+                    key={member.username}
                     className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{member.name.slice(0, 2)}</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar username={member.username} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate">{member.name}</h3>
+                          <h3 className="font-medium truncate">{member.username}</h3>
                           {getRoleIcon(member.role)}
-                          <div
+                          {/*<div
                             className={`w-2 h-2 rounded-full ${member.isOnline ? "bg-green-500" : "bg-gray-300"}`}
                             aria-label={member.isOnline ? "Online" : "Offline"}
-                          />
+                          />*/}
                         </div>
                         <p className="text-sm text-muted-foreground">{member.username}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 md:ml-auto">
+                    {/* <div className="flex items-center gap-2 md:ml-auto">
                       <Select
                         value={member.role}
                         onValueChange={(value) => handleChangeRole(member.id, value)}
@@ -460,7 +261,7 @@ export default function GroupSettingsPage() {
                           <UserMinus className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
+                    </div>*/}
                   </div>
                 ))}
               </div>
@@ -501,7 +302,7 @@ export default function GroupSettingsPage() {
                       </DialogHeader>
                       <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                          Are you sure you want to delete "{settings.name}"? This action will:
+                          Are you sure you want to delete "{groupInfo?.name}"? This action will:
                         </p>
                         <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                           <li>• Permanently delete all messages and media</li>

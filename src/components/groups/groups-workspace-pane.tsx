@@ -37,10 +37,10 @@ interface Member {
 export function GroupWorkspacePane({
   groupId,
   groupName = "Group",
-}: {
+}: React.PropsWithChildren<{
   groupId: number
   groupName?: string
-}) {
+}>) {
   const navigate = useNavigate()
 
 

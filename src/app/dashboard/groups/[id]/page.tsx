@@ -1,122 +1,109 @@
 "use client"
-import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Button } from "@/components/ui/button"
-import { GroupWorkspacePane } from "@/components/groups/group-workspace-pane"
-import { ArrowLeft, Settings } from "lucide-react"
-import { ChannelList } from "@/components/groups/channel-list"
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+
+import { GroupWorkspacePane } from "@/components/groups/groups-workspace-pane"
+
 import { ChannelChat } from "@/components/groups/channel-chat"
-import { ChannelProjects } from "@/components/groups/channel-projects"
+import { ChannelList } from "@/components/groups/channel-list"
+import { UserAvatar } from "@/components/user-avatar"
+import { useAuth } from "@/context/auth-context"
+import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
+import { fromBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
+import { ArrowLeft, Settings } from "lucide-react"
 
-type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
 
-interface Member {
-  id: string
-  name: string
-  username: string
-  avatar: string
-  role: RoleKey
-  isOnline?: boolean
-}
-interface Channel {
-  id: string
-  name: string
-  topic?: string
-  isPrivate?: boolean
-  category?: string
-  slowMode?: boolean
-}
 
-const mockMembers: Member[] = [
-  { id: "1", name: "Sarah Chen", username: "@sarahc", avatar: "/sarah-avatar.jpg", role: "owner", isOnline: true },
-  { id: "2", name: "Marcus Johnson", username: "@marcusj", avatar: "/marcus-avatar.jpg", role: "admin" },
-  {
-    id: "3",
-    name: "Emma Rodriguez",
-    username: "@emmar",
-    avatar: "/emma-avatar.png",
-    role: "moderator",
-    isOnline: true,
-  },
-  { id: "4", name: "David Kim", username: "@davidk", avatar: "/david-avatar.png", role: "member" },
-  { id: "5", name: "Lisa Wang", username: "@lisaw", avatar: "/lisa-avatar.jpg", role: "member" },
-]
-
-const initialChannels: Channel[] = [
-  { id: "general", name: "general", topic: "Group-wide announcements and chat", category: "Text" },
-  { id: "design", name: "design", topic: "Design reviews and assets", category: "Projects" },
-  {
-    id: "engineering",
-    name: "engineering",
-    topic: "Engineering updates and PR reviews",
-    category: "Projects",
-    isPrivate: true,
-  },
-]
 
 export default function GroupWorkspaceRoutePage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [groupName, setGroupName] = useState("Group")
-  const [channels, setChannels] = useState<Channel[]>(initialChannels)
-  const [selectedChannelId, setSelectedChannelId] = useState<string>(initialChannels[0].id)
-  const [currentRole, setCurrentRole] = useState<RoleKey>("member")
+
+  const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
+
+  const auth = useAuth()
+
+  const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
+
+  useEffect(() => {
+
+    EncryptionPlugin.getGroupInfoAndExtension({ groupId: Number(id) }).then((result) => {
+      setGroupInfo(result)
+      setExtension(protos.FireflyGroupExtension.decode(fromBase64(result.extensionB64)))
+    })
+
+  }, [])
+
+  const currenRole = useMemo(() => {
+
+    if (!auth.username) {
+      return
+    }
+
+    if (!extension) {
+      return
+    }
+
+    const member = extension.members.find(e => e.username == auth.username)
+
+    if (!member) {
+      return
+    }
+
+    const role = extension.roles.find(e => e.id == member.role)
+
+    return role
+  }, [auth, extension])
+
+
+  const [selectedChannelId, setSelectedChannelId] = useState<number>(0)
   const [filter, setFilter] = useState("")
   const [creating, setCreating] = useState(false)
   const [newChannelName, setNewChannelName] = useState("new-channel")
   const [newChannelPrivate, setNewChannelPrivate] = useState(false)
   const [newChannelCategory, setNewChannelCategory] = useState<string>("Text")
 
-  // Demo: pull a name based on id (replace with real fetch)
-  useEffect(() => {
-    if (!id) return
-    const names: Record<string, string> = {
-      "1": "Design Enthusiasts",
-      "2": "Engineering Hub",
-      "3": "Creators Lounge",
-      "4": "Product Squad",
-    }
-    setGroupName(names[id] || `Group #${id}`)
-  }, [id])
 
   // read ?c= from location
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const c = params.get("c")
-    if (c && channels.some((ch) => ch.id === c)) setSelectedChannelId(c)
-  }, [window.location.search, channels])
+    if (c && extension && extension.channels.some((ch) => ch.id === Number(c))) setSelectedChannelId(Number(c))
+  }, [window.location.search, extension])
 
   // write ?c= to URL
   useEffect(() => {
     const url = new URL(window.location.href)
-    url.searchParams.set("c", selectedChannelId)
+    url.searchParams.set("c", selectedChannelId.toString())
     window.history.replaceState({}, "", url.toString())
   }, [selectedChannelId])
 
-  const selectedChannel = channels.find((c) => c.id === selectedChannelId) ?? channels[0]
+  const selectedChannel = useMemo(() => extension?.channels.find(e => e.id == selectedChannelId), [extension, selectedChannelId])
 
   const addChannel = () => {
-    const idSafe = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
-    if (!idSafe || channels.some((c) => c.id === idSafe)) return
-    const newCh: Channel = {
-      id: idSafe,
-      name: idSafe,
-      topic: "",
-      isPrivate: newChannelPrivate,
-      category: newChannelCategory || "Text",
-      slowMode: false,
-    }
-    setChannels((prev) => [...prev, newCh])
-    setCreating(false)
-    setNewChannelName("new-channel")
-    setNewChannelPrivate(false)
-    setNewChannelCategory("Text")
-    setSelectedChannelId(newCh.id)
+    // const idSafe = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
+    // if (!idSafe || channels.some((c) => c.id === idSafe)) return
+    // const newCh: Channel = {
+    //   id: idSafe,
+    //   name: idSafe,
+    //   topic: "",
+    //   isPrivate: newChannelPrivate,
+    //   category: newChannelCategory || "Text",
+    //   slowMode: false,
+    // }
+    // setChannels((prev) => [...prev, newCh])
+    // setCreating(false)
+    // setNewChannelName("new-channel")
+    // setNewChannelPrivate(false)
+    // setNewChannelCategory("Text")
+    // setSelectedChannelId(newCh.id)
   }
 
-  const updateChannel = (patch: Partial<Channel>) => {
-    setChannels((prev) => prev.map((c) => (c.id === selectedChannelId ? { ...c, ...patch } : c)))
+  const updateChannel = (patch: any) => {
+    // setChannels((prev) => prev.map((c) => (c.id === selectedChannelId ? { ...c, ...patch } : c)))
   }
 
   if (!id) return null
@@ -124,26 +111,26 @@ export default function GroupWorkspaceRoutePage() {
   return (
     <DashboardLayout>
       <div className="mb-3 flex items-center justify-between" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
-        <Button variant="outline" className="bg-transparent" onClick={() => navigate("/dashboard/groups")}>
+        <Button variant="outline" className="bg-transparent" onClick={() => navigate("/groups")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           All Groups
         </Button>
         <Button
           variant="outline"
           className="bg-transparent"
-          onClick={() => navigate(`/dashboard/groups/${id}/settings`)}
+          onClick={() => navigate(`/groups/${id}/settings`)}
         >
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </Button>
       </div>
-      <GroupWorkspacePane groupId={id} groupName={groupName}>
+      <GroupWorkspacePane groupId={Number(id)} groupName={groupInfo?.name ?? ""}>
         <div className="flex h-[calc(100vh-80px)] md:h-[calc(100vh-88px)] -m-4 md:-m-6">
           {/* Left: Channel list (Desktop) */}
           <aside className="hidden md:flex w-72 flex-col border-r bg-white">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <p className="font-semibold truncate">{groupName}</p>
+                <p className="font-semibold truncate">{groupInfo?.name}</p>
                 <p className="text-xs text-muted-foreground">Channels</p>
               </div>
               <Button size="icon" variant="ghost" onClick={() => setCreating((v) => !v)} title="New channel">
@@ -159,16 +146,6 @@ export default function GroupWorkspaceRoutePage() {
                 placeholder="Filter channels"
                 className="bg-gray-100 border-none"
               />
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Viewing as</span>
-                <select value={currentRole} onChange={(e) => setCurrentRole(e.target.value as RoleKey)}>
-                  <option value="owner">Owner</option>
-                  <option value="admin">Admin</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="member">Member</option>
-                  <option value="guest">Guest</option>
-                </select>
-              </div>
             </div>
 
             {creating && (
@@ -205,7 +182,7 @@ export default function GroupWorkspaceRoutePage() {
 
             <div className="flex-1 overflow-y-auto">
               <ChannelList
-                channels={channels}
+                channels={extension?.channels ?? []}
                 filter={filter}
                 selectedId={selectedChannelId}
                 onSelect={setSelectedChannelId}
@@ -216,7 +193,7 @@ export default function GroupWorkspaceRoutePage() {
               <Button
                 variant="outline"
                 className="w-full bg-transparent"
-                onClick={() => navigate(`/dashboard/groups/${id}/settings`)}
+                onClick={() => navigate(`/groups/${id}/settings`)}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Group Settings
@@ -227,24 +204,16 @@ export default function GroupWorkspaceRoutePage() {
           {/* Top (Mobile): Quick header with channel selector */}
           <div className="md:hidden flex flex-col w-full">
             <div className="border-b p-3 flex items-center justify-between gap-2">
-              <Button variant="outline" className="bg-transparent" onClick={() => navigate("/dashboard/groups")}>
+              <Button variant="outline" className="bg-transparent" onClick={() => navigate("/groups")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Groups
               </Button>
-              <select value={selectedChannelId} onChange={(e) => setSelectedChannelId(e.target.value)}>
-                {channels.map((ch) => (
+              <select value={selectedChannelId} onChange={(e) => setSelectedChannelId(Number(e.target.value))}>
+                {extension?.channels.map((ch) => (
                   <option key={ch.id} value={ch.id}>
-                    {ch.isPrivate ? "🔒 " : "# "}
-                    {ch.name}
+                    {`# ${ch.name}`}
                   </option>
                 ))}
-              </select>
-              <select value={currentRole} onChange={(e) => setCurrentRole(e.target.value as RoleKey)}>
-                <option value="owner">Owner</option>
-                <option value="admin">Admin</option>
-                <option value="moderator">Moderator</option>
-                <option value="member">Member</option>
-                <option value="guest">Guest</option>
               </select>
             </div>
           </div>
@@ -254,34 +223,22 @@ export default function GroupWorkspaceRoutePage() {
             {/* Channel header */}
             <div className="border-b px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                {selectedChannel.isPrivate ? "🔒" : "#"}
-                <h1 className="font-semibold truncate">{selectedChannel.name || "channel"}</h1>
-                {selectedChannel.topic && (
-                  <span className="text-sm text-muted-foreground truncate">— {selectedChannel.topic}</span>
-                )}
-              </div>
-              <div className="hidden md:flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  className="bg-transparent"
-                  onClick={() => {
-                    const topic = prompt("Set channel topic", selectedChannel.topic ?? "") ?? selectedChannel.topic
-                    if (topic !== undefined) updateChannel({ topic: topic ?? "" })
-                  }}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Topic
-                </Button>
+                {"#"}
+                <h1 className="font-semibold truncate">{selectedChannel?.name || "channel"}</h1>
               </div>
             </div>
 
             {/* Chat content */}
-            <ChannelChat channelId={selectedChannelId} members={mockMembers} />
+            {
+              (extension && groupInfo) && (
+                <ChannelChat channelId={selectedChannelId} extension={extension} groupId={groupInfo.groupId} />
+              )
+            }
 
             {/* Composer */}
             <div className="border-t p-3">
               <div className="flex items-center gap-2">
-                <input placeholder={`Message #${selectedChannel.name}`} className="bg-gray-100 border-none" />
+                <input placeholder={`Message #${selectedChannel?.name}`} className="bg-gray-100 border-none" />
                 <Button className="bg-black text-white hover:bg-gray-800">Send</Button>
               </div>
             </div>
@@ -307,44 +264,34 @@ export default function GroupWorkspaceRoutePage() {
                   <div className="border rounded-lg p-4">
                     <div className="text-sm text-muted-foreground">Channel</div>
                     <div className="text-lg font-semibold flex items-center gap-2">
-                      {selectedChannel.isPrivate ? "🔒" : "#"} {selectedChannel.name}
+                      {"# "} {selectedChannel?.name}
                     </div>
-                    {selectedChannel.topic && (
-                      <p className="mt-2 text-sm text-muted-foreground">{selectedChannel.topic}</p>
-                    )}
                   </div>
 
                   <div className="border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Privacy</span>
-                      <span className="text-xs">{selectedChannel.isPrivate ? "Private" : "Public"}</span>
+                      <span className="text-xs">{"Public"}</span>
                     </div>
                     <div className="my-3" />
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Category</span>
-                      <span className="text-xs">{selectedChannel.category || "Text"}</span>
+                      <span className="text-xs">{channelTypeToText(selectedChannel?.type ?? 0)}</span>
                     </div>
                   </div>
 
                   <div className="border rounded-lg p-4">
                     <div className="text-sm text-muted-foreground mb-2">Members</div>
                     <div className="space-y-2">
-                      {mockMembers.map((m) => (
-                        <div key={m.id} className="flex items-center justify-between">
+                      {extension?.members.map((m) => (
+                        <div key={m.username} className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="h-8 w-8 rounded-full bg-gray-100 overflow-hidden">
-                              <img
-                                src={m.avatar || "/placeholder.svg?height=32&width=32&query=avatar"}
-                                alt={m.name}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
+                            <UserAvatar username={m.username} />
                             <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{m.name}</p>
                               <p className="text-xs text-muted-foreground truncate">{m.username}</p>
                             </div>
                           </div>
-                          <span className="text-xs capitalize">{m.role}</span>
+                          <span className="text-xs capitalize">{roleFromRoleId(m.role)?.name}</span>
                         </div>
                       ))}
                     </div>
@@ -352,14 +299,31 @@ export default function GroupWorkspaceRoutePage() {
                 </div>
               </div>
 
-              {/* Projects */}
+              {/* Projects 
               <div className="flex-1 overflow-y-auto p-4">
-                <ChannelProjects members={mockMembers} />
+                <ChannelProjects members={extension?.members ?? []} />
               </div>
+              */}
             </div>
           </aside>
         </div>
       </GroupWorkspacePane>
     </DashboardLayout>
   )
+
+  function roleFromRoleId(id: number) {
+    return extension?.roles.find(r => r.id == id)
+  }
+}
+
+
+function channelTypeToText(ty: number) {
+  switch (ty) {
+    case 1:
+      return "Text"
+    case 2:
+      return "Voice"
+    default:
+      return "unknown"
+  }
 }

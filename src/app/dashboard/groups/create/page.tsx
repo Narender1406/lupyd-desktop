@@ -51,7 +51,7 @@ export default function CreateGroupPage() {
         description: groupData.description
       })
 
-      navigate(`/dashboard/groups/${groupInfo.groupId}`)
+      navigate(`/groups/${groupInfo.groupId}`)
 
     } catch (e) {
       console.error(`failed to create group`, e)

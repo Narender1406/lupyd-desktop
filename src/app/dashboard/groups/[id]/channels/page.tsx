@@ -1,237 +1,54 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { ChannelChat } from "@/components/groups/channel-chat"
+import { ChannelList } from "@/components/groups/channel-list"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Hash, Lock, Plus, Settings, Shield, Users, SendHorizontal, Clock } from "lucide-react"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { ChannelPermissions } from "@/components/groups/channel-permissions"
-import { ChannelProjects } from "@/components/groups/channel-projects"
-import { ChannelList } from "@/components/groups/channel-list"
-import { ChannelChat } from "@/components/groups/channel-chat"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UserAvatar } from "@/components/user-avatar"
+import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
+import { fromBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
+import { Hash, Plus, SendHorizontal, Settings, Users } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 
-type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
-
-type PermissionKey =
-  | "viewChannel"
-  | "sendMessages"
-  | "manageMessages"
-  | "attachFiles"
-  | "pinMessages"
-  | "createThreads"
-  | "manageChannel"
-  | "manageRoles"
 
 type OverrideValue = "inherit" | "allow" | "deny"
 
-interface Role {
-  id: RoleKey
-  name: string
-  description: string
-}
 
-interface Member {
-  id: string
-  name: string
-  avatar: string
-  username: string
-  role: RoleKey
-  isOnline?: boolean
-}
 
-interface Channel {
-  id: string
-  name: string
-  topic?: string
-  isPrivate?: boolean
-  category?: string
-  slowMode?: boolean
-  defaultPermissions: Record<RoleKey, Partial<Record<PermissionKey, boolean>>>
-  overrides: Record<RoleKey, Partial<Record<PermissionKey, OverrideValue>>>
-}
-
-const defaultRoles: Role[] = [
-  { id: "owner", name: "Owner", description: "Full control of the group" },
-  { id: "admin", name: "Admin", description: "Manage channels, members, and settings" },
-  { id: "moderator", name: "Moderator", description: "Moderate content and manage messages" },
-  { id: "member", name: "Member", description: "Standard access to channels and messaging" },
-  { id: "guest", name: "Guest", description: "Limited, read-only access" },
-]
-
-const defaultPermissions: PermissionKey[] = [
-  "viewChannel",
-  "sendMessages",
-  "manageMessages",
-  "attachFiles",
-  "pinMessages",
-  "createThreads",
-  "manageChannel",
-  "manageRoles",
-]
-
-// Mock group and channels data
-const mockMembers: Member[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    username: "@sarahc",
-    avatar: "/sarah-avatar.jpg",
-    role: "owner",
-    isOnline: true,
-  },
-  { id: "2", name: "Marcus Johnson", username: "@marcusj", avatar: "/marcus-avatar.jpg", role: "admin" },
-  {
-    id: "3",
-    name: "Emma Rodriguez",
-    username: "@emmar",
-    avatar: "/emma-avatar.png",
-    role: "moderator",
-    isOnline: true,
-  },
-  { id: "4", name: "David Kim", username: "@davidk", avatar: "/david-avatar.png", role: "member" },
-  { id: "5", name: "Lisa Wang", username: "@lisaw", avatar: "/lisa-avatar.jpg", role: "member" },
-]
-
-const initialChannels: Channel[] = [
-  {
-    id: "general",
-    name: "general",
-    topic: "Group-wide announcements and chat",
-    category: "Text",
-    defaultPermissions: {
-      owner: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        manageRoles: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      admin: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      moderator: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      member: { viewChannel: true, sendMessages: true, attachFiles: true, createThreads: true },
-      guest: { viewChannel: true },
-    },
-    overrides: {
-      owner: {},
-      admin: {},
-      moderator: {},
-      member: {},
-      guest: {},
-    },
-  },
-  {
-    id: "design",
-    name: "design",
-    topic: "Design reviews and assets",
-    category: "Projects",
-    isPrivate: false,
-    defaultPermissions: {
-      owner: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        manageRoles: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      admin: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      moderator: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      member: { viewChannel: true, sendMessages: true, attachFiles: true, createThreads: true },
-      guest: { viewChannel: true },
-    },
-    overrides: { owner: {}, admin: {}, moderator: {}, member: {}, guest: {} },
-  },
-  {
-    id: "engineering",
-    name: "engineering",
-    topic: "Engineering updates and PR reviews",
-    category: "Projects",
-    isPrivate: true,
-    defaultPermissions: {
-      owner: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        manageRoles: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      admin: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        manageChannel: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      moderator: {
-        viewChannel: true,
-        sendMessages: true,
-        manageMessages: true,
-        attachFiles: true,
-        pinMessages: true,
-        createThreads: true,
-      },
-      member: { viewChannel: true, sendMessages: true, attachFiles: true, createThreads: true },
-      guest: { viewChannel: false },
-    },
-    overrides: { owner: {}, admin: {}, moderator: {}, member: {}, guest: {} },
-    slowMode: false,
-  },
-]
 
 export default function GroupChannelsPage() {
   const { id } = useParams()
+
+  const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
+
+  const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
+
+  useEffect(() => {
+
+    EncryptionPlugin.getGroupInfoAndExtension({ groupId: Number(id) }).then(result => {
+
+      setGroupInfo(result)
+      setExtension(protos.FireflyGroupExtension.decode(fromBase64(result.extensionB64)))
+
+
+    })
+
+  }, [id])
+
+
+  const channels = useMemo(() => extension?.channels || [], [extension])
+
   const navigate = useNavigate()
 
-  const [channels, setChannels] = useState<Channel[]>(initialChannels)
-  const [selectedChannelId, setSelectedChannelId] = useState<string>(initialChannels[0].id)
+  const [selectedChannelId, setSelectedChannelId] = useState(channels.length == 0 ? -1 : channels[0].id)
   const [filter, setFilter] = useState("")
   const [creating, setCreating] = useState(false)
   const [newChannelName, setNewChannelName] = useState("new-channel")
@@ -247,85 +64,27 @@ export default function GroupChannelsPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const c = params.get("c")
-    if (c && channels.some((ch) => ch.id === c)) {
-      setSelectedChannelId(c)
+    if (c && channels.some((ch) => ch.id === Number(c))) {
+      setSelectedChannelId(Number(c))
     }
-  }, [])
+  }, [channels])
 
   useEffect(() => {
     const url = new URL(window.location.href)
-    url.searchParams.set("c", selectedChannelId)
+    url.searchParams.set("c", selectedChannelId.toString())
     window.history.replaceState({}, "", url.toString())
   }, [selectedChannelId])
 
   const addChannel = () => {
-    const idSafe = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
-    if (!idSafe || channels.some((c) => c.id === idSafe)) return
-    const newCh: Channel = {
-      id: idSafe,
-      name: idSafe,
-      topic: "",
-      isPrivate: newChannelPrivate,
-      category: newChannelCategory || "Text",
-      defaultPermissions: {
-        owner: {
-          viewChannel: true,
-          sendMessages: true,
-          manageMessages: true,
-          manageChannel: true,
-          manageRoles: true,
-          attachFiles: true,
-          pinMessages: true,
-          createThreads: true,
-        },
-        admin: {
-          viewChannel: true,
-          sendMessages: true,
-          manageMessages: true,
-          manageChannel: true,
-          attachFiles: true,
-          pinMessages: true,
-          createThreads: true,
-        },
-        moderator: {
-          viewChannel: true,
-          sendMessages: true,
-          manageMessages: true,
-          attachFiles: true,
-          pinMessages: true,
-          createThreads: true,
-        },
-        member: { viewChannel: true, sendMessages: true, attachFiles: true, createThreads: true },
-        guest: { viewChannel: !newChannelPrivate },
-      },
-      overrides: { owner: {}, admin: {}, moderator: {}, member: {}, guest: {} },
-    }
-    setChannels((prev) => [...prev, newCh])
-    setCreating(false)
-    setNewChannelName("new-channel")
-    setNewChannelPrivate(false)
-    setNewChannelCategory("Text")
-    setSelectedChannelId(newCh.id)
+
   }
 
-  const updateChannel = (patch: Partial<Channel>) => {
-    setChannels((prev) => prev.map((c) => (c.id === selectedChannelId ? { ...c, ...patch } : c)))
+  const updateChannel = (patch: any) => {
+
   }
 
-  const updateChannelOverrides = (roleId: RoleKey, permission: PermissionKey, value: OverrideValue) => {
-    setChannels((prev) =>
-      prev.map((c) =>
-        c.id === selectedChannelId
-          ? {
-              ...c,
-              overrides: {
-                ...c.overrides,
-                [roleId]: { ...(c.overrides[roleId] || {}), [permission]: value },
-              },
-            }
-          : c,
-      ),
-    )
+  const updateChannelOverrides = (roleId: any, permission: any, value: any) => {
+
   }
 
   return (
@@ -414,14 +173,14 @@ export default function GroupChannelsPage() {
               <Users className="h-4 w-4 mr-2" />
               Group
             </Button>
-            <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
+            <Select value={selectedChannelId.toString()} onValueChange={(v) => setSelectedChannelId(Number(v))}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {channels.map((ch) => (
-                  <SelectItem key={ch.id} value={ch.id}>
-                    {ch.isPrivate ? "🔒 " : "# "}
+                  <SelectItem key={ch.id} value={ch.id.toString()}>
+                    {"# "}
                     {ch.name}
                   </SelectItem>
                 ))}
@@ -434,11 +193,9 @@ export default function GroupChannelsPage() {
         <section className="flex-1 flex flex-col bg-white">
           <div className="border-b px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
-              {selectedChannel?.isPrivate ? <Lock className="h-5 w-5" /> : <Hash className="h-5 w-5" />}
+              <Hash className="h-5 w-5" />
               <h1 className="font-semibold truncate">{selectedChannel?.name || "channel"}</h1>
-              {selectedChannel?.topic && (
-                <span className="text-sm text-muted-foreground truncate">— {selectedChannel?.topic}</span>
-              )}
+
             </div>
             <div className="hidden md:flex items-center gap-2">
               <Button
@@ -449,21 +206,13 @@ export default function GroupChannelsPage() {
                 <Users className="h-4 w-4 mr-2" />
                 Group
               </Button>
-              <Button
-                variant="outline"
-                className="bg-transparent"
-                onClick={() => {
-                  const topic = prompt("Set channel topic", selectedChannel?.topic ?? "") ?? selectedChannel?.topic
-                  if (topic !== undefined) updateChannel({ topic: topic ?? "" })
-                }}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Edit Topic
-              </Button>
             </div>
           </div>
 
-          <ChannelChat channelId={selectedChannelId} members={mockMembers} />
+          {
+            extension &&
+            <ChannelChat channelId={selectedChannelId} extension={extension} groupId={Number(id)} />
+          }
 
           {/* Composer */}
           <div className="border-t p-3">
@@ -473,16 +222,6 @@ export default function GroupChannelsPage() {
                 <SendHorizontal className="h-4 w-4 mr-1" />
                 Send
               </Button>
-            </div>
-            <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                <span>Slow mode: {selectedChannel?.slowMode ? "On" : "Off"}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="h-3.5 w-3.5" />
-                <span>Permissions per channel</span>
-              </div>
             </div>
           </div>
         </section>
@@ -498,7 +237,7 @@ export default function GroupChannelsPage() {
                 >
                   Info
                 </TabsTrigger>
-                <TabsTrigger
+                {/* <TabsTrigger
                   value="permissions"
                   className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:bg-transparent px-2 py-1"
                 >
@@ -509,7 +248,7 @@ export default function GroupChannelsPage() {
                   className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:bg-transparent px-2 py-1"
                 >
                   Projects
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </div>
 
@@ -522,33 +261,15 @@ export default function GroupChannelsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Privacy</span>
                     <div className="flex items-center gap-2">
-                      {selectedChannel?.isPrivate ? <Lock className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
-                      <Badge variant="secondary" className="text-xs">
-                        {selectedChannel?.isPrivate ? "Private" : "Public"}
-                      </Badge>
+                      <Hash className="h-4 w-4" />
+
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Category</span>
                     <Badge variant="outline" className="text-xs">
-                      {selectedChannel?.category || "Text"}
+                      {channelTypeToText(selectedChannel?.type || 0)}
                     </Badge>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-sm text-muted-foreground">Topic</span>
-                    <Textarea
-                      value={selectedChannel?.topic || ""}
-                      onChange={(e) => updateChannel({ topic: e.target.value })}
-                      placeholder="Add a topic to describe this channel"
-                      rows={2}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Slow Mode</span>
-                    <Switch
-                      checked={!!selectedChannel?.slowMode}
-                      onCheckedChange={(v) => updateChannel({ slowMode: v })}
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -558,16 +279,12 @@ export default function GroupChannelsPage() {
                   <CardTitle>Members with Access</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {mockMembers.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between">
+                  {extension?.members?.map((m) => (
+                    <div key={m.username} className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={m.avatar || "/placeholder.svg"} alt={m.name} />
-                          <AvatarFallback>{m.name.slice(0, 2)}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar username={m.username} />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{m.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{m.username}</p>
+                          <p className="text-sm font-medium truncate">{m.username}</p>
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs capitalize">
@@ -579,21 +296,35 @@ export default function GroupChannelsPage() {
               </Card>
             </TabsContent>
 
+            {/*
             <TabsContent value="permissions" className="flex-1 overflow-y-auto p-4">
-              <ChannelPermissions
+               <ChannelPermissions
                 roles={defaultRoles}
                 permissions={defaultPermissions}
                 overrides={selectedChannel?.overrides || { owner: {}, admin: {}, moderator: {}, member: {}, guest: {} }}
                 onChange={(roleId, perm, val) => updateChannelOverrides(roleId, perm, val)}
-              />
+              /> 
             </TabsContent>
+              */}
 
-            <TabsContent value="projects" className="flex-1 overflow-y-auto p-4">
-              <ChannelProjects members={mockMembers} />
-            </TabsContent>
+            {/* <TabsContent value="projects" className="flex-1 overflow-y-auto p-4">
+              <ChannelProjects members={extension?.members ?? []} />
+            </TabsContent> */}
           </Tabs>
         </aside>
       </div>
     </DashboardLayout>
   )
+}
+
+
+function channelTypeToText(ty: number) {
+  switch (ty) {
+    case 1:
+      return "Text"
+    case 2:
+      return "Voice"
+    default:
+      return "unknown"
+  }
 }

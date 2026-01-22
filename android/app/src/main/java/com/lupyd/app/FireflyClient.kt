@@ -316,6 +316,10 @@ class FireflyClient() {
         return client!!.getGroupExtension(groupId.toULong())
     }
 
+    suspend fun getGroupInfo(groupId: Long): GroupInfo {
+        return client!!.groupInfoStore().getFfi(groupId.toULong())
+    }
+
     suspend fun getGroupLastMessages(): List<GroupMessage> {
         return client!!.groupMessageStore().getAllLastMessagesFfi()
     }
@@ -331,5 +335,6 @@ class FireflyClient() {
     suspend fun updateGroupMember(groupId: Long, username: String, roleId: Int) {
         return client!!.updateGroupMember(groupId.toULong(), username, roleId.toUInt())
     }
+
 
 }
