@@ -35,8 +35,8 @@ import org.json.JSONObject
  * Pure Native Notification Plugin
  * Handles ALL notification functionality without relying on Capacitor notification plugins
  */
-@CapacitorPlugin(name = "NativeNotification")
-class NativeNotificationPlugin : Plugin() {
+
+class NativeNotificationPlugin  {
 
     companion object {
         private const val TAG = "lupyd-NativeNotif"

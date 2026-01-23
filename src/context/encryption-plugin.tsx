@@ -188,6 +188,10 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
+export const TestPlugin = registerPlugin<EncryptionPluginType>("TestPlugin")
+
+//@ts-ignore
+window["_plugins"] = { TestPlugin,EncryptionPlugin }
 
 
 

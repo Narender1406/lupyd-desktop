@@ -1,7 +1,5 @@
 package com.lupyd.app
 
-import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +11,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +19,11 @@ import com.getcapacitor.BridgeActivity
 
 
 class MainActivity : BridgeActivity() {
+
+
+
+
+
     lateinit var server: FileServer
 
     var filePathCallback: ValueCallback<Array<out Uri?>?>? = null
@@ -52,8 +56,18 @@ class MainActivity : BridgeActivity() {
             filePathCallback = null
         }
     lateinit var serverThread: Thread
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        registerPlugin(EncryptionPlugin::class.java)
+        registerPlugin(TestPlugin::class.java)
         super.onCreate(savedInstanceState)
+
+
+        System.setProperty("kotlinx.coroutines.debug", "on")
+
+
+        Log.i("lupyd-cap", "Encryption Plugin registered")
 
         // ✅ Unified approach for all Android versions
         // Enable edge-to-edge to allow manual inset handling
@@ -96,19 +110,10 @@ class MainActivity : BridgeActivity() {
                 View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
-        System.setProperty("kotlinx.coroutines.debug", "on")
-
-        registerPlugin(EncryptionPlugin::class.java)
-        registerPlugin(NativeNotificationPlugin::class.java)
-
-        Log.i("lupyd-cap", "Encryption Plugin registered")
-        Log.i("lupyd-cap", "NativeNotification Plugin registered")
 
 
-//        bridge.getWebView().getSettings().setMixedContentMode(MIXED_CONTENT_ALWAYS_ALLOW);
 
 
-//        bridge.webView.settings.setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW)
         val webView = bridge.getWebView()
         webView.setWebChromeClient(object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) {
@@ -140,6 +145,7 @@ class MainActivity : BridgeActivity() {
         serverThread.start()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onDestroy() {
         super.onDestroy()
         server.closeServer()
