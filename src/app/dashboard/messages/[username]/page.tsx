@@ -63,6 +63,8 @@ export default function UserMessagePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const firefly = useFirefly()
 
+  const [autoShouldScrollDown, setAutoShouldScrollDown] = useState(false)
+
 
   const [sendingMessage, setSendingMessage] = useState(false)
   // NEW: Track the exact height of the visible screen
@@ -196,14 +198,14 @@ export default function UserMessagePage() {
 
   const getOlderMessages = async () => {
     const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].id
-    const count = 100
+    const COUNT = 15
 
     // TODO: this is not good
 
 
-    console.log({ getLastMessages: { other: receiver!, limit: count, before: lastTs } })
+    console.log({ getLastMessages: { other: receiver!, limit: COUNT, before: lastTs } })
 
-    const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: count, before: lastTs })
+    const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: COUNT, before: lastTs })
 
     setMessages((prev) => {
       let newMessages = prev
@@ -700,6 +702,7 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
     return (
       <div className="mt-2 rounded-lg overflow-hidden max-h-80">
         <video
+          preload="metadata"
           src={src}
           className="max-w-full h-auto rounded-lg"
           controls
