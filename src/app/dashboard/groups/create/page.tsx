@@ -14,6 +14,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { EncryptionPlugin } from "@/context/encryption-plugin"
+import { toast } from "@/hooks/use-toast"
+import { useRef } from "react"
 
 
 export default function CreateGroupPage() {
@@ -26,6 +28,7 @@ export default function CreateGroupPage() {
   })
 
   const [isCreating, setIsCreating] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
 
 
@@ -43,7 +46,12 @@ export default function CreateGroupPage() {
     try {
 
       if (groupData.name.length == 0) {
-        throw Error("Group Name is empty")
+        toast({
+          title: "Group name required",
+          description: "Please enter a name for your group.",
+          variant: "destructive",
+        })
+        return
       }
       const groupInfo = await EncryptionPlugin.createGroup({
         groupName: groupData.name,
@@ -51,12 +59,37 @@ export default function CreateGroupPage() {
         description: groupData.description
       })
 
+      toast({
+        title: "Group created!",
+        description: `${groupData.name} has been created successfully.`,
+      })
+
       navigate(`/groups/${groupInfo.groupId}`)
 
     } catch (e) {
       console.error(`failed to create group`, e)
+      toast({
+        title: "Error creating group",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleAvatarClick = () => {
+    avatarInputRef.current?.click()
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setGroupData(prev => ({ ...prev, avatar: reader.result as string }))
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -98,9 +131,18 @@ export default function CreateGroupPage() {
                       size="sm"
                       variant="outline"
                       className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-transparent"
+                      onClick={handleAvatarClick}
+                      type="button"
                     >
                       <Upload className="h-4 w-4" />
                     </Button>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                    />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium">Group Avatar</h3>

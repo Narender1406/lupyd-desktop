@@ -61,6 +61,7 @@ export default function UserMessagePage() {
 
   const [files, setFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const messageInputRef = useRef<HTMLInputElement>(null)
   const firefly = useFirefly()
 
   const [autoShouldScrollDown, setAutoShouldScrollDown] = useState(false)
@@ -325,6 +326,11 @@ export default function UserMessagePage() {
       setMessageText("")
       setReplyingTo(null)
       setFiles([])
+
+      // Keep keyboard open by maintaining focus
+      setTimeout(() => {
+        messageInputRef.current?.focus()
+      }, 10)
     } catch (err) {
       console.error(err)
       toast({
@@ -546,6 +552,7 @@ export default function UserMessagePage() {
           </DropdownMenu>
 
           <Input
+            ref={messageInputRef}
             placeholder="Type a message..."
             className="flex-1 bg-gray-100 border-none rounded-full py-2 px-3 text-sm"
             value={messageText}
