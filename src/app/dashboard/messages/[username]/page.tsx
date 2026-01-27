@@ -108,33 +108,28 @@ export default function UserMessagePage() {
       return prev;
     }
 
-    // TODO: optimize this abomination
+    // Robust merge: concat + dedupe + sort
+    const combined = [...prev, msg]
+    const uniqueMap = new Map<number, UserMessage>()
 
-    if (prev.length > 0) {
-      if (prev[prev.length - 1].id < msg.id) {
-        return [...prev, msg]
-      } else {
-        let i = 0
-        for (; i < prev.length; i++) {
-          if (prev[i].id > msg.id) {
-            break
-          }
-          if (prev[i].id == msg.id) {
-            return [...prev.slice(0, i), msg, ...prev.slice(i + 1)]
-          }
-        }
-        return [...prev.slice(0, i), msg, ...prev.slice(i)]
-      }
-    } else {
-      return [msg]
+    // Deduplicate by id, keeping the latest version
+    for (const m of combined) {
+      uniqueMap.set(m.id, m)
     }
+
+    // Sort by id (ascending)
+    return Array.from(uniqueMap.values()).sort((a, b) => {
+      if (a.id < b.id) return -1
+      if (a.id > b.id) return 1
+      return 0
+    })
   }
 
   // Check if user is at bottom of messages
   const checkIfAtBottom = () => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
-      const isBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      const isBottom = scrollHeight - scrollTop - clientHeight < 100 // 100px threshold for better UX
       setIsAtBottom(isBottom)
 
       // Reset new messages count when user scrolls to bottom
@@ -425,7 +420,7 @@ export default function UserMessagePage() {
             dataLength={messages.length}
             inverse={false}
             style={{ display: 'flex', flexDirection: 'column' }}
-            
+
           >
             {messages.map((message) => (
               <div key={message.id.toString()} className="space-y-4">
@@ -438,16 +433,16 @@ export default function UserMessagePage() {
           <div className="h-2"></div>
         </div>
 
-        {/* Scroll to bottom button */}
+        {/* Scroll to bottom button - WhatsApp style */}
         {!isAtBottom && newMessagesCount > 0 && (
           <Button
-            className="absolute bottom-4 right-4 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg w-10 h-10 z-30"
+            className="absolute bottom-4 right-4 rounded-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-xl border border-gray-200 dark:border-gray-700 w-12 h-12 z-30 transition-all"
             size="icon"
             onClick={scrollToBottom}
           >
             <ChevronDown className="h-5 w-5" />
             {newMessagesCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shadow-md">
                 {newMessagesCount > 99 ? "99+" : newMessagesCount}
               </span>
             )}
@@ -481,22 +476,44 @@ export default function UserMessagePage() {
           </div>
         )}
 
-        {/* File Preview */}
+        {/* File Preview - Enhanced with thumbnails */}
         {files.length > 0 && (
-          <div className="px-2 py-1 mb-1 bg-gray-50 rounded-lg border">
-            <div className="flex items-center space-x-2 overflow-x-auto">
-              {files.map((file, index) => (
-                <div key={index} className="flex items-center space-x-1 bg-white px-2 py-1 rounded border min-w-0">
-                  <File className="h-3 w-3 flex-shrink-0" />
-                  <span className="text-xs truncate max-w-20">{file.name}</span>
-                  <button
-                    onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+          <div className="px-2 py-2 mb-2 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-3 gap-2">
+              {files.map((file, index) => {
+                const isImage = file.type.startsWith('image/')
+                const previewUrl = isImage ? URL.createObjectURL(file) : null
+
+                return (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-white border flex items-center justify-center">
+                      {isImage && previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-2">
+                          <File className="h-8 w-8 text-gray-400" />
+                          <span className="text-[10px] text-gray-500 mt-1 truncate max-w-full px-1">
+                            {file.name.split('.').pop()?.toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (previewUrl) URL.revokeObjectURL(previewUrl)
+                        setFiles(files.filter((_, i) => i !== index))
+                      }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -675,20 +692,30 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
   }, [])
 
 
-  if (status == Status.downloading) {
-    //TODO: make it pretty
-    return <div>Downloading...</div>
+
+  if (status == Status.downloading || status == Status.uninit) {
+    // Show placeholder to prevent layout shift
+    if (isImage || isVideo) {
+      return (
+        <div className="mt-2 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 animate-pulse" style={{ minHeight: '200px' }}>
+          <div className="flex items-center justify-center h-full min-h-[200px]">
+            <Loader className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        </div>
+      )
+    }
+    return <div className="text-sm text-gray-500">Downloading...</div>
   }
 
   if (status == Status.error) {
-    //TODO: make it pretty, maybe retry?
-    return <div>Something went wrong</div>
+    return <div className="text-sm text-red-500">Failed to load file</div>
   }
+
 
 
   if (isImage) {
     return (
-      <div className="mt-2 rounded-lg overflow-hidden">
+      <div className="mt-2 rounded-lg overflow-hidden" style={{ minHeight: '200px' }}>
         <img
           src={src}
           alt="Shared image"
@@ -700,9 +727,8 @@ export function MessageFileElement(props: { file: FireflyProtos.EncryptedFile })
 
   if (isVideo) {
     return (
-      <div className="mt-2 rounded-lg overflow-hidden max-h-80">
+      <div className="mt-2 rounded-lg overflow-hidden max-h-80" style={{ minHeight: '200px' }}>
         <video
-          preload="metadata"
           src={src}
           className="max-w-full h-auto rounded-lg"
           controls
