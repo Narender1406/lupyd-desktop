@@ -310,7 +310,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Content flows normally */}
       <main>
-        <div className="container mx-auto p-4 max-w-full md:ml-64">
+        <div className="container mx-auto p-4 pt-6 max-w-full md:ml-64">
           {children}
         </div>
 

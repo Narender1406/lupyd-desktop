@@ -482,6 +482,7 @@ export default function UserMessagePage() {
             <div className="grid grid-cols-3 gap-2">
               {files.map((file, index) => {
                 const isImage = file.type.startsWith('image/')
+                const isVideo = file.type.startsWith('video/')
                 const previewUrl = isImage ? URL.createObjectURL(file) : null
 
                 return (
@@ -493,6 +494,13 @@ export default function UserMessagePage() {
                           alt={file.name}
                           className="w-full h-full object-cover"
                         />
+                      ) : isVideo ? (
+                        <div className="flex flex-col items-center justify-center p-2">
+                          <Video className="h-8 w-8 text-gray-400" />
+                          <span className="text-[10px] text-gray-500 mt-1 truncate max-w-full px-1">
+                            VIDEO
+                          </span>
+                        </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center p-2">
                           <File className="h-8 w-8 text-gray-400" />
