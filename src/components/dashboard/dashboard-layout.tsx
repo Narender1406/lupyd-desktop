@@ -50,9 +50,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { path: "/discover", label: "Discover", icon: Compass },
     // { path: "/activity", label: "Activity", icon: Activity },
     { path: "/saved-posts", label: "Saved", icon: Bookmark },
+    { path: "/groups", label: "Groups", icon: Group },
     // { path: "/analytics", label: "Analytics", icon: BarChart },
     // { path: "/subscription", label: "Subscriptions", icon: Crown },
-    // { path: "/groups", label: "Groups", icon: MessageCircle },
     // { path: "/business", label: "Business", icon: BriefcaseBusinessIcon },
     { path: "/settings", label: "Settings", icon: Settings },
   ]
@@ -159,39 +159,39 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-        {/* Profile / Sign In or Out */}
-        <div className="p-4 border-t dark:border-neutral-800">
-          {username ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Link to={`/user/${username}`}>
-                  <UserAvatar username={username} />
-                </Link>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
+          {/* Profile / Sign In or Out */}
+          <div className="p-4 border-t dark:border-neutral-800">
+            {username ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Link to={`/user/${username}`}>
+                    <UserAvatar username={username} />
+                  </Link>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onSigninButtonClick}
+                  className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
               </div>
+            ) : (
               <Button
-                variant="ghost"
-                size="icon"
+                className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
                 onClick={onSigninButtonClick}
-                className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
               >
-                <LogOut className="h-5 w-5" />
+                <LogIn className="mr-2 h-4 w-4" />
+                <span>Sign In</span>
               </Button>
-            </div>
-          ) : (
-            <Button
-              className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              onClick={onSigninButtonClick}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              <span>Sign In</span>
-            </Button>
-          )}
-        </div>
-      </aside>
+            )}
+          </div>
+        </aside>
 
         {/* Top Bar - No sidebar toggle on mobile in header anymore */}
         <div
@@ -310,7 +310,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Content flows normally */}
       <main>
-        <div className="container mx-auto p-4 max-w-full md:ml-64">
+        <div className="container mx-auto p-4 pt-6 max-w-full md:ml-64">
           {children}
         </div>
 
