@@ -49,7 +49,7 @@ function App() {
 
 
   useEffect(() => {
-    EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic"] })
+    EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic", "notification"] })
 
     const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
 

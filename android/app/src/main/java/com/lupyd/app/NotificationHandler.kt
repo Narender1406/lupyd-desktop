@@ -25,6 +25,7 @@ import com.lupyd.app.MyFirebaseMessagingService.Companion.KEY_TEXT_REPLY
 import firefly.Message
 import kotlinx.coroutines.runBlocking
 import uniffi.firefly_signal.UserMessage
+import kotlin.math.absoluteValue
 
 class NotificationHandler(private val context: Context) {
 
@@ -111,7 +112,7 @@ class NotificationHandler(private val context: Context) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             val channel = NotificationChannel(
-                MyFirebaseMessagingService.CHANNEL_ID,
+                CHANNEL_ID,
                 MyFirebaseMessagingService.CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
@@ -183,11 +184,7 @@ class NotificationHandler(private val context: Context) {
         try {
             createNotificationChannel()
 
-            val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
-            if (notificationManager == null) {
-                Log.e(MyFirebaseMessagingService.Companion.TAG, "Failed to show notification: notificationManager is null")
-                return
-            }
+
 
             Log.d(MyFirebaseMessagingService.Companion.TAG, "Showing bundled notification from: $other")
 
@@ -291,18 +288,7 @@ class NotificationHandler(private val context: Context) {
 
             // Create large profile icon with letter
             val profileIconSize = context.resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
-            val profileBitmap = com.lupyd.app.createProfileBitmap(other, profileIconSize)
-
-//            GlobalScope.launch {
-//                val response = httpClient.get("${Constants.CDN_URL}/users/${other}")
-//                if (!response.status.isSuccess()) {
-//                    return@launch
-//                }
-//
-//                val bitmap = BitmapFactory.decodeStream(response.bodyAsChannel().toInputStream())
-//
-//                // TODO: notify notification with loaded image
-//            }
+            val profileBitmap = createProfileBitmap(other, profileIconSize)
 
             val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(context.resources.getIdentifier("flower_notification_icon", "drawable", context.packageName))
@@ -332,6 +318,12 @@ class NotificationHandler(private val context: Context) {
             // Use sender's hashCode as notification ID to update the same notification
             val notificationId = other.hashCode()
             Log.d(MyFirebaseMessagingService.Companion.TAG, "Showing bundled notification with ID: $notificationId")
+
+            val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager?
+            if (notificationManager == null) {
+                Log.e(MyFirebaseMessagingService.Companion.TAG, "Failed to show notification: notificationManager is null")
+                return
+            }
             notificationManager.notify(notificationId, notificationBuilder.build())
             Log.d(MyFirebaseMessagingService.Companion.TAG, "Bundled notification shown for $other with $messageCount messages")
         } catch (e: Exception) {
