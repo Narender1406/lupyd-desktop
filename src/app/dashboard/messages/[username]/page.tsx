@@ -273,7 +273,7 @@ export default function UserMessagePage() {
 
     const msg = await firefly.encryptAndSend(receiver!, payload)
 
-    setMessages(prev => addMessage(prev, msg))
+    return msg
   }
 
   async function handleSendMessage() {
@@ -313,24 +313,59 @@ export default function UserMessagePage() {
         })
       })
 
-      // For mobile: Don't clear input immediately, let it clear naturally after send
-      // Add message to UI immediately for better UX
-      await sendMessage(userMessage)
 
-      // For mobile app: Only clear input after successful send, no immediate clearing
+      // Optimistic Update:
+      // 1. Construct temporary message
+      // We need a proper UserMessage object. 
+      // construct temp message manually since UserMessageInner is just part of it.
+
+      const tempId = 0
+      const tempMsg: UserMessage = {
+        id: tempId,
+        other: receiver!,
+        sentByOther: false,
+        text: FireflyProtos.UserMessageInner.encode(userMessage).finish(),
+      }
+
+      setMessages(prev => addMessage(prev, tempMsg))
       setMessageText("")
       setReplyingTo(null)
       setFiles([])
 
-      // No focus management needed - let mobile handle it naturally
+      // Keep keyboard open
       messageInputRef.current?.focus()
+
+      // Don't await here, let it run
+      sendMessage(userMessage).then(finalMsg => {
+        setMessages(prev => {
+          // Remove optimistic message(s) with ID 0
+          const filtered = prev.filter(m => m.id !== 0)
+          // Add the confirmed message
+          // finalMsg is now guaranteed by the updated sendMessage
+          return addMessage(filtered, finalMsg)
+        })
+      }).catch(err => {
+        console.error(err)
+        toast({ title: "Failed to send", variant: "destructive" })
+        // Remove temp message and restore text
+        setMessages(prev => prev.filter(m => m.id !== 0))
+        setMessageText(msg)
+      }).finally(() => {
+        setSendingMessage(false)
+      })
+
+      // Return early/break function flow since we handled async part
+      // Note: setSendingMessage is handled in finally of the promise chain above
+      return
+
     } catch (err) {
       console.error(err)
       toast({
-        title: "Error sending message",
+        title: "Error preparing message",
         description: "Please try again later",
         variant: "destructive",
       })
+      setSendingMessage(false)
     } finally {
       setSendingMessage(false)
     }

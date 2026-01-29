@@ -114,28 +114,41 @@ export function ChannelChat({
       channelId, // Add missing channelId
       epoch: 0, // Add missing epoch
     }
-    
+
     try {
-      // Send message and wait for response
-      const msgId = await EncryptionPlugin.encryptAndSendGroupMessage({
+      // Optimistically add message to UI
+      setMessages((prev) => addMessage(prev, msg))
+      setDraft("")
+
+      // Ensure input stays focused (keep keyboard open)
+      inputRef.current?.focus()
+
+      // Send message in background (fire and forget)
+      // We don't await here so the UI thread is not blocked from clearing the input
+      EncryptionPlugin.encryptAndSendGroupMessage({
         textB64: toBase64(text),
         ...msg
+      }).then((msgId) => {
+        // Update message ID after successful send
+        setMessages((prev) => {
+          const newMsg = { ...msg, id: msgId.messageId }
+
+          // Remove the optimistic message (id 0) and add the real one
+          const filtered = prev.filter(m => m.id !== 0)
+          return addMessage(filtered, newMsg)
+        })
+      }).catch((error) => {
+        console.error('Failed to send message:', error)
+        // Remove optimistic message on error and restore draft?
+        setMessages(prev => prev.filter(m => m.id !== 0))
+        setDraft(content) // Restore draft
       })
 
-      msg.id = msgId.messageId
-
-      // For mobile: Add message to UI only after successful send
-      setMessages((prev) => addMessage(prev, msg))
-      
-      // For mobile app: Only clear input after successful send
-      setDraft("")
-      
-      // No focus management needed - let mobile handle it naturally
-      inputRef.current?.focus()
     } catch (error) {
-      console.error('Failed to send message:', error)
-      // Don't add message to UI on error
+      console.error('Error preparing message:', error)
+      setDraft(content)
     }
+
   }
 
   return (
@@ -150,7 +163,7 @@ export function ChannelChat({
             key={m.id}
             className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-900 transition"
           >
-            <UserAvatar username={m.sender}/>
+            <UserAvatar username={m.sender} />
 
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
@@ -185,7 +198,7 @@ export function ChannelChat({
                 send()
               }
             }}
-            // Just let the natural focus behavior work
+          // Just let the natural focus behavior work
           />
           <Button
             className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300"
