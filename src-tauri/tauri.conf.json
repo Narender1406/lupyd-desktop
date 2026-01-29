@@ -35,8 +35,6 @@
     ]
   },
   "plugins": {
-    "single-instance": {
-      "args": true
-    }
+    "single-instance": null
   }
 }
