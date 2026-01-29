@@ -1,12 +1,14 @@
+use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
-use tauri::Manager;
+use tauri::{Manager, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
-                let _ = w.set_focus();
+                w.show().unwrap();
+                w.set_focus().unwrap();
             }
         }))
         .setup(|app| {
@@ -17,8 +19,11 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&quit_i]).unwrap();
 
             let _tray = TrayIconBuilder::with_id("main")
+                .menu(&menu)
                 .icon(app.default_window_icon().unwrap().clone())
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { .. } = event {
@@ -41,6 +46,12 @@ pub fn run() {
                 .build(app)?;
 
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                window.hide().unwrap()
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

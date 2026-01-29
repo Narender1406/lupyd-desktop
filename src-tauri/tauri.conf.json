@@ -21,6 +21,9 @@
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.ico"
     }
   },
   "bundle": {

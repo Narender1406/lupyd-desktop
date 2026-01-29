@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Black color for notification icon background -->
-    <color name="notification_icon_color">#000000</color>
-</resources>
