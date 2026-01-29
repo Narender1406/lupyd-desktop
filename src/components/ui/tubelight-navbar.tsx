@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -19,7 +19,16 @@ interface NavBarProps {
 }
 
 export function NavBar({ items, className }: NavBarProps) {
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState(items[0].name)
+
+  // Sync activeTab with current route
+  useEffect(() => {
+    const current = items.find(item => item.url === location.pathname)
+    if (current) {
+      setActiveTab(current.name)
+    }
+  }, [location.pathname, items])
 
   useEffect(() => {
     const handleResize = () => {

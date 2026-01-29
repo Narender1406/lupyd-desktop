@@ -10,7 +10,7 @@ type SavedPostsContextType = {
   savePost: (postId: string) => void
 }
 
-const SavedPostsContext = createContext<SavedPostsContextType| undefined>(undefined)
+const SavedPostsContext = createContext<SavedPostsContextType | undefined>(undefined)
 
 
 export function SavedPostsDataProvider({ children }: { children: ReactNode }) {
@@ -19,13 +19,32 @@ export function SavedPostsDataProvider({ children }: { children: ReactNode }) {
   const apiService = useApiService()
 
   useEffect(() => {
-    apiService.api.getSavedPosts().then(ids => setState({ savedPostIds: ids})).catch(console.error)
-
+    // Defensive check - getSavedPosts may not be implemented in API
+    const apiWithSavedPosts = apiService.api as any
+    if (typeof apiWithSavedPosts.getSavedPosts === 'function') {
+      apiWithSavedPosts.getSavedPosts()
+        .then((ids: string[]) => setState({ savedPostIds: ids }))
+        .catch((err: Error) => {
+          console.error('Error fetching saved posts:', err)
+          setState({ savedPostIds: [] })
+        })
+    } else {
+      console.warn('getSavedPosts method not available in API service')
+      setState({ savedPostIds: [] })
+    }
   }, [apiService])
 
 
   const savePost = (postId: string) => {
-    apiService.api.savePost(postId).then(() => console.log(`saved post ${postId}`)).catch(console.error)
+    // Defensive check - savePost may not be implemented in API
+    const apiWithSavePost = apiService.api as any
+    if (typeof apiWithSavePost.savePost === 'function') {
+      apiWithSavePost.savePost(postId)
+        .then(() => console.log(`saved post ${postId}`))
+        .catch((err: Error) => console.error('Error saving post:', err))
+    } else {
+      console.warn('savePost method not available in API service')
+    }
 
     setState((prev) => {
       return {

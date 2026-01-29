@@ -9,7 +9,7 @@ import { PostProtos } from "lupyd-js"
 // Wrapper component that adds persistence to the existing PostFeed
 export function PersistentPostFeed() {
   const queryClient = useQueryClient()
-  
+
   // Load cached data on mount
   useEffect(() => {
     const loadCachedData = async () => {
@@ -22,9 +22,25 @@ export function PersistentPostFeed() {
         console.log("Failed to load cached posts", error)
       }
     }
-    
+
     loadCachedData()
   }, [queryClient])
+
+  // Save and restore scroll position
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('feed-scroll')
+    if (savedScroll) {
+      // Restore scroll position after a short delay to ensure content is loaded
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScroll))
+      }, 100)
+    }
+
+    // Save scroll position before unmount
+    return () => {
+      sessionStorage.setItem('feed-scroll', window.scrollY.toString())
+    }
+  }, [])
 
   return <PostFeed />
 }

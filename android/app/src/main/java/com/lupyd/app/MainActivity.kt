@@ -15,16 +15,17 @@ import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.getcapacitor.BridgeActivity
+import kotlinx.coroutines.launch
+import uniffi.firefly_signal.FfiFileServer
+import kotlin.io.encoding.Base64
+import kotlin.random.Random
 
 
 class MainActivity : BridgeActivity() {
 
-
-
-
-
-    lateinit var server: FileServer
+    lateinit var server: FfiFileServer
 
     var filePathCallback: ValueCallback<Array<out Uri?>?>? = null
 
@@ -40,8 +41,10 @@ class MainActivity : BridgeActivity() {
             val uris = when {
                 clip != null ->
                     (0 until clip.itemCount).map { clip.getItemAt(it).uri }
+
                 single != null ->
                     listOf(single)
+
                 else ->
                     emptyList()
             }
@@ -55,7 +58,7 @@ class MainActivity : BridgeActivity() {
 
             filePathCallback = null
         }
-    lateinit var serverThread: Thread
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -72,20 +75,20 @@ class MainActivity : BridgeActivity() {
         // ✅ Unified approach for all Android versions
         // Enable edge-to-edge to allow manual inset handling
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        
+
         // Use ADJUST_RESIZE for compatibility (enhanced by WindowInsets on newer versions)
         window.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         )
-        
+
         // Apply WindowInsets listener to handle IME and system bars properly
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            
+
             // Calculate the bottom inset (either IME or navigation bar, whichever is larger)
             val bottomInset = maxOf(ime.bottom, systemBars.bottom)
-            
+
             // Apply padding to prevent content from going behind system UI
             view.setPadding(
                 systemBars.left,
@@ -93,7 +96,7 @@ class MainActivity : BridgeActivity() {
                 systemBars.right,
                 bottomInset
             )
-            
+
             WindowInsetsCompat.CONSUMED
         }
 
@@ -109,9 +112,6 @@ class MainActivity : BridgeActivity() {
             window.decorView.systemUiVisibility =
                 View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
-
-
-
 
 
         val webView = bridge.getWebView()
@@ -137,19 +137,33 @@ class MainActivity : BridgeActivity() {
         })
 
         Log.i("lupyd-cap", "creating FileServer")
-        server = FileServer(rootDir = application.filesDir, port = 62510)
+        val fileServerToken = randomString(32)
+        server = FfiFileServer.create(
+            basePath = application.filesDir.toPath().toAbsolutePath().toString(),
+            token = fileServerToken
+        )
 
-        serverThread = Thread {
-            server.startServer()
+        lifecycleScope.launch {
+            server.startServing(null)
+
+            Constants.fileServerPort = server.port().toInt()
+            Constants.fileServerToken = server.token()
+
+            Log.i("lupyd-cap", "FileServer serving at ${Constants.fileServerPort}")
         }
-        serverThread.start()
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onDestroy() {
         super.onDestroy()
-        server.closeServer()
-        serverThread.interrupt()
 
     }
+}
+
+fun randomString(length: Int): String {
+    val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
+    return (1..length)
+        .map { allowedChars.random() }
+        .joinToString("")
 }

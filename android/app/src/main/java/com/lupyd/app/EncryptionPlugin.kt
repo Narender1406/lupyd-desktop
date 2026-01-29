@@ -32,6 +32,10 @@ import uniffi.firefly_signal.UserMessage
         Permission(
             alias = "mic",
             strings = [Manifest.permission.RECORD_AUDIO]
+        ),
+        Permission(
+            alias = "notification",
+            strings = [Manifest.permission.POST_NOTIFICATIONS]
         )
     ]
 )

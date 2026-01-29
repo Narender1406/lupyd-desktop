@@ -223,10 +223,34 @@ export default function GroupsPage() {
           </div>
         </div>
 
-        {selectedGroupId != undefined &&
+
+        {selectedGroupId != undefined ? (
           <div className="w-full md:flex-1 min-w-0">
             <GroupWorkspacePane groupId={selectedGroupId!} groupName={groupInfos.find(e => e.groupId == selectedGroupId)?.name ?? ""} />
-          </div>}
+          </div>
+        ) : (
+          <div className="w-full md:flex-1 min-w-0 flex items-center justify-center">
+            <div className="text-center max-w-md px-6 py-12">
+              <div className="mb-6">
+                <div className="mx-auto w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                  <Users className="h-10 w-10 text-gray-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Groups</h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Create or join groups to connect with communities, share ideas, and collaborate with others.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => navigate("/groups/create")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create Your First Group
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )
