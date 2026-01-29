@@ -78,7 +78,7 @@ export default function GroupsPage() {
               key={g.groupId}
               className={`relative flex h-12 w-12 items-center justify-center rounded-2xl overflow-hidden transition-all hover:rounded-xl ${isActive ? "ring-2 ring-black" : "ring-1 ring-transparent"
                 }`}
-              onClick={() => setSelectedGroupId(g.groupId)}
+              onClick={() => navigate(`/groups/${g.groupId}`)}
               aria-label={`Open ${g.name}`}
             >
             </button>
@@ -104,7 +104,7 @@ export default function GroupsPage() {
         const extension = fromBase64(resultB64)
         setExtension(extension)
       })
-    })
+    }, [g.groupId])
 
 
 
@@ -116,7 +116,7 @@ export default function GroupsPage() {
         className={`w-full text-left rounded-md p-2 hover:bg-gray-100 transition ${g.groupId === selectedGroupId ? "bg-gray-100" : ""
           }`}
         onClick={() => {
-          setSelectedGroupId(g.groupId)
+          navigate(`/groups/${g.groupId}`)
           setOpenSheet(false)
         }}
       >
@@ -131,7 +131,7 @@ export default function GroupsPage() {
           <div className="min-w-0">
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {groupExtension.members.length.toLocaleString()}
+              {groupExtension.members?.members?.length.toLocaleString()}
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function GroupsPage() {
                   Groups
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
+              <SheetContent side="left" className="w-80 p-0 bg-white dark:bg-black">
                 <SheetHeader className="p-4 border-b">
                   <SheetTitle>Groups</SheetTitle>
                 </SheetHeader>

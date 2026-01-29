@@ -15,6 +15,7 @@ import { protos } from "firefly-client-js"
 import {
   AlertTriangle,
   ArrowLeft,
+  Info,
   Save,
   Trash2,
   Upload
@@ -56,6 +57,16 @@ export default function GroupSettingsPage() {
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showRoleDialog, setShowRoleDialog] = useState(false)
+  const [editingRole, setEditingRole] = useState<any | null>(null)
+  const [newRoleName, setNewRoleName] = useState("")
+  // Permissions state (mocked for UI structure)
+  const [permissions, setPermissions] = useState({
+    sendMessages: true,
+    createChannels: false,
+    manageRoles: false,
+    kickMembers: false
+  })
 
 
 
@@ -68,10 +79,17 @@ export default function GroupSettingsPage() {
     setIsSaving(true)
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000))
+      // TODO: Implement updateGroupInfo in EncryptionPlugin
+      toast({
+        title: "Not Implemented",
+        description: "Updating group details is not yet supported by the plugin.",
+      })
+      /*
       toast({
         title: "Settings saved",
         description: "Your group settings have been updated successfully.",
       })
+      */
     } catch (error) {
       toast({
         title: "Error",
@@ -91,10 +109,9 @@ export default function GroupSettingsPage() {
 
 
   const addMember = async (username: string, role: number) => {
-    await EncryptionPlugin.updateGroupMember({
+    await EncryptionPlugin.updateGroupUsers({
       groupId: Number(id),
-      username,
-      roleId: role
+      users: [{ username, roleId: role }]
     })
     updateState()
   }
@@ -109,7 +126,7 @@ export default function GroupSettingsPage() {
 
 
   const getRoleIcon = (role: number) => {
-    const roleObj = extension?.roles.find(e => e.id == role)
+    const roleObj = extension?.roles?.roles?.find((e: any) => e.id == role)
     if (!roleObj) return null
     return <p>{roleObj.name}</p>
   }
@@ -122,7 +139,7 @@ export default function GroupSettingsPage() {
           <div className="flex items-center gap-2 min-w-0">
             <Button
               variant="ghost"
-              onClick={() => navigate(`/groups/${id}/info`)}
+              onClick={() => navigate(`/groups/${id}`)}
               className="flex items-center gap-2 shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -155,8 +172,11 @@ export default function GroupSettingsPage() {
         <div className="space-y-6">
           {/* Basic Information */}
           <Card className="border-none shadow-sm">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Basic Information</CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => navigate(`/groups/${id}/info`)} title="Group Info">
+                <Info className="h-5 w-5 text-muted-foreground" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Avatar Upload */}
@@ -172,6 +192,7 @@ export default function GroupSettingsPage() {
                       variant="outline"
                       className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-white"
                       aria-label="Upload"
+                      onClick={() => toast({ title: "Not Supported", description: "Avatar upload is not yet implemented." })}
                     >
                       <Upload className="h-4 w-4" />
                     </Button>
@@ -213,10 +234,109 @@ export default function GroupSettingsPage() {
 
           {/* Role & Channel Permissions */}
           <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Role & Channel Permissions</CardTitle>
-              <CardDescription>Configure per-role permissions for channels in this group</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Role & Channel Permissions</CardTitle>
+                <CardDescription>Configure per-role permissions for channels in this group</CardDescription>
+              </div>
+              <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => { setEditingRole(null); setNewRoleName(""); }}>
+                    + Create Role
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingRole ? "Edit Role" : "Create New Role"}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Role Name</Label>
+                      <Input
+                        placeholder="e.g. Moderator"
+                        value={newRoleName}
+                        onChange={(e) => setNewRoleName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Permissions</Label>
+                      <div className="space-y-2 border p-3 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id="perm-send" checked={permissions.sendMessages} onChange={(e) => setPermissions({ ...permissions, sendMessages: e.target.checked })} />
+                          <label htmlFor="perm-send" className="text-sm">Send Messages</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id="perm-create" checked={permissions.createChannels} onChange={(e) => setPermissions({ ...permissions, createChannels: e.target.checked })} />
+                          <label htmlFor="perm-create" className="text-sm">Create Channels</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" id="perm-manage" checked={permissions.manageRoles} onChange={(e) => setPermissions({ ...permissions, manageRoles: e.target.checked })} />
+                          <label htmlFor="perm-manage" className="text-sm">Manage Roles</label>
+                        </div>
+                      </div>
+                    </div>
+                    <Button className="w-full bg-black text-white" onClick={async () => {
+                      if (!newRoleName.trim()) return
+
+                      try {
+                        const newRoleId = editingRole ? editingRole.id : Math.floor(Math.random() * 100000)
+                        // Minimal permission mapping for demo: 
+                        // In real app, you'd map individual permissions to bits
+                        let permValue = 0
+                        if (permissions.sendMessages) permValue |= 1
+                        if (permissions.createChannels) permValue |= 2
+                        if (permissions.manageRoles) permValue |= 4
+
+                        const payload = {
+                          groupId: Number(id),
+                          roles: [{
+                            roleId: editingRole ? editingRole.id : 0, // Try 0 for new role
+                            name: newRoleName,
+                            permissions: permValue,
+                            delete: false
+                          }]
+                        }
+                        console.log("DEBUG: Calling updateGroupRoles with:", JSON.stringify(payload, null, 2))
+
+                        await EncryptionPlugin.updateGroupRoles(payload)
+
+                        toast({ title: "Success", description: `Role ${editingRole ? "updated" : "created"} successfully.` })
+                        setShowRoleDialog(false)
+                        // Refresh state
+                        setTimeout(updateState, 500)
+                      } catch (e) {
+                        console.error(e)
+                        toast({ title: "Error", description: "Failed to save role.", variant: "destructive" })
+                      }
+                    }}>
+                      {editingRole ? "Save Changes" : "Create Role"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {extension?.roles?.roles?.map((role: any) => (
+                  <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-gray-200 grid place-items-center text-xs font-bold">
+                        {role.name.slice(0, 1).toUpperCase()}
+                      </div>
+                      <span className="font-medium">{role.name}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setEditingRole(role)
+                      setNewRoleName(role.name)
+                      setShowRoleDialog(true)
+                    }}>Edit</Button>
+                  </div>
+                ))}
+                {(!extension?.roles?.roles || extension.roles.roles.length === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No roles defined yet.</p>
+                )}
+              </div>
+            </CardContent>
           </Card>
 
           {/* Member Management */}
@@ -227,7 +347,7 @@ export default function GroupSettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {extension?.members?.map((member) => (
+                {extension?.members?.members?.map((member: any) => (
                   <div
                     key={member.username}
                     className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"

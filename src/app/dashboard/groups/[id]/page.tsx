@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
-import { GroupWorkspacePane } from "@/components/groups/groups-workspace-pane"
+
 
 import { ChannelChat } from "@/components/groups/channel-chat"
 import { ChannelList } from "@/components/groups/channel-list"
@@ -13,7 +13,8 @@ import { useAuth } from "@/context/auth-context"
 import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
 import { fromBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
-import { ArrowLeft, Settings } from "lucide-react"
+import { ArrowLeft, Settings, Menu } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 
 
@@ -29,13 +30,16 @@ export default function GroupWorkspaceRoutePage() {
   const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
 
   useEffect(() => {
+    if (!id) return;
+    setGroupInfo(undefined) // clear previous info
+    setExtension(undefined) // clear previous extension
 
     EncryptionPlugin.getGroupInfoAndExtension({ groupId: Number(id) }).then((result) => {
       setGroupInfo(result)
       setExtension(protos.FireflyGroupExtension.decode(fromBase64(result.extensionB64)))
     })
 
-  }, [])
+  }, [id])
 
   const currenRole = useMemo(() => {
 
@@ -47,13 +51,13 @@ export default function GroupWorkspaceRoutePage() {
       return
     }
 
-    const member = extension.members.find(e => e.username == auth.username)
+    const member = extension.members?.members?.find(e => e.username == auth.username)
 
     if (!member) {
       return
     }
 
-    const role = extension.roles.find(e => e.id == member.role)
+    const role = extension.roles?.roles?.find(e => e.id == member.role)
 
     return role
   }, [auth, extension])
@@ -69,10 +73,24 @@ export default function GroupWorkspaceRoutePage() {
 
   // read ?c= from location
   useEffect(() => {
+    if (!extension) return
+    const channels = extension.channels?.channels ?? []
+    if (channels.length === 0) return
+
     const params = new URLSearchParams(window.location.search)
     const c = params.get("c")
-    if (c && extension && extension.channels.some((ch) => ch.id === Number(c))) setSelectedChannelId(Number(c))
-  }, [window.location.search, extension])
+
+    if (c && channels.some((ch: any) => ch.id === Number(c))) {
+      setSelectedChannelId(Number(c))
+    } else if (selectedChannelId === 0 || !channels.some((ch: any) => ch.id === selectedChannelId)) {
+      // Select first channel (prefer Text type if possible, otherwise first)
+      // types: 1=Text, 2=Voice.
+      const defaultChannel = channels.find((ch: any) => ch.type === 1) || channels[0]
+      if (defaultChannel) {
+        setSelectedChannelId(defaultChannel.id)
+      }
+    }
+  }, [extension])
 
   // write ?c= to URL
   useEffect(() => {
@@ -81,25 +99,46 @@ export default function GroupWorkspaceRoutePage() {
     window.history.replaceState({}, "", url.toString())
   }, [selectedChannelId])
 
-  const selectedChannel = useMemo(() => extension?.channels.find(e => e.id == selectedChannelId), [extension, selectedChannelId])
+  const selectedChannel = useMemo(() => extension?.channels?.channels?.find((e: any) => e.id == selectedChannelId), [extension, selectedChannelId])
 
-  const addChannel = () => {
-    // const idSafe = newChannelName.trim().toLowerCase().replace(/\s+/g, "-")
-    // if (!idSafe || channels.some((c) => c.id === idSafe)) return
-    // const newCh: Channel = {
-    //   id: idSafe,
-    //   name: idSafe,
-    //   topic: "",
-    //   isPrivate: newChannelPrivate,
-    //   category: newChannelCategory || "Text",
-    //   slowMode: false,
-    // }
-    // setChannels((prev) => [...prev, newCh])
-    // setCreating(false)
-    // setNewChannelName("new-channel")
-    // setNewChannelPrivate(false)
-    // setNewChannelCategory("Text")
-    // setSelectedChannelId(newCh.id)
+  const addChannel = async () => {
+    if (!newChannelName.trim()) return
+    // Simple random ID generation for new channel
+    const newId = Math.floor(Math.random() * 1000000)
+
+    try {
+      const payload = {
+        groupId: Number(id),
+        id: 0, // Try 0 to see if backend auto-assigns
+        delete: false,
+        name: newChannelName.trim(),
+        channelTy: newChannelCategory === "Voice" ? 2 : 1,
+        defaultPermissions: 0
+      }
+      console.log("DEBUG: Calling updateGroupChannel with:", JSON.stringify(payload, null, 2))
+
+      await EncryptionPlugin.updateGroupChannel(payload)
+
+      // Refresh extension to show new channel
+      // We might need a small delay or retry as consistency might not be instant
+      // But for now just re-fetch
+      setTimeout(() => {
+        EncryptionPlugin.getGroupInfoAndExtension({ groupId: Number(id) }).then((result) => {
+          setGroupInfo(result)
+          setExtension(protos.FireflyGroupExtension.decode(fromBase64(result.extensionB64)))
+        })
+      }, 500)
+
+      setCreating(false)
+      setNewChannelName("new-channel")
+      setNewChannelPrivate(false)
+      setNewChannelCategory("Text")
+
+      // Optionally select the new channel? 
+      // setSelectedChannelId(newId) 
+    } catch (e) {
+      console.error("Failed to create channel", e)
+    }
   }
 
   const updateChannel = (patch: any) => {
@@ -124,8 +163,9 @@ export default function GroupWorkspaceRoutePage() {
           Settings
         </Button>
       </div>
-      <GroupWorkspacePane groupId={Number(id)} groupName={groupInfo?.name ?? ""}>
-        <div className="flex h-[calc(100vh-80px)] md:h-[calc(100vh-88px)] -m-4 md:-m-6">
+      <div className="w-full h-full">
+        {/* On mobile: no negative margins, flex col. Desktop: negative margins to bleed to edges */}
+        <div className="flex flex-col h-[calc(100vh-80px)] md:py-0 md:h-[calc(100vh-88px)] md:-m-6 md:flex-row">
           {/* Left: Channel list (Desktop) */}
           <aside className="hidden md:flex w-72 flex-col border-r bg-white">
             <div className="p-4 border-b flex items-center justify-between">
@@ -182,7 +222,7 @@ export default function GroupWorkspaceRoutePage() {
 
             <div className="flex-1 overflow-y-auto">
               <ChannelList
-                channels={extension?.channels ?? []}
+                channels={extension?.channels?.channels ?? []}
                 filter={filter}
                 selectedId={selectedChannelId}
                 onSelect={setSelectedChannelId}
@@ -202,26 +242,97 @@ export default function GroupWorkspaceRoutePage() {
           </aside>
 
           {/* Top (Mobile): Quick header with channel selector */}
-          <div className="md:hidden flex flex-col w-full">
-            <div className="border-b p-3 flex items-center justify-between gap-2">
-              <Button variant="outline" className="bg-transparent" onClick={() => navigate("/groups")}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Groups
-              </Button>
-              <select value={selectedChannelId} onChange={(e) => setSelectedChannelId(Number(e.target.value))}>
-                {extension?.channels.map((ch) => (
-                  <option key={ch.id} value={ch.id}>
-                    {`# ${ch.name}`}
-                  </option>
-                ))}
-              </select>
+          <div className="md:hidden flex flex-col w-full bg-white border-b sticky top-0 z-10">
+            <div className="p-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => navigate("/groups")}>
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 max-w-[200px]">
+                      <span className="truncate"># {selectedChannel?.name || "Select Channel"}</span>
+                      <Menu className="h-4 w-4 ml-1 opacity-50" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 bg-white dark:bg-black">
+                    <SheetHeader className="p-4 border-b text-left">
+                      <SheetTitle>{groupInfo?.name}</SheetTitle>
+                    </SheetHeader>
+                    <div className="h-full overflow-y-auto pb-6">
+                      {/* Re-use channel list logic or component */}
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm font-medium text-muted-foreground">Channels</span>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setCreating(v => !v)}>+</Button>
+                        </div>
+
+                        {creating && (
+                          <div className="pb-3 space-y-2 border-b mb-3">
+                            <input
+                              type="text"
+                              value={newChannelName}
+                              onChange={(e) => setNewChannelName(e.target.value)}
+                              placeholder="channel-name"
+                              className="w-full p-2 text-sm border rounded"
+                            />
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Private</span>
+                              <select
+                                value={newChannelPrivate ? "yes" : "no"}
+                                onChange={(e) => setNewChannelPrivate(e.target.value === "yes")}
+                                className="p-1 text-sm border rounded"
+                              >
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">Category</span>
+                              <select
+                                value={newChannelCategory}
+                                onChange={(e) => setNewChannelCategory(e.target.value)}
+                                className="p-1 text-sm border rounded flex-1"
+                              >
+                                <option value="Text">Text</option>
+                                <option value="Projects">Projects</option>
+                                <option value="Announcements">Announcements</option>
+                              </select>
+                            </div>
+                            <Button className="w-full bg-black text-white hover:bg-gray-800 h-8 text-xs" onClick={addChannel}>
+                              Create Channel
+                            </Button>
+                          </div>
+                        )}
+                        <ChannelList
+                          channels={extension?.channels?.channels ?? []}
+                          filter={""}
+                          selectedId={selectedChannelId}
+                          onSelect={(id) => {
+                            setSelectedChannelId(id)
+                            // Close sheet? ideally yes but controlled sheet is complex here without extra state. 
+                            // User can just swipe away or click backdrop.
+                          }}
+                        />
+                        <div className="mt-4 pt-4 border-t">
+                          <Button variant="ghost" className="w-full justify-start px-2" onClick={() => navigate(`/groups/${id}/settings`)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Group Settings
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </div>
 
           {/* Center: Chat */}
           <section className="flex-1 flex flex-col bg-white">
-            {/* Channel header */}
-            <div className="border-b px-4 py-3 flex items-center justify-between">
+            {/* Desktop Channel header */}
+            <div className="hidden md:flex border-b px-4 py-3 items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 {"#"}
                 <h1 className="font-semibold truncate">{selectedChannel?.name || "channel"}</h1>
@@ -229,18 +340,33 @@ export default function GroupWorkspaceRoutePage() {
             </div>
 
             {/* Chat content */}
-            {
-              (extension && groupInfo) && (
-                <ChannelChat channelId={selectedChannelId} extension={extension} groupId={groupInfo.groupId} />
-              )
-            }
+            {/* Chat content usually */}
+            <div className="flex-1 overflow-hidden relative">
+              {(!extension?.channels?.channels || extension.channels.channels.length === 0) ? (
+                <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Settings className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No Channels Created</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    This group doesn't have any channels yet. Create one to start communicating.
+                  </p>
+                  <Button onClick={() => setCreating(true)}>
+                    Create First Channel
+                  </Button>
+                </div>
+              ) : (
+                (extension && groupInfo) && (
+                  <ChannelChat channelId={selectedChannelId} groupId={groupInfo.groupId} />
+                )
+              )}
+            </div>
 
             {/* Composer */}
-            <div className="border-t p-3">
-              <div className="flex items-center gap-2">
-                <input placeholder={`Message #${selectedChannel?.name}`} className="bg-gray-100 border-none" />
-                <Button className="bg-black text-white hover:bg-gray-800">Send</Button>
-              </div>
+            <div className="border-t bg-white dark:bg-black hidden md:block p-3">
+              {/* Desktop composer is handled by ChannelChat currently? No, ChannelChat handles it. */}
+              {/* Wait, ChannelChat HAS an inline composer for mobile, but desktop layout here adds another one? */}
+              {/* Looking at lines 274-279 in original, it has a dummy composer. Removing it since ChannelChat has one. */}
             </div>
           </section>
 
@@ -283,7 +409,7 @@ export default function GroupWorkspaceRoutePage() {
                   <div className="border rounded-lg p-4">
                     <div className="text-sm text-muted-foreground mb-2">Members</div>
                     <div className="space-y-2">
-                      {extension?.members.map((m) => (
+                      {extension?.members?.members?.map((m: any) => (
                         <div key={m.username} className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
                             <UserAvatar username={m.username} />
@@ -307,12 +433,12 @@ export default function GroupWorkspaceRoutePage() {
             </div>
           </aside>
         </div>
-      </GroupWorkspacePane>
+      </div>
     </DashboardLayout>
   )
 
   function roleFromRoleId(id: number) {
-    return extension?.roles.find(r => r.id == id)
+    return extension?.roles?.roles?.find((r: any) => r.id == id)
   }
 }
 

@@ -64,6 +64,9 @@ export default function CreateGroupPage() {
         description: `${groupData.name} has been created successfully.`,
       })
 
+      // Dispatch event to update sidebar
+      window.dispatchEvent(new CustomEvent("groups-updated"))
+
       navigate(`/groups/${groupInfo.groupId}`)
 
     } catch (e) {
