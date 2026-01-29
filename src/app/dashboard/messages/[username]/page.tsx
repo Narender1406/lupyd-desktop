@@ -64,9 +64,6 @@ export default function UserMessagePage() {
   const messageInputRef = useRef<HTMLInputElement>(null)
   const firefly = useFirefly()
 
-  const [autoShouldScrollDown, setAutoShouldScrollDown] = useState(false)
-
-
   const [sendingMessage, setSendingMessage] = useState(false)
   // NEW: Track the exact height of the visible screen
   const [viewportHeight, setViewportHeight] = useState('100%')
@@ -82,8 +79,8 @@ export default function UserMessagePage() {
       // This automatically shrinks the UI when keyboard opens
       setViewportHeight(`${window.visualViewport?.height}px`)
 
-      // Optional: Scroll to bottom if keyboard opened
-      if (document.activeElement === document.querySelector('input')) {
+      // Optional: Scroll to bottom if keyboard opened and user is at bottom
+      if (document.activeElement === messageInputRef.current && isAtBottom) {
         setTimeout(scrollToBottom, 100)
       }
     }
@@ -98,7 +95,7 @@ export default function UserMessagePage() {
       window.visualViewport?.removeEventListener('resize', handleResize)
       window.visualViewport?.removeEventListener('scroll', handleResize)
     }
-  }, [])
+  }, [isAtBottom])
 
   // Apply the scroll boundary guard hook
   useScrollBoundaryGuard(messagesContainerRef)
@@ -140,9 +137,10 @@ export default function UserMessagePage() {
     }
   }
 
-  // Scroll to bottom of messages
+  // Scroll to bottom of messages - improved version
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
+      // Instant scroll to bottom (no animation for better performance)
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
       setNewMessagesCount(0)
     }
@@ -251,15 +249,6 @@ export default function UserMessagePage() {
   const [replyingTo, setReplyingTo] = useState<UserMessage | null>(null)
 
   const [endOfOlderMessages] = useState(false)
-  function handleReaction(_msg: UserMessage, _emoji: string): void {
-    // TODO: Implement reaction functionality
-    console.log('Adding reaction', _emoji, 'to message', _msg);
-  }
-
-  function handleReply(message: UserMessage): void {
-    setReplyingTo(message)
-  }
-
 
   function cancelReply(): void {
     setReplyingTo(null)
@@ -299,7 +288,8 @@ export default function UserMessagePage() {
       const encryptedFiles = FireflyProtos.EncryptedFiles.create()
       for (const file of files) {
         const { reader, key } = encryptBlobV1(file)
-        const objectKey = await api.uploadFile(file.name, "application/octet-stream", reader, file.size)
+        // Fix: uploadFile expects 3 arguments, not 4
+        const objectKey = await api.uploadFile(file.name, "application/octet-stream", reader)
 
         let contentType = ContentType.Unknown
         if (file.type.startsWith("image/")) {
@@ -322,15 +312,18 @@ export default function UserMessagePage() {
           files: encryptedFiles,
         })
       })
+
+      // For mobile: Don't clear input immediately, let it clear naturally after send
+      // Add message to UI immediately for better UX
       await sendMessage(userMessage)
+
+      // For mobile app: Only clear input after successful send, no immediate clearing
       setMessageText("")
       setReplyingTo(null)
       setFiles([])
 
-      // Keep keyboard open by maintaining focus
-      setTimeout(() => {
-        messageInputRef.current?.focus()
-      }, 10)
+      // No focus management needed - let mobile handle it naturally
+      messageInputRef.current?.focus()
     } catch (err) {
       console.error(err)
       toast({
@@ -361,6 +354,16 @@ export default function UserMessagePage() {
     (viewportMeta as HTMLMetaElement).content = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
   }, []);
 
+
+  // Scroll to bottom when messages change or when chat opens
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Always scroll to bottom when new messages arrive
+      setTimeout(() => {
+        scrollToBottom()
+      }, 50)
+    }
+  }, [messages])
 
   return (
     <div
@@ -422,11 +425,10 @@ export default function UserMessagePage() {
             scrollableTarget="chat-scroll"
             next={getOlderMessages}
             hasMore={!endOfOlderMessages}
-            loader={<Loader className="mx-auto my-4" />}
+            loader={null} // Remove the loader icon at the bottom
             dataLength={messages.length}
             inverse={false}
             style={{ display: 'flex', flexDirection: 'column' }}
-
           >
             {messages.map((message) => (
               <div key={message.id.toString()} className="space-y-4">
@@ -560,6 +562,7 @@ export default function UserMessagePage() {
             onKeyDown={handleKeyDown}
             // Prevent auto-zoom on iOS inputs by ensuring font-size is at least 16px in CSS or here
             style={{ fontSize: '16px' }}
+          // For mobile app: Remove all focus manipulation to let native behavior handle it
           />
 
           <Popover>
@@ -587,10 +590,11 @@ export default function UserMessagePage() {
             size="icon"
             className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10"
             onClick={handleSendMessage}
-            disabled={!messageText.trim() && files.length === 0}
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={sendingMessage || (!messageText.trim() && files.length === 0)}
           >
             {sendingMessage ? (
-              <Loader className="h-4 w-4 animate-spin" />
+              <Send className="h-4 w-4" /> // Show send icon instead of loader
             ) : (
               <Send className="h-4 w-4" />
             )}
@@ -610,11 +614,9 @@ export default function UserMessagePage() {
   )
 }
 
-
-export function MessageElement(props: { message: UserMessage, sender: string, handleReply?: (message: UserMessage) => void, handleReaction?: (message: UserMessage, emoji: string) => void }) {
-  const { message, handleReaction, handleReply } = props;
+export function MessageElement(props: { message: UserMessage, sender: string }) {
+  const { message } = props;
   const isMine = !message.sentByOther;
-
 
   const date = new Date(message.id / 1000)
   const timestamp = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`

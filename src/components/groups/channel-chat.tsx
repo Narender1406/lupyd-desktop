@@ -15,17 +15,14 @@ import { UserAvatar } from "../user-avatar"
 export function ChannelChat({
   channelId,
   groupId,
-  extension,
 }: {
   channelId: number
   groupId: number,
-  extension: protos.FireflyGroupExtension
 }) {
   const [messages, setMessages] = useState<GroupMessage[]>([])
   const [draft, setDraft] = useState("")
   const containerRef = useRef<HTMLDivElement | null>(null)
-
-
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const addMessage = (prev: GroupMessage[], msg: GroupMessage) => {
     if (prev.length > 0) {
@@ -93,15 +90,14 @@ export function ChannelChat({
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    // Scroll to bottom when messages load or change
     el.scrollTop = el.scrollHeight
   }, [messages])
-
 
   const auth = useAuth()
   async function send() {
     const content = draft.trim()
     if (!content) return
-
 
     const text = protos.GroupMessageInner.encode({
       channelId,
@@ -115,16 +111,31 @@ export function ChannelChat({
       text: text,
       sender: auth.username!,
       id: 0,
+      channelId, // Add missing channelId
+      epoch: 0, // Add missing epoch
     }
-    const msgId = await EncryptionPlugin.encryptAndSendGroupMessage({
-      textB64: toBase64(text),
-      ...msg
-    })
+    
+    try {
+      // Send message and wait for response
+      const msgId = await EncryptionPlugin.encryptAndSendGroupMessage({
+        textB64: toBase64(text),
+        ...msg
+      })
 
-    msg.id = msgId.messageId
+      msg.id = msgId.messageId
 
-    setMessages((prev) => addMessage(prev, msg))
-    setDraft("")
+      // For mobile: Add message to UI only after successful send
+      setMessages((prev) => addMessage(prev, msg))
+      
+      // For mobile app: Only clear input after successful send
+      setDraft("")
+      
+      // No focus management needed - let mobile handle it naturally
+      inputRef.current?.focus()
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      // Don't add message to UI on error
+    }
   }
 
   return (
@@ -163,14 +174,24 @@ export function ChannelChat({
       <div className="border-t p-2 md:hidden bg-white dark:bg-black">
         <div className="flex items-center gap-2">
           <Input
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={"Message #" + channelId}
             className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
+            // Just let the natural focus behavior work
           />
           <Button
             className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300"
             onClick={send}
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={!draft.trim()}
           >
             Send
           </Button>

@@ -72,13 +72,14 @@ class MainActivity : BridgeActivity() {
 
         Log.i("lupyd-cap", "Encryption Plugin registered")
 
-        // ✅ Unified approach for all Android versions
+        // ✅ Mobile-optimized approach for chat applications
         // Enable edge-to-edge to allow manual inset handling
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // Use ADJUST_RESIZE for compatibility (enhanced by WindowInsets on newer versions)
+        // Use ADJUST_RESIZE with stateUnchanged for mobile chat experience
         window.setSoftInputMode(
-            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or 
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
         )
 
         // Apply WindowInsets listener to handle IME and system bars properly
