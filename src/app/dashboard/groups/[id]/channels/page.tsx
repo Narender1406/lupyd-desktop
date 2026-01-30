@@ -211,7 +211,7 @@ export default function GroupChannelsPage() {
 
           {
             extension &&
-            <ChannelChat channelId={selectedChannelId} extension={extension} groupId={Number(id)} />
+            <ChannelChat channelId={selectedChannelId} groupId={Number(id)} />
           }
 
           {/* Composer */}

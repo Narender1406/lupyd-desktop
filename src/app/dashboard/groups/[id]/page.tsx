@@ -51,13 +51,13 @@ export default function GroupWorkspaceRoutePage() {
       return
     }
 
-    const member = extension.members?.members?.find(e => e.username == auth.username)
+    const member = extension.members?.find(e => e.username == auth.username)
 
     if (!member) {
       return
     }
 
-    const role = extension.roles?.roles?.find(e => e.id == member.role)
+    const role = extension.roles?.find(e => e.id == member.role)
 
     return role
   }, [auth, extension])
@@ -74,7 +74,7 @@ export default function GroupWorkspaceRoutePage() {
   // read ?c= from location
   useEffect(() => {
     if (!extension) return
-    const channels = extension.channels?.channels ?? []
+    const channels = extension.channels ?? []
     if (channels.length === 0) return
 
     const params = new URLSearchParams(window.location.search)
@@ -99,7 +99,7 @@ export default function GroupWorkspaceRoutePage() {
     window.history.replaceState({}, "", url.toString())
   }, [selectedChannelId])
 
-  const selectedChannel = useMemo(() => extension?.channels?.channels?.find((e: any) => e.id == selectedChannelId), [extension, selectedChannelId])
+  const selectedChannel = useMemo(() => extension?.channels?.find((e: any) => e.id == selectedChannelId), [extension, selectedChannelId])
 
   const addChannel = async () => {
     if (!newChannelName.trim()) return
@@ -222,7 +222,7 @@ export default function GroupWorkspaceRoutePage() {
 
             <div className="flex-1 overflow-y-auto">
               <ChannelList
-                channels={extension?.channels?.channels ?? []}
+                channels={extension?.channels ?? []}
                 filter={filter}
                 selectedId={selectedChannelId}
                 onSelect={setSelectedChannelId}
@@ -306,7 +306,7 @@ export default function GroupWorkspaceRoutePage() {
                           </div>
                         )}
                         <ChannelList
-                          channels={extension?.channels?.channels ?? []}
+                          channels={extension?.channels ?? []}
                           filter={""}
                           selectedId={selectedChannelId}
                           onSelect={(id) => {
@@ -342,7 +342,7 @@ export default function GroupWorkspaceRoutePage() {
             {/* Chat content */}
             {/* Chat content usually */}
             <div className="flex-1 overflow-hidden relative">
-              {(!extension?.channels?.channels || extension.channels.channels.length === 0) ? (
+              {(!extension?.channels || extension.channels.length === 0) ? (
                 <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center">
                   <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <Settings className="h-8 w-8 text-gray-400" />
@@ -409,7 +409,7 @@ export default function GroupWorkspaceRoutePage() {
                   <div className="border rounded-lg p-4">
                     <div className="text-sm text-muted-foreground mb-2">Members</div>
                     <div className="space-y-2">
-                      {extension?.members?.members?.map((m: any) => (
+                      {extension?.members?.map((m: any) => (
                         <div key={m.username} className="flex items-center justify-between">
                           <div className="flex items-center gap-2 min-w-0">
                             <UserAvatar username={m.username} />
@@ -438,7 +438,7 @@ export default function GroupWorkspaceRoutePage() {
   )
 
   function roleFromRoleId(id: number) {
-    return extension?.roles?.roles?.find((r: any) => r.id == id)
+    return extension?.roles?.find((r: any) => r.id == id)
   }
 }
 

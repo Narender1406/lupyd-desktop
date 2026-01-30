@@ -50,7 +50,7 @@ export default function GroupInfoPage() {
   }, [id])
 
   const getRoleIcon = (role: number) => {
-    const roleObj = extension?.roles?.roles?.find((e: any) => e.id == role)
+    const roleObj = extension?.roles?.find((e: any) => e.id == role)
     if (!roleObj) return null
     return <p>{roleObj.name}</p>
   }
@@ -98,7 +98,7 @@ export default function GroupInfoPage() {
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mb-4">
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    {extension?.members?.members?.length || 0} members
+                    {extension?.members?.length || 0} members
                   </div>
                   <div className="flex items-center gap-1">
                     <ImageIcon className="h-4 w-4" />
@@ -154,7 +154,7 @@ export default function GroupInfoPage() {
               value="members"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4"
             >
-              Members ({extension?.members?.members?.length || 0})
+              Members ({extension?.members?.length || 0})
             </TabsTrigger>
             <TabsTrigger
               value="media"
@@ -172,7 +172,7 @@ export default function GroupInfoPage() {
 
           <TabsContent value="members" className="space-y-4">
             <div className="grid gap-4">
-              {extension?.members?.members?.map((member: any, index: number) => (
+              {extension?.members?.map((member: any, index: number) => (
                 <Card key={index} className="border-none shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">

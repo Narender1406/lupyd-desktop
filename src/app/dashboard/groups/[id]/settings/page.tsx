@@ -126,7 +126,7 @@ export default function GroupSettingsPage() {
 
 
   const getRoleIcon = (role: number) => {
-    const roleObj = extension?.roles?.roles?.find((e: any) => e.id == role)
+    const roleObj = extension?.roles?.find((e: any) => e.id == role)
     if (!roleObj) return null
     return <p>{roleObj.name}</p>
   }
@@ -317,7 +317,7 @@ export default function GroupSettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {extension?.roles?.roles?.map((role: any) => (
+                {extension?.roles?.map((role: any) => (
                   <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-gray-200 grid place-items-center text-xs font-bold">
@@ -332,7 +332,7 @@ export default function GroupSettingsPage() {
                     }}>Edit</Button>
                   </div>
                 ))}
-                {(!extension?.roles?.roles || extension.roles.roles.length === 0) && (
+                {(!extension?.roles || extension.roles.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">No roles defined yet.</p>
                 )}
               </div>
@@ -347,7 +347,7 @@ export default function GroupSettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {extension?.members?.members?.map((member: any) => (
+                {extension?.members?.map((member: any) => (
                   <div
                     key={member.username}
                     className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"
