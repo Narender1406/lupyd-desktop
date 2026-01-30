@@ -131,7 +131,7 @@ export default function GroupsPage() {
           <div className="min-w-0">
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {groupExtension.members?.members?.length.toLocaleString()}
+              {groupExtension.members?.length.toLocaleString()}
             </div>
           </div>
         </div>

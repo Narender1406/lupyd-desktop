@@ -8,13 +8,13 @@ import { useNavigate, useParams } from "react-router-dom"
 
 import { ChannelChat } from "@/components/groups/channel-chat"
 import { ChannelList } from "@/components/groups/channel-list"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { UserAvatar } from "@/components/user-avatar"
 import { useAuth } from "@/context/auth-context"
 import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
 import { fromBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
-import { ArrowLeft, Settings, Menu } from "lucide-react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { ArrowLeft, Menu, Settings } from "lucide-react"
 
 
 
@@ -107,13 +107,19 @@ export default function GroupWorkspaceRoutePage() {
     const newId = Math.floor(Math.random() * 1000000)
 
     try {
+      console.log("extension: ", JSON.stringify(extension, undefined, " "))
+      let channelId = 1
+      if (extension?.channels && extension.channels.length > 0) {
+        channelId = extension.channels[extension.channels.length - 1].id + 1
+      }
+      
       const payload = {
         groupId: Number(id),
-        id: 0, // Try 0 to see if backend auto-assigns
+        id: channelId, // Try 0 to see if backend auto-assigns
         delete: false,
         name: newChannelName.trim(),
         channelTy: newChannelCategory === "Voice" ? 2 : 1,
-        defaultPermissions: 0
+        defaultPermissions: 4 // AddMessage Permission is 4
       }
       console.log("DEBUG: Calling updateGroupChannel with:", JSON.stringify(payload, null, 2))
 
@@ -210,8 +216,7 @@ export default function GroupWorkspaceRoutePage() {
                   <span className="text-sm">Category</span>
                   <select value={newChannelCategory} onChange={(e) => setNewChannelCategory(e.target.value)}>
                     <option value="Text">Text</option>
-                    <option value="Projects">Projects</option>
-                    <option value="Announcements">Announcements</option>
+                    <option value="Voice">Voice</option>
                   </select>
                 </div>
                 <Button className="w-full bg-black text-white hover:bg-gray-800" onClick={addChannel}>
@@ -296,8 +301,7 @@ export default function GroupWorkspaceRoutePage() {
                                 className="p-1 text-sm border rounded flex-1"
                               >
                                 <option value="Text">Text</option>
-                                <option value="Projects">Projects</option>
-                                <option value="Announcements">Announcements</option>
+                                <option value="Voice">Voice</option>
                               </select>
                             </div>
                             <Button className="w-full bg-black text-white hover:bg-gray-800 h-8 text-xs" onClick={addChannel}>

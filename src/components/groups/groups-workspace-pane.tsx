@@ -13,25 +13,7 @@ import { ListChecks, Settings, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
 
-interface Channel {
-  id: string
-  name: string
-  topic?: string
-  isPrivate?: boolean
-  category?: string
-  slowMode?: boolean
-}
-
-interface Member {
-  id: string
-  name: string
-  username: string
-  avatar: string
-  role: RoleKey
-  isOnline?: boolean
-}
 
 
 export function GroupWorkspacePane({
@@ -231,7 +213,7 @@ export function GroupWorkspacePane({
           {
             selectedChannelId &&
             <div className="flex-1 min-h-0">
-              <ChannelChat channelId={selectedChannelId} groupId={groupId} extension={groupExtension} />
+              <ChannelChat channelId={selectedChannelId} groupId={groupId}  />
             </div>}
 
           {/* Composer */}
