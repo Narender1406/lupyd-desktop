@@ -50,7 +50,7 @@ export default function GroupInfoPage() {
   }, [id])
 
   const getRoleIcon = (role: number) => {
-    const roleObj = extension?.roles.find(e => e.id == role)
+    const roleObj = extension?.roles?.find((e: any) => e.id == role)
     if (!roleObj) return null
     return <p>{roleObj.name}</p>
   }
@@ -73,9 +73,9 @@ export default function GroupInfoPage() {
       <div className="w-full max-w-6xl mx-auto px-4 md:px-6 min-w-0 overflow-x-hidden supports-[overflow:clip]:overflow-x-clip" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate("/groups")} className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => navigate(`/groups/${id}/settings`)} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to Groups
+            Back to Settings
           </Button>
         </div>
 
@@ -172,12 +172,12 @@ export default function GroupInfoPage() {
 
           <TabsContent value="members" className="space-y-4">
             <div className="grid gap-4">
-              {extension?.members?.map((member, index) => (
+              {extension?.members?.map((member: any, index: number) => (
                 <Card key={index} className="border-none shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                       <UserAvatar username={member.username}/>
+                        <UserAvatar username={member.username} />
                       </div>
 
                       <div className="flex-1">
@@ -194,12 +194,12 @@ export default function GroupInfoPage() {
                   </CardContent>
                 </Card>
               )) || (
-                <Card className="border-none shadow-sm">
-                  <CardContent className="p-4 text-center text-muted-foreground">
-                    No members found
-                  </CardContent>
-                </Card>
-              )}
+                  <Card className="border-none shadow-sm">
+                    <CardContent className="p-4 text-center text-muted-foreground">
+                      No members found
+                    </CardContent>
+                  </Card>
+                )}
             </div>
           </TabsContent>
 
