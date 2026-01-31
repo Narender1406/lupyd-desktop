@@ -1,17 +1,21 @@
 "use client"
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { RoleManager } from "@/components/groups/role-manager"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/user-avatar"
-import { EncryptionPlugin, GroupPermission, type BGroupInfo } from "@/context/encryption-plugin"
+import { useAuth } from "@/context/auth-context"
+import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
 import { toast } from "@/hooks/use-toast"
 import { fromBase64 } from "@/lib/utils"
+import { GroupPermission, hasPermission, type GroupRole } from "@/types/permission-types"
 import { protos } from "firefly-client-js"
 import {
   AlertTriangle,
@@ -21,7 +25,7 @@ import {
   Trash2,
   Upload
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 
@@ -32,6 +36,7 @@ export default function GroupSettingsPage() {
 
   const navigate = useNavigate()
   const { id } = useParams()
+  const auth = useAuth()
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
 
   const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
@@ -53,21 +58,28 @@ export default function GroupSettingsPage() {
 
   }
 
+  // Get current user's role and permissions
+  const userRole = useMemo(() => {
+    if (!extension || !auth.username) return null
+    const member = extension.members?.find(m => m.username === auth.username)
+    if (!member) return null
+    return extension.roles?.find(r => r.id === member.role) || null
+  }, [extension, auth.username])
+
+  const canManageRoles = useMemo(() => {
+    if (!userRole) return false
+    return hasPermission(userRole.permissions, GroupPermission.ManageRole)
+  }, [userRole])
+
+  const canManageMembers = useMemo(() => {
+    if (!userRole) return false
+    return hasPermission(userRole.permissions, GroupPermission.ManageMember)
+  }, [userRole])
+
 
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [showRoleDialog, setShowRoleDialog] = useState(false)
-  const [editingRole, setEditingRole] = useState<any | null>(null)
-  const [newRoleName, setNewRoleName] = useState("")
-  // Permissions state (mocked for UI structure)
-  const [permissions, setPermissions] = useState({
-    sendMessages: true,
-    createChannels: false,
-    manageRoles: false,
-    kickMembers: false
-  })
-
 
 
 
@@ -117,7 +129,7 @@ export default function GroupSettingsPage() {
   }
 
 
-  const deleteMember = async (username: string) => { 
+  const deleteMember = async (username: string) => {
     await EncryptionPlugin.kickGroupMember({ groupId: Number(id), username })
     updateState()
   }
@@ -151,7 +163,7 @@ export default function GroupSettingsPage() {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto"
+            className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300 w-full sm:w-auto"
           >
             {isSaving ? (
               <>
@@ -167,311 +179,184 @@ export default function GroupSettingsPage() {
           </Button>
         </div>
 
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Basic Information</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => navigate(`/groups/${id}/info`)} title="Group Info">
-                <Info className="h-5 w-5 text-muted-foreground" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Avatar Upload */}
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="relative h-20 w-20">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage src={"/placeholder.svg?height=80&width=80"} />
-                      <AvatarFallback className="text-lg">{groupInfo?.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-white"
-                      aria-label="Upload"
-                      onClick={() => toast({ title: "Not Supported", description: "Avatar upload is not yet implemented." })}
-                    >
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium">Group Avatar</h3>
-                  <p className="text-sm text-muted-foreground">Upload a new image to change your group&apos;s avatar</p>
-                </div>
-              </div>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="roles" disabled={!canManageRoles}>
+              Roles
+            </TabsTrigger>
+            <TabsTrigger value="members" disabled={!canManageMembers}>
+              Members
+            </TabsTrigger>
+          </TabsList>
 
-              {/* Group Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Group Name</Label>
-                <Input
-                  id="name"
-                  value={groupInfo?.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  maxLength={50}
-                />
-                <p className="text-xs text-muted-foreground">{groupInfo?.name?.length ?? 0}/50 characters</p>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={groupInfo?.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  rows={3}
-                  maxLength={200}
-                />
-                <p className="text-xs text-muted-foreground">{groupInfo?.description.length ?? 0}/200 characters</p>
-              </div>
-            </CardContent>
-          </Card>
-
-
-          {/* Role & Channel Permissions */}
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Role & Channel Permissions</CardTitle>
-                <CardDescription>Configure per-role permissions for channels in this group</CardDescription>
-              </div>
-              <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={() => { setEditingRole(null); setNewRoleName(""); }}>
-                    + Create Role
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingRole ? "Edit Role" : "Create New Role"}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Role Name</Label>
-                      <Input
-                        placeholder="e.g. Moderator"
-                        value={newRoleName}
-                        onChange={(e) => setNewRoleName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Permissions</Label>
-                      <div className="space-y-2 border p-3 rounded-md">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" id="perm-send" checked={permissions.sendMessages} onChange={(e) => setPermissions({ ...permissions, sendMessages: e.target.checked })} />
-                          <label htmlFor="perm-send" className="text-sm">Send Messages</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" id="perm-create" checked={permissions.createChannels} onChange={(e) => setPermissions({ ...permissions, createChannels: e.target.checked })} />
-                          <label htmlFor="perm-create" className="text-sm">Create Channels</label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" id="perm-manage" checked={permissions.manageRoles} onChange={(e) => setPermissions({ ...permissions, manageRoles: e.target.checked })} />
-                          <label htmlFor="perm-manage" className="text-sm">Manage Roles</label>
-                        </div>
-                      </div>
-                    </div>
-                    <Button className="w-full bg-black text-white" onClick={async () => {
-                      if (!newRoleName.trim()) return
-
-                      try {
-                        // Minimal permission mapping for demo: 
-                        // In real app, you'd map individual permissions to bits
-                        let permValue = 0
-                        if (permissions.sendMessages) permValue |= GroupPermission.AddMessage
-                        if (permissions.createChannels) permValue |= GroupPermission.ManageChannel
-                        if (permissions.manageRoles) permValue |= GroupPermission.ManageRole
-
-                        let roleId = 1;
-                        if (!editingRole) {
-                          let newRoleId = 1
-
-                          if (extension && extension.roles.length > 0) {
-                            newRoleId = extension.roles[extension.roles.length - 1].id + 1
-                          }
-
-                          roleId = newRoleId;
-                        }
-
-                        const payload = {
-                          groupId: Number(id),
-                          roles: [{
-                            roleId: editingRole ? editingRole.id : roleId, // Try 0 for new role
-                            name: newRoleName,
-                            permissions: permValue,
-                            delete: false
-                          }]
-                        }
-                        console.log("DEBUG: Calling updateGroupRoles with:", JSON.stringify(payload, null, 2))
-
-                        await EncryptionPlugin.updateGroupRoles(payload)
-
-                        toast({ title: "Success", description: `Role ${editingRole ? "updated" : "created"} successfully.` })
-                        setShowRoleDialog(false)
-                        // Refresh state
-                        setTimeout(updateState, 500)
-                      } catch (e) {
-                        console.error(e)
-                        toast({ title: "Error", description: "Failed to save role.", variant: "destructive" })
-                      }
-                    }}>
-                      {editingRole ? "Save Changes" : "Create Role"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {extension?.roles?.map((role: any) => (
-                  <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50/50">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 grid place-items-center text-xs font-bold">
-                        {role.name.slice(0, 1).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{role.name}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      setEditingRole(role)
-                      setNewRoleName(role.name)
-                      setShowRoleDialog(true)
-                    }}>Edit</Button>
-                  </div>
-                ))}
-                {(!extension?.roles || extension.roles.length === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No roles defined yet.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Member Management */}
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle>Member Management</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage roles and remove members from the group</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {extension?.members?.map((member: any) => (
-                  <div
-                    key={member.username}
-                    className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <UserAvatar username={member.username} />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate">{member.username}</h3>
-                          {getRoleIcon(member.role)}
-                          {/*<div
-                            className={`w-2 h-2 rounded-full ${member.isOnline ? "bg-green-500" : "bg-gray-300"}`}
-                            aria-label={member.isOnline ? "Online" : "Offline"}
-                          />*/}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{member.username}</p>
-                      </div>
-                    </div>
-
-                    {/* <div className="flex items-center gap-2 md:ml-auto">
-                      <Select
-                        value={member.role}
-                        onValueChange={(value) => handleChangeRole(member.id, value)}
-                        disabled={member.role === "admin"}
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Basic Information */}
+            <Card className="border-none shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Basic Information</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/groups/${id}/info`)} title="Group Info">
+                  <Info className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Avatar Upload */}
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="relative h-20 w-20">
+                      <Avatar className="h-20 w-20">
+                        <AvatarImage src={"/placeholder.svg?height=80&width=80"} />
+                        <AvatarFallback className="text-lg">{groupInfo?.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-white"
+                        aria-label="Upload"
+                        onClick={() => toast({ title: "Not Supported", description: "Avatar upload is not yet implemented." })}
                       >
-                        <SelectTrigger className="w-full sm:w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="moderator">Moderator</SelectItem>
-                          <SelectItem value="member">Member</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {member.role !== "admin" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          aria-label={`Remove ${member.name}`}
-                          title={`Remove ${member.name}`}
-                        >
-                          <UserMinus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>*/}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Danger Zone */}
-          <Card className="border-none shadow-sm border-red-200">
-            <CardHeader>
-              <CardTitle className="text-red-600 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Danger Zone
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Irreversible and destructive actions</p>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="font-medium text-red-800">Delete Group</h3>
-                    <p className="text-sm text-red-600">
-                      Permanently delete this group and all its content. This action cannot be undone.
-                    </p>
-                  </div>
-                  <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="destructive" className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Group
+                        <Upload className="h-4 w-4" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                          <AlertTriangle className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium">Group Avatar</h3>
+                    <p className="text-sm text-muted-foreground">Upload a new image to change your group&apos;s avatar</p>
+                  </div>
+                </div>
+
+                {/* Group Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Group Name</Label>
+                  <Input
+                    id="name"
+                    value={groupInfo?.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-muted-foreground">{groupInfo?.name?.length ?? 0}/50 characters</p>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={groupInfo?.description}
+                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    rows={3}
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground">{groupInfo?.description.length ?? 0}/200 characters</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Danger Zone */}
+            <Card className="border-none shadow-sm border-red-200">
+              <CardHeader>
+                <CardTitle className="text-red-600 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Irreversible and destructive actions</p>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h3 className="font-medium text-red-800">Delete Group</h3>
+                      <p className="text-sm text-red-600">
+                        Permanently delete this group and all its content. This action cannot be undone.
+                      </p>
+                    </div>
+                    <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive" className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                          <Trash2 className="h-4 w-4 mr-2" />
                           Delete Group
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Are you sure you want to delete "{groupInfo?.name}"? This action will:
-                        </p>
-                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                          <li>• Permanently delete all messages and media</li>
-                          <li>• Remove all members from the group</li>
-                          <li>• Delete all group settings and data</li>
-                          <li>• This action cannot be undone</li>
-                        </ul>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm">Type "DELETE" to confirm:</Label>
-                          <Input id="confirm" placeholder="Type DELETE here" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertTriangle className="h-5 w-5" />
+                            Delete Group
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            Are you sure you want to delete "{groupInfo?.name}"? This action will:
+                          </p>
+                          <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                            <li>• Permanently delete all messages and media</li>
+                            <li>• Remove all members from the group</li>
+                            <li>• Delete all group settings and data</li>
+                            <li>• This action cannot be undone</li>
+                          </ul>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirm">Type "DELETE" to confirm:</Label>
+                            <Input id="confirm" placeholder="Type DELETE here" />
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button variant="destructive" onClick={handleDeleteGroup} className="flex-1">
+                              Delete Group Permanently
+                            </Button>
+                            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="flex-1">
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button variant="destructive" onClick={handleDeleteGroup} className="flex-1">
-                            Delete Group Permanently
-                          </Button>
-                          <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="flex-1">
-                            Cancel
-                          </Button>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Roles Tab */}
+          <TabsContent value="roles" className="space-y-6">
+            <RoleManager
+              groupId={Number(id)}
+              roles={(extension?.roles || []) as GroupRole[]}
+              onUpdate={updateState}
+              canManageRoles={canManageRoles}
+            />
+          </TabsContent>
+
+          {/* Members Tab */}
+          <TabsContent value="members" className="space-y-6">
+            <Card className="border-none shadow-sm">
+              <CardHeader>
+                <CardTitle>Member Management</CardTitle>
+                <CardDescription>Manage roles and remove members from the group</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {extension?.members?.map((member: any) => (
+                    <div
+                      key={member.username}
+                      className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <UserAvatar username={member.username} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium truncate">{member.username}</h3>
+                            {getRoleIcon(member.role)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{member.username}</p>
                         </div>
                       </div>
-                    </DialogContent>
-                  </Dialog>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   )

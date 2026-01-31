@@ -193,27 +193,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <span>{item.label}</span>
                   </Link>
 
-                  {/* Render Groups Sub-list if this is the Groups item */}
-                  {item.label === "Groups" && groups.length > 0 && (
-                    <div className="ml-9 mt-1 space-y-1">
-                      {groups.map((group) => {
-                        const isGroupActive = location.pathname.startsWith(`/groups/${group.groupId}`)
-                        return (
-                          <Link
-                            key={group.groupId}
-                            to={`/groups/${group.groupId}`}
-                            className={`flex items-center px-3 py-2 rounded-md text-sm ${isGroupActive
-                              ? "text-primary font-medium bg-gray-50 dark:bg-neutral-900"
-                              : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
-                              }`}
-                          >
-                            <Hash className="mr-2 h-3 w-3" />
-                            <span className="truncate">{group.name}</span>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
+
                 </div>
               );
             })}

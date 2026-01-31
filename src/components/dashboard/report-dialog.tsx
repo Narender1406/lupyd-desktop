@@ -114,7 +114,16 @@ export function ReportDialog({ open, onOpenChange, postId, title }: ReportDialog
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent
+                className="sm:max-w-[425px]"
+                onInteractOutside={(e) => {
+                    // Prevent dialog from closing when interacting with select dropdown
+                    const target = e.target as HTMLElement
+                    if (target.closest('[role="listbox"]') || target.closest('[data-radix-select-content]')) {
+                        e.preventDefault()
+                    }
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>Report Post</DialogTitle>
                     <DialogDescription>
