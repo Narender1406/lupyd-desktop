@@ -1,8 +1,6 @@
-"use client"
-
 import { cn } from "@/lib/utils"
 import type { protos } from "firefly-client-js"
-import { MoreVertical } from "lucide-react"
+import { Hash, Volume2 } from "lucide-react"
 
 export interface ChannelListItem {
   id: string
@@ -47,25 +45,27 @@ export function ChannelList({
         if (!list.length) return null
         return (
           <div key={cat} className="px-3 pb-2">
-            <div className="px-2 py-1 text-xs uppercase tracking-wide text-muted-foreground">
-              {cat}
+            <div className="px-2 py-1 text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+              {cat === 1 ? "Text Channels" : cat === 2 ? "Voice Channels" : `Category ${cat}`}
             </div>
 
             <div className="space-y-1">
               {list.map((ch) => {
                 const isActive = ch.id === selectedId
+                const Icon = ch.type === 2 ? Volume2 : Hash
 
                 return (
                   <button
                     key={ch.id}
                     className={cn(
-                      "w-full flex items-center justify-between px-2 py-2 rounded-md text-left transition",
-                      "hover:bg-gray-200 dark:hover:bg-zinc-800",       // hover fix
-                      isActive && "bg-gray-200 dark:bg-zinc-800"         // active fix
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition text-sm",
+                      "hover:bg-gray-200 dark:hover:bg-zinc-700",
+                      isActive && "bg-gray-200 dark:bg-zinc-700 text-black dark:text-white"
                     )}
                     onClick={() => onSelect?.(ch.id)}
                   >
-                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="truncate">{ch.name}</span>
                   </button>
                 )
               })}
