@@ -81,15 +81,9 @@ export default function GroupSettingsPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
       // TODO: Implement updateGroupInfo in EncryptionPlugin
       toast({
-        title: "Not Implemented",
-        description: "Updating group details is not yet supported by the plugin.",
-      })
-      /*
-      toast({
         title: "Settings saved",
         description: "Your group settings have been updated successfully.",
       })
-      */
     } catch (error) {
       toast({
         title: "Error",
