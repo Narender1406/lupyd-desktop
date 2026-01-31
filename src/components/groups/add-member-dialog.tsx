@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { EncryptionPlugin, type UpdateUserProposal } from "@/context/encryption-plugin"
+import { EncryptionPlugin } from "@/context/encryption-plugin"
 import { toast } from "@/hooks/use-toast"
 import type { GroupRole } from "@/types/permission-types"
 import { UserPlus } from "lucide-react"
@@ -66,14 +66,10 @@ export function AddMemberDialog({
 
         setIsAdding(true)
         try {
-            const proposal: UpdateUserProposal = {
+            await EncryptionPlugin.addGroupMember({
+                groupId,
                 username: username.trim(),
                 roleId: Number(selectedRoleId),
-            }
-
-            await EncryptionPlugin.updateGroupUsers({
-                groupId,
-                users: [proposal],
             })
 
             toast({

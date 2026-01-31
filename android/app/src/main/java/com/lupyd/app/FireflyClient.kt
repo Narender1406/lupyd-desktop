@@ -344,6 +344,14 @@ class FireflyClient() {
         return client!!.updateGroupUsers(groupId.toULong(), users).toLong()
     }
 
+    suspend fun addGroupMember(groupId: Long, username: String, roleId: Int) {
+        client!!.addGroupMember(groupId.toULong(), username, roleId.toUInt())
+    }
+
+    suspend fun kickGroupMember(groupId: Long, username: String) {
+        client!!.kickGroupMember(groupId.toULong(), username)
+    }
+
     suspend fun dispose() {
         client!!.dispose()
     }

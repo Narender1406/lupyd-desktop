@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/user-avatar"
-import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
+import { EncryptionPlugin, GroupPermission, type BGroupInfo } from "@/context/encryption-plugin"
+import { toast } from "@/hooks/use-toast"
 import { fromBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
 import {
@@ -22,7 +23,6 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { toast } from "@/hooks/use-toast"
 
 
 
@@ -109,6 +109,12 @@ export default function GroupSettingsPage() {
 
 
   const addMember = async (username: string, role: number) => {
+    await EncryptionPlugin.addGroupMember({ groupId: Number(id), username, roleId: role })
+    updateState()
+  }
+
+
+  const updateMember = async (username: string, role: number) => {
     await EncryptionPlugin.updateGroupUsers({
       groupId: Number(id),
       users: [{ username, roleId: role }]
@@ -117,12 +123,10 @@ export default function GroupSettingsPage() {
   }
 
 
-  const updateMember = (username: string, role: number) => {
-    return addMember(username, role)
+  const deleteMember = async (username: string) => { 
+    await EncryptionPlugin.kickGroupMember({ groupId: Number(id), username })
+    updateState()
   }
-
-
-  const deleteMember = (username: string) => { }
 
 
   const getRoleIcon = (role: number) => {
@@ -279,18 +283,28 @@ export default function GroupSettingsPage() {
                       if (!newRoleName.trim()) return
 
                       try {
-                        const newRoleId = editingRole ? editingRole.id : Math.floor(Math.random() * 100000)
                         // Minimal permission mapping for demo: 
                         // In real app, you'd map individual permissions to bits
                         let permValue = 0
-                        if (permissions.sendMessages) permValue |= 1
-                        if (permissions.createChannels) permValue |= 2
-                        if (permissions.manageRoles) permValue |= 4
+                        if (permissions.sendMessages) permValue |= GroupPermission.AddMessage
+                        if (permissions.createChannels) permValue |= GroupPermission.ManageChannel
+                        if (permissions.manageRoles) permValue |= GroupPermission.ManageRole
+
+                        let roleId = 1;
+                        if (!editingRole) {
+                          let newRoleId = 1
+
+                          if (extension && extension.roles.length > 0) {
+                            newRoleId = extension.roles[extension.roles.length - 1].id + 1
+                          }
+
+                          roleId = newRoleId;
+                        }
 
                         const payload = {
                           groupId: Number(id),
                           roles: [{
-                            roleId: editingRole ? editingRole.id : 0, // Try 0 for new role
+                            roleId: editingRole ? editingRole.id : roleId, // Try 0 for new role
                             name: newRoleName,
                             permissions: permValue,
                             delete: false

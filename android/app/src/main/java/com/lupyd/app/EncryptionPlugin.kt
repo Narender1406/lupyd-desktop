@@ -554,6 +554,39 @@ class EncryptionPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun addGroupMember(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getLong("groupId")
+                val username = call.data.getString("username")!!
+                val roleId = call.data.getInteger("roleId")!!
+
+                fireflyClient.addGroupMember(groupId, username, roleId)
+                call.resolve()
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
+    fun kickGroupMember(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getLong("groupId")
+                val username = call.data.getString("username")!!
+
+                fireflyClient.kickGroupMember(groupId, username)
+                call.resolve()
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
 }
 
 
