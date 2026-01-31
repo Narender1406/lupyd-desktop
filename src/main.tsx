@@ -29,6 +29,7 @@ import { PersistenceProvider } from "@/context/persistence-provider"
 import { QueryClientProviderWrapper } from "@/context/query-client"
 import FireflyProvider from './context/firefly-context.tsx'
 import { BrowserRouter } from "react-router-dom"
+import { Toaster } from "@/components/ui/toaster"
 
 
 createRoot(document.getElementById('root')!).render(
@@ -44,11 +45,12 @@ createRoot(document.getElementById('root')!).render(
                   <UserImageProvider>
                     <UserDataProvider>
                       <SavedPostsDataProvider>
-                      <FireflyProvider>
-                        <div>
-                          <App />
-                        </div>
-                      </FireflyProvider>
+                        <FireflyProvider>
+                          <div>
+                            <App />
+                            <Toaster />
+                          </div>
+                        </FireflyProvider>
                       </SavedPostsDataProvider>
                     </UserDataProvider>
                   </UserImageProvider>
@@ -59,7 +61,7 @@ createRoot(document.getElementById('root')!).render(
         </DialogProvider>
       </PersistenceProvider>
     </QueryClientProviderWrapper>
-  </ThemeProvider>
+  </ThemeProvider >
 
 
 )

@@ -27,6 +27,7 @@ import { UserAvatar } from "../user-avatar"
 import { NotificationsDropdown } from "./notifications-dropdown"
 import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
 import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
+import { toast } from "@/hooks/use-toast"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -380,7 +381,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             { name: 'Messages', url: '/messages', icon: MessageSquare },
             { name: 'Groups', url: '/groups', icon: Group },
             { name: 'Discover', url: '/discover', icon: Compass },
-            { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
+            {
+              name: 'Profile',
+              url: username ? `/user/${username}` : '#',
+              icon: User,
+              onClick: (e) => {
+                if (!username) {
+                  e.preventDefault()
+                  toast({
+                    title: "Authentication required",
+                    description: "Please sign in to view your profile.",
+                    variant: "destructive",
+                  })
+                }
+              }
+            },
             { name: 'Settings', url: '/settings', icon: Settings },
           ]}
           className="fixed bottom-0"
