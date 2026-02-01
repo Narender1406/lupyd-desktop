@@ -21,6 +21,7 @@ import CreatePostPage from './app/dashboard/create-post/page'
 import DiscoverPage from './app/dashboard/discover/page'
 import GroupChannelsPage from './app/dashboard/groups/[id]/channels/page'
 import GroupInfoPage from './app/dashboard/groups/[id]/info/page'
+import GroupWorkspaceRoutePage from './app/dashboard/groups/[id]/page'
 import GroupSettingsPage from './app/dashboard/groups/[id]/settings/page'
 import CreateGroupPage from './app/dashboard/groups/create/page'
 import GroupsPage from './app/dashboard/groups/page'
@@ -117,9 +118,10 @@ function App() {
       <Route path="/blocked-accounts" element={<BlockedAccountsPage />} />
       <Route path="/groups" element={<GroupsPage />} />
       <Route path="/groups/create" element={<CreateGroupPage />} />
-      <Route path="/groups/:groupid/settings" element={<GroupSettingsPage />} />
-      <Route path="/groups/:groupid/info" element={<GroupInfoPage />} />
-      <Route path="/groups/:groupid/channels" element={<GroupChannelsPage />} />
+      <Route path="/groups/:id" element={<GroupWorkspaceRoutePage />} />
+      <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
+      <Route path="/groups/:id/info" element={<GroupInfoPage />} />
+      <Route path="/groups/:id/channels" element={<GroupChannelsPage />} />
       <Route path="/discover" element={<DiscoverPage />} />
       <Route path="/post/:postId" element={<PostPage />} />
       <Route path="/user/:username" element={<ProfilePage />} />

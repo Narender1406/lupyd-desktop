@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { ThumbsUp, ThumbsDown, MessageCircle, Bookmark, Send, MoreVertical, Flag, Delete } from "lucide-react"
 import { Link } from "react-router-dom"
 import { ShareModal } from "@/components/dashboard/share-modal"
+import { ReportDialog } from "@/components/dashboard/report-dialog"
 import { useAuth } from "@/context/auth-context"
 import { useGlobalDialog } from "@/context/dialog-context"
 import van from "vanjs-core"
@@ -138,18 +139,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   const postUrl = `${window.origin}/post/${ulidStringify(post.id)}`
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-
-  const report = async () => {
-    try {
-      await api.reportPost(post.id, "")
-      setIsDropdownOpen(false)
-      toast({ title: "Post has been reported" })
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Failed to report post" })
-    }
-
-  }
+  const [showReportDialog, setShowReportDialog] = useState(false)
 
   const deleteThisPost = async () => {
     await api.deletePost(post.id)
@@ -160,7 +150,7 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
   }
   const savedPostsData = useSavedPosts()
 
-  const isSaved =useMemo(() =>  savedPostsData.savedPostIds.includes(ulidStringify( post.id)) , [savedPostsData])
+  const isSaved = useMemo(() => savedPostsData.savedPostIds.includes(ulidStringify(post.id)), [savedPostsData])
 
   const savePost = async () => {
     try {
@@ -204,14 +194,9 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {/*<DropdownMenuItem onClick={report} >
-                <div className="flex items-center cursor-pointer">
-                  <Flag className="mr-2 h-4 w-4" />
-                  <span>Report</span>
-                </div>
-              </DropdownMenuItem>*/}
               <DropdownMenuItem onClick={() => {
-                report();
+                setIsDropdownOpen(false)
+                setShowReportDialog(true)
               }}>
                 <div className="flex items-center cursor-pointer">
                   <Flag className="mr-2 h-4 w-4" />
@@ -310,6 +295,12 @@ export function PostCard(props: { post: FullPost; onDelete?: (id: Uint8Array) =>
           </div>
         )}
       </CardContent>
+      <ReportDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+        postId={post.id}
+        title={post.title}
+      />
     </Card>
   )
 }

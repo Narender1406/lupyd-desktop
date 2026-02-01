@@ -10,6 +10,7 @@ interface NavItem {
   name: string
   url: string
   icon: LucideIcon
+  onClick?: (e: React.MouseEvent) => void
 }
 
 interface NavBarProps {
@@ -57,7 +58,12 @@ export function NavBar({ items, className }: NavBarProps) {
             <Link
               key={item.name}
               to={item.url}
-              onClick={() => setActiveTab(item.name)}
+              onClick={(e) => {
+                if (item.onClick) {
+                  item.onClick(e)
+                }
+                setActiveTab(item.name)
+              }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-1.5 relative",
                 "text-foreground/80 hover:text-primary",

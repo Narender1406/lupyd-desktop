@@ -16,7 +16,8 @@ import {
   Search,
   Settings,
   User,
-  X
+  X,
+  Hash
 } from "lucide-react"
 import { getPayloadFromAccessToken } from "lupyd-js"
 import type React from "react"
@@ -24,6 +25,9 @@ import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { UserAvatar } from "../user-avatar"
 import { NotificationsDropdown } from "./notifications-dropdown"
+import { EncryptionPlugin, type BGroupInfo } from "@/context/encryption-plugin"
+import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
+import { toast } from "@/hooks/use-toast"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -41,6 +45,39 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     setUsername(auth.username)
   }, [auth])
+
+  const [groups, setGroups] = useState<BGroupInfo[]>([])
+  const firefly = useFirefly()
+
+  useEffect(() => {
+    // Fetch initial groups
+    EncryptionPlugin.getGroupInfos().then(({ result }) => {
+      setGroups(result)
+    })
+
+    // Listen for new groups (via messages that might indicate group updates, 
+    // strictly speaking we might need a specific group list update event, 
+    // but often re-fetching or listening to group messages helps discover new ones if logic exists.
+    // The previous implementation in GroupsPage listened to ALL group text messages to re-sort list.
+    // For sidebar, we might just want to know if a group is added.
+    // For now, let's just fetch once. Adding a robust listener for "Group Created" might require more specific backend events.
+    // However, we can reuse the listener pattern if we want to be fancy.
+    // Let's stick to fetch-on-mount for stability first.
+
+    // Listen for custom "groups-updated" event
+    const handleGroupsUpdate = () => {
+      EncryptionPlugin.getGroupInfos().then(({ result }) => {
+        setGroups(result)
+      })
+    }
+
+    window.addEventListener("groups-updated", handleGroupsUpdate)
+
+    return () => {
+      window.removeEventListener("groups-updated", handleGroupsUpdate)
+    }
+
+  }, [])
 
   // Navigation itemseed
   const navItems = [
@@ -144,17 +181,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`flex items-center px-3 py-2 rounded-md ${isActive
-                    ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
-                    : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
-                    }`}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
+                <div key={index}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center px-3 py-2 rounded-md ${isActive
+                      ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
+                      : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
+                      }`}
+                  >
+                    <Icon className="mr-3 h-5 w-5" />
+                    <span>{item.label}</span>
+                  </Link>
+
+
+                </div>
               );
             })}
           </nav>
@@ -321,7 +361,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             { name: 'Messages', url: '/messages', icon: MessageSquare },
             { name: 'Groups', url: '/groups', icon: Group },
             { name: 'Discover', url: '/discover', icon: Compass },
-            { name: 'Profile', url: username ? `/user/${username}` : '/signin', icon: User },
+            {
+              name: 'Profile',
+              url: username ? `/user/${username}` : '#',
+              icon: User,
+              onClick: (e) => {
+                if (!username) {
+                  e.preventDefault()
+                  toast({
+                    title: "Authentication required",
+                    description: "Please sign in to view your profile.",
+                    variant: "destructive",
+                  })
+                }
+              }
+            },
             { name: 'Settings', url: '/settings', icon: Settings },
           ]}
           className="fixed bottom-0"

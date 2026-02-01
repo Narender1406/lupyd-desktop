@@ -186,6 +186,14 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   getConversations(options: { token: string }): Promise<{ result: Conversation[] }>
 
   dispose(): Promise<void>
+
+  testMethod(options: { [key: string]: any }): Promise<{ [key: string]: any }>
+
+  clearNotifications(): Promise<void>
+
+  addGroupMember(options: { groupId: number, username: string, roleId: number }): Promise<void>
+
+  kickGroupMember(options: { groupId: number, username: string }): Promise<void>
 };
 
 // Check if running in Tauri environment
@@ -279,4 +287,13 @@ export const checkIfFileExists = async (file: FireflyProtos.EncryptedFile) => {
   }
 
   return false
+}
+
+
+export enum GroupPermission {
+    AddMessage = 4,
+    ManageChannel = 8,
+    ManageRole = 16,
+    ManageMember = 32,
+    ManageGroup = 64,
 }

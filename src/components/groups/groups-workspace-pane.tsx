@@ -13,25 +13,7 @@ import { ListChecks, Settings, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-type RoleKey = "owner" | "admin" | "moderator" | "member" | "guest"
 
-interface Channel {
-  id: string
-  name: string
-  topic?: string
-  isPrivate?: boolean
-  category?: string
-  slowMode?: boolean
-}
-
-interface Member {
-  id: string
-  name: string
-  username: string
-  avatar: string
-  role: RoleKey
-  isOnline?: boolean
-}
 
 
 export function GroupWorkspacePane({
@@ -97,83 +79,8 @@ export function GroupWorkspacePane({
     groupExtension?.channels.find(e => e.id == selectedChannelId), [selectedChannelId, groupExtension])
 
 
-  const header = (
-    <div className="flex items-center justify-between px-3 md:px-4 py-2 border-b bg-white dark:bg-black">
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold truncate">{groupName}</span>
-          <Badge variant="outline" className="hidden sm:inline-flex text-xs">
-            #{groupId}
-          </Badge>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {/* Channels (mobile) */}
-        <Sheet open={openChannelsSheet} onOpenChange={setOpenChannelsSheet}>
-          <SheetContent
-            side="left"
-            className="p-0 w-80 max-w-[calc(100vw-1rem)] bg-white dark:bg-black"
-          >
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Channels
-              </SheetTitle>
-            </SheetHeader>
-
-            <div className="p-3 space-y-3">
-              <Input
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                placeholder="Filter channels"
-                className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
-              />
-            </div>
-
-            <div className="overflow-y-auto">
-              <ChannelList
-                channels={groupExtension.channels ?? []}
-                filter={filter}
-                selectedId={selectedChannelId}
-                onSelect={(id) => {
-                  setSelectedChannelId(id)
-                  setOpenChannelsSheet(false)
-                }}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Tasks button */}
-        <Button
-          variant="outline"
-          className="bg-transparent dark:text-white"
-          onClick={() => setOpenTasks(true)}
-          aria-label="Open tasks"
-        >
-          <ListChecks className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Tasks</span>
-        </Button>
-
-        {/* Settings */}
-        <Button
-          variant="outline"
-          className="bg-transparent dark:text-white"
-          onClick={() => navigate(`/groups/${groupId}/settings`)}
-          aria-label="Group settings"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">{groupName}-Settings</span>
-        </Button>
-      </div>
-    </div>
-  )
-
   return (
-    <div className="flex flex-col bg-white dark:bg-black border rounded-lg w-full max-w-full overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
-      {/* Header */}
-      {header}
-
+    <div className="flex flex-col bg-white dark:bg-black w-full max-w-full overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
       {/* Tasks 
       
       <GroupTasks
@@ -186,7 +93,12 @@ export function GroupWorkspacePane({
 
       <div className="grid w-full max-w-full [--aside-w:260px] md:grid-cols-[minmax(240px,var(--aside-w))_minmax(0,1fr)] min-h-[70vh] md:gap-0 overflow-hidden overflow-x-hidden supports-[overflow:clip]:overflow-x-clip">
         {/* Channel list (desktop) */}
-        <aside className="hidden md:flex md:flex-col border-r shrink-0 w-[var(--aside-w)] max-w-full overflow-x-hidden">
+        <aside className="hidden md:flex md:flex-col border-r shrink-0 w-[var(--aside-w)] max-w-full overflow-x-hidden bg-gray-50 dark:bg-zinc-900">
+          {/* Group name header */}
+          <div className="p-3 border-b bg-white dark:bg-zinc-900">
+            <h2 className="font-semibold text-base truncate">{groupName}</h2>
+          </div>
+
           <div className="p-3 space-y-3">
             <Input
               value={filter}
@@ -207,6 +119,18 @@ export function GroupWorkspacePane({
                 setOpenChannelsSheet(false)
               }}
             />
+          </div>
+
+          {/* Settings button at bottom */}
+          <div className="p-3 border-t">
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => navigate(`/groups/${groupId}/settings`)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Group Settings
+            </Button>
           </div>
         </aside>
 
@@ -231,7 +155,7 @@ export function GroupWorkspacePane({
           {
             selectedChannelId &&
             <div className="flex-1 min-h-0">
-              <ChannelChat channelId={selectedChannelId} groupId={groupId} extension={groupExtension} />
+              <ChannelChat channelId={selectedChannelId} groupId={groupId} />
             </div>}
 
           {/* Composer */}

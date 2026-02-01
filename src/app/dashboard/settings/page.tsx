@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -31,6 +32,7 @@ import { CDN_STORAGE, PostProtos, UserProtos } from "lupyd-js"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { toast } from "@/hooks/use-toast"
 
 
 
@@ -41,6 +43,7 @@ export default function SettingsPage() {
   const [allowChats, setAllowChats] = useState(false)
   const [bio, setBio] = useState("")
   const [initialUserData, setInitialUserData] = useState<UserProtos.User | null>(null)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
 
   // const [password, setPassword] = useState("")
   // const [confirmPassword, setConfirmPassword] = useState("")
@@ -81,49 +84,59 @@ export default function SettingsPage() {
   }
 
   const onSubmit = async () => {
-
-    let isBioChanged = false
-    if (initialUserData?.bio) {
-      const oldBio = PostProtos.PostBody.decode(initialUserData!.bio)
-      if (oldBio.plainText !== bio && oldBio.markdown !== bio) {
-        isBioChanged = true
+    try {
+      let isBioChanged = false
+      if (initialUserData?.bio) {
+        const oldBio = PostProtos.PostBody.decode(initialUserData!.bio)
+        if (oldBio.plainText !== bio && oldBio.markdown !== bio) {
+          isBioChanged = true
+        }
       }
+
+      const isPfpChanged = pfpSrc.startsWith("blob")
+      if (isPfpChanged) {
+        const pfp = await fetch(pfpSrc)
+        const blob = await pfp.blob()
+        await api.updateUserProfilePicture(blob)
+      }
+
+      let settings = initialUserData?.settings ?? 0;
+      if (allowChats) {
+        settings = settings | 1;
+      } else {
+        settings = settings & ~1;
+      }
+
+      if (pfpSrc) {
+        settings = settings | 16;
+      } else {
+        settings = settings & ~16;
+      }
+
+
+      const info = UserProtos.UpdateUserInfo.create({
+        bio: isBioChanged ? PostProtos.PostBody.create({ plainText: bio }) : undefined,
+        settings: settings
+      })
+
+
+      await api.updateUser(info)
+      setInitialUserData(UserProtos.User.create({
+        uname: initialUserData!.uname,
+        bio: isBioChanged ? PostProtos.PostBody.encode(PostProtos.PostBody.create({ plainText: bio })).finish() : initialUserData!.bio,
+        settings: settings,
+      }))
+
+      // Show success dialog
+      setShowSuccessDialog(true)
+    } catch (error) {
+      console.error("Error saving settings:", error)
+      toast({
+        title: "Error saving settings",
+        description: "There was a problem saving your settings. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    const isPfpChanged = pfpSrc.startsWith("blob")
-    if (isPfpChanged) {
-      const pfp = await fetch(pfpSrc)
-      const blob = await pfp.blob()
-      await api.updateUserProfilePicture(blob)
-    }
-
-    let settings = initialUserData?.settings ?? 0;
-    if (allowChats) {
-      settings = settings | 1;
-    } else {
-      settings = settings & ~1;
-    }
-
-    if (pfpSrc) {
-      settings = settings | 16;
-    } else {
-      settings = settings & ~16;
-    }
-
-
-    const info = UserProtos.UpdateUserInfo.create({
-      bio: isBioChanged ? PostProtos.PostBody.create({ plainText: bio }) : undefined,
-      settings: settings
-    })
-
-
-    await api.updateUser(info)
-    setInitialUserData(UserProtos.User.create({
-      uname: initialUserData!.uname,
-      bio: isBioChanged ? PostProtos.PostBody.encode(PostProtos.PostBody.create({ plainText: bio })).finish() : initialUserData!.bio,
-      settings: settings,
-    }))
-
   }
 
 
@@ -154,8 +167,32 @@ export default function SettingsPage() {
 
 
 
+
+
   return (
     <DashboardLayout>
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">✓ Settings Saved</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">
+              Your settings have been updated successfully.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowSuccessDialog(false)}
+              className="bg-black text-white hover:bg-gray-800"
+            >
+              OK
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="container mx-auto px-4 max-w-full overflow-hidden" style={{ paddingBottom: 'max(4rem, calc(env(safe-area-inset-bottom, 1rem) + 80px))' }}>
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Settings</h1>
@@ -184,7 +221,7 @@ export default function SettingsPage() {
                 >
                   Notifications
                 </TabsTrigger>
-                
+
                 <TabsTrigger
                   value="preferences"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent py-2 px-4 whitespace-nowrap"
@@ -197,7 +234,7 @@ export default function SettingsPage() {
                 >
                   About
                 </TabsTrigger>
-                
+
               </TabsList>
             </div>
           </div>
@@ -221,14 +258,14 @@ export default function SettingsPage() {
                             {(auth.username ?? "U")[0]}
                           </AvatarFallback>
                         </Avatar>
-                       <Button
-                        size="icon"
-                        variant="outline"
-                        className="absolute bottom-0 right-0 rounded-full h-8 w-8 
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="absolute bottom-0 right-0 rounded-full h-8 w-8 
                           bg-white dark:bg-neutral-800 dark:border-neutral-700"
                           onClick={pickProfileImage}
-                          >
-                        <Camera className="h-4 w-4 dark:text-white" />
+                        >
+                          <Camera className="h-4 w-4 dark:text-white" />
                         </Button>
 
                       </div>
@@ -261,8 +298,8 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                   <div className="flex justify-end"> 
-                    <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button> 
+                    <div className="flex justify-end">
+                      <Button className="flex items-center justify-between" onClick={onSubmit}>Save Changes</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -275,6 +312,19 @@ export default function SettingsPage() {
                     <CardDescription>Irreversible actions for your account</CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                      <div>
+                        <h3 className="font-medium">Log Out</h3>
+                        <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                      </div>
+                      <Button
+                        onClick={() => auth.logout()}
+                        variant="outline"
+                        className="w-full sm:w-auto mt-2 sm:mt-0"
+                      >
+                        Log Out
+                      </Button>
+                    </div>
                     {/*  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                       <div>
                         <h3 className="font-medium">Deactivate Account</h3>
@@ -303,92 +353,92 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="privacy" className="mt-0 space-y-6">
-              <PrivacySection />
+              <PrivacySection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
 
             <TabsContent value="notifications" className="mt-0 space-y-6">
-              <NotificationsSection />
+              <NotificationsSection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
             <TabsContent value="preferences" className="mt-0 space-y-6">
-              <PreferencesSection />
+              <PreferencesSection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
-            <TabsContent value="about"  className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
-            <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
+            <TabsContent value="about" className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
+              <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
                   bg-white text-black dark:bg-black dark:text-white rounded-lg space-y-8">
 
-               {/* Header */}
+                {/* Header */}
                 <div>
-              <h1 className="text-4xl font-extrabold text-black dark:text-white">Privacy Center</h1>
-               <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">
-                Your privacy matters to us more.
-          </p>
-          </div>
+                  <h1 className="text-4xl font-extrabold text-black dark:text-white">Privacy Center</h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2 text-base">
+                    Your privacy matters to us more.
+                  </p>
+                </div>
 
-           {/* PrivacySection */}
-            <div className="max-w-2xl">
-          <h2 className="text-xl font-semibold mb-2">Privacy at Lupyd</h2>
-           <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-            At Lupyd, we value your trust and are committed to keeping your personal data safe.  
-            We never share your information without consent and use secure systems to protect your identity.  
-              Your privacy is at the heart of everything we build.
-            </p>
+                {/* PrivacySection */}
+                <div className="max-w-2xl">
+                  <h2 className="text-xl font-semibold mb-2">Privacy at Lupyd</h2>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                    At Lupyd, we value your trust and are committed to keeping your personal data safe.
+                    We never share your information without consent and use secure systems to protect your identity.
+                    Your privacy is at the heart of everything we build.
+                  </p>
 
-          {/* Privacy Button (Round Black/White) */}
-            <Link to="/privacy"className="inline-block px-5 py-2 rounded-md 
+                  {/* Privacy Button (Round Black/White) */}
+                  <Link to="/privacy" className="inline-block px-5 py-2 rounded-md 
                bg-black text-white hover:bg-gray-800 
              dark:bg-white dark:text-black dark:hover:bg-gray-200 
              transition text-sm font-medium"
-        >
-        Privacy Policy
-        
-          </Link>
-        </div>
+                  >
+                    Privacy Policy
 
-    {/* Terms Section */}
-        <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
-        <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
-        <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-        By using Lupyd, you agree to follow our community standards and respect others' rights.  
-        Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.  
-        We encourage you to read and understand them carefully.
-         </p>
+                  </Link>
+                </div>
 
-      {/* Terms Button (Round Black/White) */}
-      <Link to="/terms-of-use"
-          className="inline-block px-5 py-2 rounded-md 
+                {/* Terms Section */}
+                <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+                  <h2 className="text-xl font-semibold mb-2">Terms of Use</h2>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                    By using Lupyd, you agree to follow our community standards and respect others' rights.
+                    Our Terms of Use are designed to create a safe, transparent, and fair platform for everyone.
+                    We encourage you to read and understand them carefully.
+                  </p>
+
+                  {/* Terms Button (Round Black/White) */}
+                  <Link to="/terms-of-use"
+                    className="inline-block px-5 py-2 rounded-md 
              bg-black text-white hover:bg-gray-800 
              dark:bg-white dark:text-black dark:hover:bg-gray-200 
              transition text-sm font-medium"
-            >
-        Terms Of Use
-        
-          </Link>
-          </div>
-          {/* Terms Section */}
-<div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
-  <h2 className="text-xl font-semibold mb-2">Terms of Service</h2>
-  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-    By using Lupyd, you agree to comply with our Terms of Service, which outline your rights and responsibilities when using our platform.  
-    These terms ensure transparency, fairness, and a safe community for all users.  
-    Please take a moment to review them before continuing to use Lupyd.
-  </p>
+                  >
+                    Terms Of Use
 
-  {/* Terms of Service Button */}
-  <Link 
-    to="/terms-of-service"
-    className="inline-block px-5 py-2 rounded-md 
+                  </Link>
+                </div>
+                {/* Terms Section */}
+                <div className="max-w-2xl pt-6 border-t border-gray-200 dark:border-gray-800">
+                  <h2 className="text-xl font-semibold mb-2">Terms of Service</h2>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                    By using Lupyd, you agree to comply with our Terms of Service, which outline your rights and responsibilities when using our platform.
+                    These terms ensure transparency, fairness, and a safe community for all users.
+                    Please take a moment to review them before continuing to use Lupyd.
+                  </p>
+
+                  {/* Terms of Service Button */}
+                  <Link
+                    to="/terms-of-service"
+                    className="inline-block px-5 py-2 rounded-md 
                bg-black text-white hover:bg-gray-800 
                dark:bg-white dark:text-black dark:hover:bg-gray-200 
                transition text-sm font-medium"
-  >
-    Terms of Service
-  </Link>
-</div>
+                  >
+                    Terms of Service
+                  </Link>
+                </div>
 
-          </div>
-          </TabsContent>
+              </div>
+            </TabsContent>
 
-            
+
           </div>
         </Tabs>
       </div>
@@ -397,21 +447,21 @@ export default function SettingsPage() {
 }
 
 
-function PrivacySection() {
+function PrivacySection({ onSave }: { onSave: () => void }) {
   const userData = useUserData();
   const navigate = useNavigate();
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]); // Replace [] with real data when available
   const [showModal, setShowModal] = useState(false);
 
-  
+
 
 
 
 
   useEffect(() => {
     setBlockedUsers(userData.blocked)
-  },[userData])
-  
+  }, [userData])
+
   const handleViewBlocked = () => {
     if (blockedUsers.length > 0) {
       navigate("/blocked-accounts");
@@ -519,7 +569,10 @@ function PrivacySection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="flex items-center justify-between">
+            <Button
+              className="flex items-center justify-between"
+              onClick={onSave}
+            >
               Save Privacy Settings
             </Button>
           </div>
@@ -531,7 +584,7 @@ function PrivacySection() {
 
 }
 
-function PreferencesSection() {
+function PreferencesSection({ onSave }: { onSave: () => void }) {
   const { theme, setTheme } = useTheme()
   return (
     <AnimatedCard>
@@ -646,7 +699,10 @@ function PreferencesSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="flex items-center justify-between">
+            <Button
+              className="flex items-center justify-between"
+              onClick={onSave}
+            >
               Save Preferences
             </Button>
           </div>
@@ -657,7 +713,7 @@ function PreferencesSection() {
 }
 
 
-function NotificationsSection() {
+function NotificationsSection({ onSave }: { onSave: () => void }) {
   return <>
     <AnimatedCard>
       <Card className="border-none shadow-sm">
@@ -755,7 +811,10 @@ function NotificationsSection() {
           </div>
 
           <div className="flex justify-end">
-            <Button className="flex items-center justify-between">
+            <Button
+              className="flex items-center justify-between"
+              onClick={onSave}
+            >
               Save Notification Settings
             </Button>
           </div>
