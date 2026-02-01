@@ -34,7 +34,16 @@ pub fn run() {
             encryption_plugin::get_conversations,
             encryption_plugin::dispose,
         ])
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            println!("Single Instance Args: {:?}", args);
+            // Check for deep link in args
+            if let Some(url) = args.iter().find(|arg| arg.starts_with("lupyd://")) {
+                println!("Deep link received in single-instance: {}", url);
+                // We're already in the main thread of the primary instance here
+                // We can emit it to the frontend if needed, but for now we just log it as requested
+                // app.emit("deep-link", url); 
+            }
+
             if let Some(w) = app.get_webview_window("main") {
                 w.show().unwrap();
                 w.set_focus().unwrap();

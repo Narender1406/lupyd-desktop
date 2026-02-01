@@ -40,12 +40,18 @@
   "plugins": {
     "single-instance": null,
     "deep-link": {
-      "mobile": {
-        "scheme": ["lupyd"],
-        "appLink": false
-      },
+      "mobile": [
+        {
+          "scheme": [
+            "lupyd"
+          ],
+          "appLink": false
+        }
+      ],
       "desktop": {
-        "schemes": ["lupyd"]
+        "schemes": [
+          "lupyd"
+        ]
       }
     }
   }
