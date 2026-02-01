@@ -3,6 +3,7 @@ import { fromBase64, toBase64 } from "@/lib/utils";
 import { decryptBlobV1 } from "@/lib/utils";
 import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core';
 import { protos as FireflyProtos } from "firefly-client-js";
+import { TauriEncryptionPluginInstance } from './tauri-encryption-plugin';
 
 
 export interface UpdateRoleProposal {
@@ -187,8 +188,16 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   dispose(): Promise<void>
 };
 
-export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
-export const TestPlugin = registerPlugin<EncryptionPluginType>("TestPlugin")
+// Check if running in Tauri environment
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+
+export const EncryptionPlugin = isTauri 
+  ? TauriEncryptionPluginInstance 
+  : registerPlugin<EncryptionPluginType>("EncryptionPlugin");
+  
+export const TestPlugin = isTauri 
+  ? TauriEncryptionPluginInstance 
+  : registerPlugin<EncryptionPluginType>("TestPlugin");
 
 //@ts-ignore
 window["_plugins"] = { TestPlugin,EncryptionPlugin }

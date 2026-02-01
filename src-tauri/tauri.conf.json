@@ -38,6 +38,15 @@
     ]
   },
   "plugins": {
-    "single-instance": null
+    "single-instance": null,
+    "deep-link": {
+      "mobile": {
+        "scheme": ["lupyd"],
+        "appLink": false
+      },
+      "desktop": {
+        "schemes": ["lupyd"]
+      }
+    }
   }
 }

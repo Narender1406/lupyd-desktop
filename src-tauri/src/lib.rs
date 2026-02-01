@@ -1,10 +1,39 @@
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tauri::{Manager, WindowEvent};
+use tauri_plugin_deep_link::DeepLinkExt;
+
+mod encryption_plugin;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
+        .invoke_handler(tauri::generate_handler![
+            encryption_plugin::encrypt_and_send,
+            encryption_plugin::get_last_messages,
+            encryption_plugin::get_last_messages_from_all_conversations,
+            encryption_plugin::save_tokens,
+            encryption_plugin::mark_as_read_until,
+            encryption_plugin::show_user_notification,
+            encryption_plugin::show_call_notification,
+            encryption_plugin::request_all_permissions,
+            encryption_plugin::handle_message,
+            encryption_plugin::get_file_server_url,
+            encryption_plugin::get_last_group_messages,
+            encryption_plugin::encrypt_and_send_group_message,
+            encryption_plugin::get_group_extension,
+            encryption_plugin::create_group,
+            encryption_plugin::get_group_infos,
+            encryption_plugin::get_group_info_and_extension,
+            encryption_plugin::get_group_messages,
+            encryption_plugin::update_group_channel,
+            encryption_plugin::update_group_roles,
+            encryption_plugin::update_group_roles_in_channel,
+            encryption_plugin::update_group_users,
+            encryption_plugin::get_conversations,
+            encryption_plugin::dispose,
+        ])
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
                 w.show().unwrap();
@@ -24,6 +53,13 @@ pub fn run() {
 
             let _tray = TrayIconBuilder::with_id("main")
                 .menu(&menu)
+                .show_menu_on_left_click(true)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
                 .icon(app.default_window_icon().unwrap().clone())
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { .. } = event {
@@ -44,6 +80,20 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            let start_urls = app.deep_link().get_current()?;
+            if let Some(urls) = start_urls {
+                // app was likely started by a deep link
+                println!("start_urls deep link URLs: {:?}", urls);
+            }
+
+            app.deep_link().on_open_url(|event| {
+                println!("on_open_url deep link URLs: {:?}", event.urls());
+            });
+            app.deep_link().register_all()?;
+            app.deep_link().register("lupyd")?;
+
+            println!("deep link scheme registered: lupyd");
 
             Ok(())
         })
