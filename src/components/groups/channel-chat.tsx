@@ -195,22 +195,22 @@ export function ChannelChat({
       {/* Chat scroll area */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white dark:bg-black"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50"
       >
         {messages.map((m: GroupMessage) => (
           <GroupChatMessageItem key={m.id} m={m} />
         ))}
       </div>
 
-      {/* Inline composer (mobile only) */}
-      <div className="border-t p-2 md:hidden bg-white dark:bg-black">
+      {/* Message Input */}
+      <div className="border-t p-3 bg-white shrink-0">
         <div className="flex items-center gap-2">
           <Input
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={"Message #" + channelId}
-            className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
+            className="bg-gray-100 border-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -220,7 +220,7 @@ export function ChannelChat({
           // Just let the natural focus behavior work
           />
           <Button
-            className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300"
+            className="bg-black text-white hover:bg-gray-800"
             onClick={send}
             onMouseDown={(e) => e.preventDefault()}
             disabled={!draft.trim()}
