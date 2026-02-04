@@ -599,19 +599,21 @@ fun groupInfoToJSObj(groupInfo: GroupInfo): JSObject {
 
 fun groupMessageToJsObj(msg: GroupMessage): JSObject {
     return JSObject()
-        .put("groupId", msg.groupId)
+        .put("groupId", msg.groupId.toLong())
         .put("sender", msg.by)
         .put("textB64", Base64.encodeToString(msg.message, Base64.NO_WRAP))
-        .put("id", msg.id)
-        .put("channelId", msg.channelId)
-        .put("epoch", msg.epoch)
+        .put("id", msg.id.toLong())
+        .put("channelId", msg.channelId.toInt())
+        .put("epoch", msg.epoch.toInt())
 }
 
 fun userMessageToJsObj(msg: UserMessage): JSObject {
 
     val base64 = Base64.encodeToString(msg.message, Base64.NO_WRAP)
-
-    return JSObject().put("id", msg.id).put("other", msg.other).put("sentByOther", msg.sentByOther)
+    return JSObject()
+        .put("id", msg.id.toLong())
+        .put("other", msg.other)
+        .put("sentByOther", msg.sentByOther)
         .put("textB64", base64)
 
 

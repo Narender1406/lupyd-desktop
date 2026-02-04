@@ -1,15 +1,16 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { UserAvatar } from "@/components/user-avatar"
+import { useApiService } from "@/context/apiService"
 import { useAuth } from "@/context/auth-context"
 import {
   bGroupMessageToGroupMessage,
@@ -18,10 +19,9 @@ import {
   type GroupMessage,
 } from "@/context/encryption-plugin"
 import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
-import { useApiService } from "@/context/apiService"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 import { toast } from "@/hooks/use-toast"
-import { encryptBlobV1, formatNumber, fromBase64, SIZE_LOOKUP_TABLE, toBase64 } from "@/lib/utils"
+import { encryptBlobV1, formatNumber, fromBase64, SIZE_LOOKUP_TABLE } from "@/lib/utils"
 import { protos } from "firefly-client-js"
 import {
   ArrowLeft,
@@ -49,6 +49,7 @@ enum ContentType {
 
 export default function GroupChannelChatPage() {
   const { id } = useParams()
+  const groupId = id
   const navigate = useNavigate()
   const auth = useAuth()
   const firefly = useFirefly()
@@ -151,32 +152,36 @@ export default function GroupChannelChatPage() {
     })
   }, [id, selectedChannelId])
 
+
+  function onGroupMessage(msg: GroupMessage) {
+    if (msg.groupId === Number(id) && msg.channelId === selectedChannelId) {
+      const newMessage = msg
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === newMessage.id)) return prev
+        return [...prev, newMessage].sort((a, b) => a.id - b.id)
+      })
+
+      if (!isAtBottom) {
+        setNewMessagesCount((prev) => prev + 1)
+      }
+
+      setTimeout(() => {
+        if (isAtBottom) {
+          scrollToBottom()
+        }
+      }, 100)
+    }
+  }
+
+
   // Listen for new messages
   useEffect(() => {
     if (!id || !selectedChannelId) return
 
-    const callback: GroupMessageCallbackType = (msg) => {
-      if (msg.groupId === Number(id) && msg.channelId === selectedChannelId) {
-        const newMessage = bGroupMessageToGroupMessage(msg)
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === newMessage.id)) return prev
-          return [...prev, newMessage].sort((a, b) => a.id - b.id)
-        })
+    const callback: GroupMessageCallbackType = onGroupMessage
 
-        if (!isAtBottom) {
-          setNewMessagesCount((prev) => prev + 1)
-        }
-
-        setTimeout(() => {
-          if (isAtBottom) {
-            scrollToBottom()
-          }
-        }, 100)
-      }
-    }
-
-    firefly.addGroupMessageCallback(callback)
-    return () => firefly.removeGroupMessageCallback(callback)
+    firefly.addGroupEventListener(callback)
+    return () => firefly.removeGroupEventListener(callback)
   }, [id, selectedChannelId, firefly, isAtBottom])
 
   // Check if user is at bottom
@@ -297,15 +302,21 @@ export default function GroupChannelChatPage() {
         messagePayload: {
           text: msg,
           files: encryptedFiles,
+          replyingTo: 0n, // allows replying to ui
         },
+        channelId: selectedChannelId!,
       }).finish()
 
-      await EncryptionPlugin.encryptAndSendGroupMessage({
+      const message = await firefly.encryptAndSendGroupMessage({
         groupId: Number(id),
         channelId: selectedChannelId!,
+        text: messageInner,
+        sender: auth.username ?? "",
         id: 0,
-        message: toBase64(messageInner),
+        epoch: 0, // let the lib fill it up
       })
+
+      onGroupMessage(message)
 
       setMessageText("")
       setFiles([])
