@@ -84,6 +84,13 @@ export function bGroupMessageToGroupMessage(msg: BGroupMessage): GroupMessage {
   }
 }
 
+export function groupMessageToBGroupMessage(msg: GroupMessage): BGroupMessage {
+  return {
+    ...msg,
+    textB64: toBase64(msg.text)
+  }
+}
+
 export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
   const o = {
     ...msg,

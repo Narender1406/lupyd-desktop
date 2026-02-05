@@ -7,7 +7,7 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
+import { bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -21,6 +21,7 @@ type FireflyContextType = {
   addGroupEventListener: (cb: GroupMessageCallbackType) => void,
   removeGroupEventListener: (cb: GroupMessageCallbackType) => void,
 
+  encryptAndSendGroupMessage: (groupMessage: GroupMessage) => Promise<GroupMessage>,
 
   encryptAndSend: (other: string, text: Uint8Array) => Promise<UserMessage>,
   service: fireflyClientJs.FireflyService
@@ -130,10 +131,18 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
   }
 
 
+  async function encryptAndSendGroupMessage(groupMessage: GroupMessage) {
+    const result = await EncryptionPlugin.encryptAndSendGroupMessage(groupMessageToBGroupMessage(groupMessage))
+
+    groupMessage.id = result.messageId
+    return groupMessage
+  }
+
+
 
   return <FireflyContext.Provider value={{
     addEventListener, removeEventListener,
-    addGroupEventListener, removeGroupEventListener,
+    addGroupEventListener, removeGroupEventListener, encryptAndSendGroupMessage,
     service,
     encryptAndSend,
   }}> {children} </FireflyContext.Provider>

@@ -6,11 +6,9 @@ import { useAuth } from "@/context/auth-context"
 import { bGroupMessageToGroupMessage, EncryptionPlugin, type GroupMessage } from "@/context/encryption-plugin"
 import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
-import { toBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
-import { useRef, useMemo, useState, useEffect, memo } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { UserAvatar } from "../user-avatar"
-import React from "react"
 
 const GroupChatMessageItem = memo(({ m }: { m: GroupMessage }) => {
   const decodedText = useMemo(() => {
@@ -164,13 +162,10 @@ export function ChannelChat({
 
       // Send message in background (fire and forget)
       // We don't await here so the UI thread is not blocked from clearing the input
-      EncryptionPlugin.encryptAndSendGroupMessage({
-        textB64: toBase64(text),
-        ...msg
-      }).then((msgId) => {
+      firefly.encryptAndSendGroupMessage(msg).then((result) => {
         // Update message ID after successful send
         setMessages((prev) => {
-          const newMsg = { ...msg, id: msgId.messageId }
+          const newMsg = result
 
           // Remove the optimistic message (id 0) and add the real one
           const filtered = prev.filter(m => m.id !== 0)
@@ -195,22 +190,22 @@ export function ChannelChat({
       {/* Chat scroll area */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white dark:bg-black"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50"
       >
         {messages.map((m: GroupMessage) => (
           <GroupChatMessageItem key={m.id} m={m} />
         ))}
       </div>
 
-      {/* Inline composer (mobile only) */}
-      <div className="border-t p-2 md:hidden bg-white dark:bg-black">
+      {/* Message Input */}
+      <div className="border-t p-3 bg-white shrink-0">
         <div className="flex items-center gap-2">
           <Input
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder={"Message #" + channelId}
-            className="bg-gray-100 dark:bg-neutral-900 border-none text-black dark:text-white"
+            className="bg-gray-100 border-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -220,7 +215,7 @@ export function ChannelChat({
           // Just let the natural focus behavior work
           />
           <Button
-            className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-300"
+            className="bg-black text-white hover:bg-gray-800"
             onClick={send}
             onMouseDown={(e) => e.preventDefault()}
             disabled={!draft.trim()}
