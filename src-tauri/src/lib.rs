@@ -7,8 +7,14 @@ mod encryption_plugin;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize tracing
+    tracing_subscriber::fmt::init();
+    
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             encryption_plugin::encrypt_and_send,
             encryption_plugin::get_last_messages,
@@ -33,20 +39,23 @@ pub fn run() {
             encryption_plugin::update_group_users,
             encryption_plugin::get_conversations,
             encryption_plugin::dispose,
+            encryption_plugin::add_group_member,
+            encryption_plugin::kick_group_member,
+            encryption_plugin::clear_notifications,
+            encryption_plugin::test_method,
         ])
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             println!("Single Instance Args: {:?}", args);
             // Check for deep link in args
             if let Some(url) = args.iter().find(|arg| arg.starts_with("lupyd://")) {
                 println!("Deep link received in single-instance: {}", url);
-                // We're already in the main thread of the primary instance here
-                // We can emit it to the frontend if needed, but for now we just log it as requested
-                // app.emit("deep-link", url); 
+                // Emit deep link event to frontend
+                let _ = app.emit("deep-link", url);
             }
 
             if let Some(w) = app.get_webview_window("main") {
-                w.show().unwrap();
-                w.set_focus().unwrap();
+                let _ = w.show();
+                let _ = w.set_focus();
             }
         }))
         .setup(|app| {
@@ -57,6 +66,17 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            
+            // Initialize firefly client and file server
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = encryption_plugin::initialize_firefly_client(&app_handle).await {
+                    eprintln!("Failed to initialize firefly client: {}", e);
+                } else {
+                    println!("Firefly client initialized successfully");
+                }
+            });
+            
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i]).unwrap();
 
@@ -65,6 +85,10 @@ pub fn run() {
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "quit" => {
+                        // Cleanup before exit
+                        tauri::async_runtime::block_on(async {
+                            let _ = encryption_plugin::dispose(app.clone()).await;
+                        });
                         app.exit(0);
                     }
                     _ => {}
@@ -84,7 +108,7 @@ pub fn run() {
 
                         #[cfg(target_os = "macos")]
                         {
-                            tauri::AppHandle::show(&app.app_handle()).unwrap();
+                            let _ = tauri::AppHandle::show(&app.app_handle());
                         }
                     }
                 })
@@ -92,24 +116,34 @@ pub fn run() {
 
             let start_urls = app.deep_link().get_current()?;
             if let Some(urls) = start_urls {
-                // app was likely started by a deep link
                 println!("start_urls deep link URLs: {:?}", urls);
+                // Emit to frontend
+                for url in urls {
+                    let _ = app.emit("deep-link", &url);
+                }
             }
 
             app.deep_link().on_open_url(|event| {
                 println!("on_open_url deep link URLs: {:?}", event.urls());
+                // Emit to frontend
+                for url in event.urls() {
+                    let _ = event.app_handle().emit("deep-link", url);
+                }
             });
+            
             app.deep_link().register_all()?;
             app.deep_link().register("lupyd")?;
 
-            println!("deep link scheme registered: lupyd");
+            println!("Deep link scheme registered: lupyd");
+            println!("Lupyd Desktop initialized successfully");
 
             Ok(())
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
+                // Hide to tray instead of closing
                 api.prevent_close();
-                window.hide().unwrap()
+                let _ = window.hide();
             }
         })
         .run(tauri::generate_context!())

@@ -87,8 +87,14 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
     return await invoke('get_last_group_messages');
   }
 
-  async encryptAndSendGroupMessage(options: BGroupMessage): Promise<{ messageId: number }> {
-    return await invoke('encrypt_and_send_group_message', { message: options });
+  async encryptAndSendGroupMessage(options: {
+    textB64: string;
+    groupId: number;
+  }): Promise<{ messageId: number }> {
+    return await invoke('encrypt_and_send_group_message', {
+      textB64: options.textB64,
+      groupId: options.groupId,
+    });
   }
 
   async getGroupExtension(options: { groupId: number }): Promise<{ resultB64: string }> {
@@ -175,6 +181,29 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
 
   async dispose(): Promise<void> {
     return await invoke('dispose');
+  }
+
+  async testMethod(options: { [key: string]: any }): Promise<{ [key: string]: any }> {
+    return await invoke('test_method', { data: options });
+  }
+
+  async clearNotifications(): Promise<void> {
+    return await invoke('clear_notifications');
+  }
+
+  async addGroupMember(options: { groupId: number; username: string; roleId: number }): Promise<void> {
+    return await invoke('add_group_member', {
+      groupId: options.groupId,
+      username: options.username,
+      roleId: options.roleId,
+    });
+  }
+
+  async kickGroupMember(options: { groupId: number; username: string }): Promise<void> {
+    return await invoke('kick_group_member', {
+      groupId: options.groupId,
+      username: options.username,
+    });
   }
 }
 

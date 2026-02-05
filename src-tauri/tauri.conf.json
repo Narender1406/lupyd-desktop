@@ -53,6 +53,18 @@
           "lupyd"
         ]
       }
+    },
+    "notification": {
+      "identifier": "com.lupyd.app"
+    },
+    "fs": {
+      "scope": [
+        "$APPDATA/**",
+        "$APPDATA/decrypted/**"
+      ]
+    },
+    "shell": {
+      "scope": []
     }
   }
 }
