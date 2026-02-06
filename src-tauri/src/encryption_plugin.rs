@@ -1,13 +1,22 @@
+use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
-use firefly_signal::{db::messages::MessagesStore, websocket::FfiFireflyWsClient, *};
+use firefly_signal::{
+    db::{
+        auth::TokenResponse,
+        group_messages::GroupMessage,
+        group_stores::GroupInfo,
+        messages::{MessagesStore, UserMessage},
+    },
+    group::{UpdateRoleProposalFfi, UpdateUserProposalFfi},
+    websocket::{FfiFireflyWsClient, FireflyWsClientCallback},
+    *,
+};
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
-use tauri::{
-    command, AppHandle, Emitter, Manager, Runtime, State,
-    async_runtime::Mutex,
-};
-use rand::{distributions::Alphanumeric, Rng};
+use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
+use tauri_plugin_notification::NotificationBuilder;
 
 type FireflyClient = Arc<FfiFireflyWsClient>;
 type MessageStore = Arc<MessagesStore>;
@@ -239,7 +248,7 @@ impl<R: Runtime> NotificationHandler<R> {
         self.add_message_to_history(msg).await?;
         let messages = self.store.get_from_user(&msg.other, 6).await?;
         
-        tauri::NotificationBuilder::new(&self.app_handle)
+        NotificationBuilder::new(&self.app_handle)
             .title(format!("Message from {}", msg.other))
             .body(format!("{} new message{}", messages.len(), if messages.len() == 1 { "" } else { "s" }))
             .show()
@@ -322,30 +331,30 @@ impl<R: Runtime> FireflyCallbackHandler<R> {
     }
 }
 
+#[async_trait::async_trait]
 impl<R: Runtime> FireflyWsClientCallback for FireflyCallbackHandler<R> {
-    fn on_message(&self, message: UserMessage) {
+    async fn on_message(&self, message: UserMessage) {
         let user_message = BUserMessage {
             id: message.id,
             other: message.other.clone(),
             sent_by_other: message.sent_by_other,
             text_b64: general_purpose::STANDARD.encode(&message.message),
         };
-        
+
         let _ = self.app_handle.emit("onUserMessage", &user_message);
-        
+
         let app_handle = self.app_handle.clone();
-        let msg = message.clone();
         tauri::async_runtime::spawn(async move {
             let db_state: State<Database> = app_handle.state();
             let pool = db_state.inner().clone();
             if let Ok(store) = NotificationStore::new(pool.clone()).await {
                 let handler = NotificationHandler::new(app_handle, store);
-                let _ = handler.show_user_bundled_notification(&msg).await;
+                let _ = handler.show_user_bundled_notification(&message).await;
             }
         });
     }
-    
-    fn on_group_message(&self, message: GroupMessage) {
+
+    async fn on_group_message(&self, message: GroupMessage) {
         let group_message = BGroupMessage {
             sender: message.by.clone(),
             group_id: message.group_id,
@@ -354,7 +363,7 @@ impl<R: Runtime> FireflyWsClientCallback for FireflyCallbackHandler<R> {
             channel_id: message.channel_id,
             epoch: message.epoch,
         };
-        
+
         let _ = self.app_handle.emit("onGroupMessage", &group_message);
     }
 }
@@ -490,7 +499,7 @@ pub async fn show_user_notification<R: Runtime>(
     app: AppHandle<R>,
     message: BUserMessage,
 ) -> Result<(), String> {
-    tauri::NotificationBuilder::new(&app)
+    NotificationBuilder::new(&app)
         .title(format!("Message from {}", message.other))
         .body("New message received")
         .show()
@@ -506,7 +515,7 @@ pub async fn show_call_notification<R: Runtime>(
     _session_id: u32,
     _conversation_id: u32,
 ) -> Result<(), String> {
-    tauri::NotificationBuilder::new(&app)
+    NotificationBuilder::new(&app)
         .title("Incoming Call")
         .body(format!("{} is calling...", caller))
         .show()
