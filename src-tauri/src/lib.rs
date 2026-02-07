@@ -1,6 +1,6 @@
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 mod encryption_plugin;
@@ -9,8 +9,13 @@ mod encryption_plugin;
 pub fn run() {
     // Initialize tracing
     tracing_subscriber::fmt::init();
-    
+
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(tauri_plugin_log::log::LevelFilter::Info)
+                .build(),
+        )
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_fs::init())
@@ -23,7 +28,7 @@ pub fn run() {
             encryption_plugin::mark_as_read_until,
             encryption_plugin::show_user_notification,
             encryption_plugin::show_call_notification,
-            encryption_plugin::request_all_permissions,
+            // encryption_plugin::request_all_required_permissions,
             encryption_plugin::handle_message,
             encryption_plugin::get_file_server_url,
             encryption_plugin::get_last_group_messages,
@@ -45,12 +50,14 @@ pub fn run() {
             encryption_plugin::test_method,
         ])
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            println!("Single Instance Args: {:?}", args);
+            log::info!("Single Instance Args: {:?}", args);
             // Check for deep link in args
             if let Some(url) = args.iter().find(|arg| arg.starts_with("lupyd://")) {
-                println!("Deep link received in single-instance: {}", url);
+                log::info!("Deep link received in single-instance: {}", url);
                 // Emit deep link event to frontend
-                let _ = app.emit("deep-link", url);
+                if let Err(err) = app.emit("deep-link", url) {
+                    log::error!("deep link emit failed: {:?}", err);
+                }
             }
 
             if let Some(w) = app.get_webview_window("main") {
@@ -66,17 +73,17 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            
+
             // Initialize firefly client and file server
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = encryption_plugin::initialize_firefly_client(&app_handle).await {
-                    eprintln!("Failed to initialize firefly client: {}", e);
+                    log::error!("Failed to initialize firefly client: {}", e);
                 } else {
-                    println!("Firefly client initialized successfully");
+                    log::info!("Firefly client initialized successfully");
                 }
             });
-            
+
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i]).unwrap();
 
@@ -114,28 +121,11 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            let start_urls = app.deep_link().get_current()?;
-            if let Some(urls) = start_urls {
-                println!("start_urls deep link URLs: {:?}", urls);
-                // Emit to frontend
-                for url in urls {
-                    let _ = app.emit("deep-link", &url);
-                }
-            }
-
-            app.deep_link().on_open_url(|event| {
-                println!("on_open_url deep link URLs: {:?}", event.urls());
-                // Emit to frontend
-                for url in event.urls() {
-                    let _ = event.app_handle().emit("deep-link", url);
-                }
-            });
-            
             app.deep_link().register_all()?;
             app.deep_link().register("lupyd")?;
 
-            println!("Deep link scheme registered: lupyd");
-            println!("Lupyd Desktop initialized successfully");
+            log::info!("Deep link scheme registered: lupyd");
+            log::info!("Lupyd Desktop initialized successfully");
 
             Ok(())
         })

@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use firefly_signal::{
     db::{
@@ -16,12 +15,12 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
-use tauri_plugin_notification::NotificationBuilder;
+use tauri_plugin_notification::NotificationExt;
 
 type FireflyClient = Arc<FfiFireflyWsClient>;
 type MessageStore = Arc<MessagesStore>;
 type FileServer = Arc<FfiFileServer>;
-type Database = Arc<SqlitePool>;
+type Database = SqlitePool;
 
 struct Constants;
 impl Constants {
@@ -170,7 +169,7 @@ impl NotificationStore {
                 text BLOB NOT NULL,
                 sent_by_me BOOLEAN NOT NULL,
                 PRIMARY KEY (other, msg_id)
-            )"
+            )",
         )
         .execute(&self.pool)
         .await
@@ -178,7 +177,11 @@ impl NotificationStore {
         Ok(())
     }
 
-    async fn get_from_user(&self, user: &str, limit: i32) -> Result<Vec<MessageNotification>, String> {
+    async fn get_from_user(
+        &self,
+        user: &str,
+        limit: i32,
+    ) -> Result<Vec<MessageNotification>, String> {
         let rows = sqlx::query(
             "SELECT msg_id, other, text, sent_by_me FROM user_message_notifications WHERE other = ? ORDER BY msg_id LIMIT ?"
         )
@@ -247,10 +250,16 @@ impl<R: Runtime> NotificationHandler<R> {
     async fn show_user_bundled_notification(&self, msg: &UserMessage) -> Result<(), String> {
         self.add_message_to_history(msg).await?;
         let messages = self.store.get_from_user(&msg.other, 6).await?;
-        
-        NotificationBuilder::new(&self.app_handle)
+
+        self.app_handle
+            .notification()
+            .builder()
             .title(format!("Message from {}", msg.other))
-            .body(format!("{} new message{}", messages.len(), if messages.len() == 1 { "" } else { "s" }))
+            .body(format!(
+                "{} new message{}",
+                messages.len(),
+                if messages.len() == 1 { "" } else { "s" }
+            ))
             .show()
             .map_err(|e| e.to_string())?;
         Ok(())
@@ -273,22 +282,27 @@ impl<R: Runtime> NotificationHandler<R> {
 
 pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    tokio::fs::create_dir_all(&app_data_dir).await.map_err(|e| e.to_string())?;
-    
+    tokio::fs::create_dir_all(&app_data_dir)
+        .await
+        .map_err(|e| e.to_string())?;
+
     let db_path = app_data_dir.join("app.db");
     let database_url = format!("sqlite:{}", db_path.display());
-    let pool = SqlitePool::connect(&database_url).await.map_err(|e| e.to_string())?;
+    let pool = SqlitePool::connect(&database_url)
+        .await
+        .map_err(|e| e.to_string())?;
     app.manage(Arc::new(pool));
-    
+
     let messages_db_path = app_data_dir.join("user_messages.db");
     let message_store = MessagesStore::from_path(messages_db_path.to_string_lossy().to_string())
+        .await
         .map_err(|e| format!("Failed to create messages store: {}", e))?;
     app.manage(Arc::new(message_store));
-    
+
     let firefly_db_path = app_data_dir.join("firefly.db");
     let app_handle = app.clone();
     let callback = FireflyCallbackHandler::new(app_handle);
-    
+
     let client = FfiFireflyWsClient::create(
         Constants::FIREFLY_API_URL.to_string(),
         Constants::FIREFLY_WS_URL.to_string(),
@@ -298,26 +312,30 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
         5000,
         Constants::AUTH0_CLIENT_ID.to_string(),
         Constants::AUTH0_DOMAIN.to_string(),
-    ).map_err(|e| format!("Failed to create firefly client: {}", e))?;
+    )
+    .await
+    .map_err(|e| format!("Failed to create firefly client: {}", e))?;
     app.manage(Arc::new(client));
-    
+
     let file_server_token: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(32)
         .map(char::from)
         .collect();
-    
+
     let file_server = FfiFileServer::create(
         app_data_dir.to_string_lossy().to_string(),
         file_server_token,
-    ).map_err(|e| format!("Failed to create file server: {}", e))?;
-    
+    );
+
+    let file_server = Arc::new(file_server);
+
     let server_clone = file_server.clone();
     tokio::spawn(async move {
         let _ = server_clone.start_serving(None).await;
     });
-    
-    app.manage(Arc::new(file_server));
+
+    app.manage(file_server);
     Ok(())
 }
 
@@ -404,18 +422,23 @@ pub async fn encrypt_and_send<R: Runtime>(
 ) -> Result<BUserMessage, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let message_bytes = general_purpose::STANDARD.decode(&text_b64)
+
+    let message_bytes = general_purpose::STANDARD
+        .decode(&text_b64)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
-    
-    let user_message = client.encrypt_and_send(&to, &message_bytes)
+
+    let user_message = client
+        .encrypt_and_send(to, message_bytes)
+        .await
         .map_err(|e| format!("Failed to encrypt and send: {}", e))?;
-    
+
     let store_state: State<MessageStore> = app.state();
     let store = store_state.inner().clone();
-    let _ = store.insert_user_message(&user_message);
-    
-    Ok(user_message_to_b_user_message(&user_message))
+
+    let b_user_message = user_message_to_b_user_message(&user_message);
+    let _ = store.insert_user_message(user_message);
+
+    Ok(b_user_message)
 }
 
 #[command]
@@ -427,11 +450,16 @@ pub async fn get_last_messages<R: Runtime>(
 ) -> Result<LastMessagesResponse, String> {
     let store_state: State<MessageStore> = app.state();
     let store = store_state.inner().clone();
-    
-    let messages = store.get_last_messages_of(&other, before, limit)
+
+    let messages = store
+        .get_last_messages_of(&other, before as i64, limit as i64)
+        .await
         .map_err(|e| format!("Failed to get messages: {}", e))?;
-    
-    let result = messages.iter().map(user_message_to_b_user_message).collect();
+
+    let result = messages
+        .iter()
+        .map(user_message_to_b_user_message)
+        .collect();
     Ok(LastMessagesResponse { result })
 }
 
@@ -441,15 +469,20 @@ pub async fn get_last_messages_from_all_conversations<R: Runtime>(
 ) -> Result<AllConversationsResponse, String> {
     let store_state: State<MessageStore> = app.state();
     let store = store_state.inner().clone();
-    
-    let conversations = store.get_last_message_from_all_conversations()
+
+    let conversations = store
+        .get_last_message_from_all_conversations()
+        .await
         .map_err(|e| format!("Failed to get conversations: {}", e))?;
-    
-    let result = conversations.iter().map(|conv| ConversationWithCount {
-        message: user_message_to_b_user_message(&conv.message),
-        count: conv.count,
-    }).collect();
-    
+
+    let result = conversations
+        .iter()
+        .map(|conv| ConversationWithCount {
+            message: user_message_to_b_user_message(&conv.message),
+            count: conv.count,
+        })
+        .collect();
+
     Ok(AllConversationsResponse { result })
 }
 
@@ -461,15 +494,17 @@ pub async fn save_tokens<R: Runtime>(
 ) -> Result<(), String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
+
     let tokens = TokenResponse {
         access_token,
         refresh_token,
     };
-    
-    client.set_auth_tokens(&tokens)
+
+    client
+        .set_auth_tokens(tokens)
+        .await
         .map_err(|e| format!("Failed to save tokens: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -481,16 +516,20 @@ pub async fn mark_as_read_until<R: Runtime>(
 ) -> Result<(), String> {
     let store_state: State<MessageStore> = app.state();
     let store = store_state.inner().clone();
-    
-    store.mark_as_read_until(&username, ts)
+
+    store
+        .mark_as_read_until(&username, ts as i64)
+        .await
         .map_err(|e| format!("Failed to mark as read: {}", e))?;
-    
+
     let db_state: State<Database> = app.state();
     let pool = db_state.inner().clone();
     if let Ok(notification_store) = NotificationStore::new(pool).await {
-        let _ = notification_store.delete_until_of_sender(&username, ts as i64).await;
+        let _ = notification_store
+            .delete_until_of_sender(&username, ts as i64)
+            .await;
     }
-    
+
     Ok(())
 }
 
@@ -499,12 +538,13 @@ pub async fn show_user_notification<R: Runtime>(
     app: AppHandle<R>,
     message: BUserMessage,
 ) -> Result<(), String> {
-    NotificationBuilder::new(&app)
+    app.notification()
+        .builder()
         .title(format!("Message from {}", message.other))
         .body("New message received")
         .show()
         .map_err(|e| format!("Failed to show notification: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -515,12 +555,13 @@ pub async fn show_call_notification<R: Runtime>(
     _session_id: u32,
     _conversation_id: u32,
 ) -> Result<(), String> {
-    NotificationBuilder::new(&app)
+    app.notification()
+        .builder()
         .title("Incoming Call")
         .body(format!("{} is calling...", caller))
         .show()
         .map_err(|e| format!("Failed to show call notification: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -541,22 +582,25 @@ pub async fn get_file_server_url<R: Runtime>(
 ) -> Result<FileServerResponse, String> {
     let server_state: State<FileServer> = app.state();
     let server = server_state.inner().clone();
-    
+
     Ok(FileServerResponse {
-        url: format!("http://localhost:{}", server.port()),
-        token: server.token(),
+        url: format!("http://localhost:{}", server.port().await),
+        token: server.token().await,
     })
 }
 
 #[command]
-pub async fn request_all_permissions<R: Runtime>(
-    _permissions: Vec<String>,
-) -> Result<serde_json::Value, String> {
-    Ok(serde_json::json!({"granted": true}))
+pub async fn request_all_required_permissions<R: Runtime>(
+    _app: AppHandle<R>,
+    permissions: Vec<String>,
+) -> Result<bool, String> {
+    let _ = permissions;
+    Ok(true)
 }
 
 #[command]
 pub async fn handle_message<R: Runtime>(
+    _app: AppHandle<R>,
     _message: BUserMessage,
 ) -> Result<(), String> {
     Ok(())
@@ -564,18 +608,19 @@ pub async fn handle_message<R: Runtime>(
 
 #[command]
 pub async fn test_method<R: Runtime>(
+    _app: AppHandle<R>,
     data: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let mut result = serde_json::json!({
         "receivedAt": chrono::Utc::now().timestamp_millis()
     });
-    
+
     if let Some(obj) = data.as_object() {
         for (key, value) in obj {
             result[key] = value.clone();
         }
     }
-    
+
     Ok(result)
 }
 
@@ -583,62 +628,87 @@ pub async fn test_method<R: Runtime>(
 pub async fn dispose<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    client.dispose().map_err(|e| format!("Failed to dispose client: {}", e))?;
-    
+    client.dispose().await;
+
     let db_state: State<Database> = app.state();
     let pool = db_state.inner().clone();
     pool.close().await;
-    
+
     Ok(())
 }
 
 #[command]
-pub async fn get_last_group_messages<R: Runtime>(app: AppHandle<R>) -> Result<LastGroupMessagesResponse, String> {
+pub async fn get_last_group_messages<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<LastGroupMessagesResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let messages = client.group_message_store().get_all_last_messages_ffi()
+
+    let messages = client
+        .group_message_store()
+        .get_all_last_messages_ffi()
+        .await
         .map_err(|e| format!("Failed to get group messages: {}", e))?;
-    
-    let result = messages.iter().map(group_message_to_b_group_message).collect();
+
+    let result = messages
+        .iter()
+        .map(group_message_to_b_group_message)
+        .collect();
     Ok(LastGroupMessagesResponse { result })
 }
 
 #[command]
-pub async fn encrypt_and_send_group_message<R: Runtime>(app: AppHandle<R>, text_b64: String, group_id: u64) -> Result<MessageIdResponse, String> {
+pub async fn encrypt_and_send_group_message<R: Runtime>(
+    app: AppHandle<R>,
+    text_b64: String,
+    group_id: u64,
+) -> Result<MessageIdResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let message_bytes = general_purpose::STANDARD.decode(&text_b64)
+
+    let message_bytes = general_purpose::STANDARD
+        .decode(&text_b64)
         .map_err(|e| format!("Failed to decode base64: {}", e))?;
-    
-    let message_id = client.encrypt_and_send_group(group_id, &message_bytes)
+
+    let message_id = client
+        .encrypt_and_send_group(group_id, message_bytes)
+        .await
         .map_err(|e| format!("Failed to encrypt and send group message: {}", e))?;
-    
+
     Ok(MessageIdResponse { message_id })
 }
 
 #[command]
-pub async fn get_group_extension<R: Runtime>(app: AppHandle<R>, group_id: u64) -> Result<GroupExtensionResponse, String> {
+pub async fn get_group_extension<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+) -> Result<GroupExtensionResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let extension = client.get_group_extension(group_id)
+
+    let extension = client
+        .get_group_extension(group_id)
+        .await
         .map_err(|e| format!("Failed to get group extension: {}", e))?;
-    
+
     Ok(GroupExtensionResponse {
         result_b64: general_purpose::STANDARD.encode(&extension),
     })
 }
 
 #[command]
-pub async fn create_group<R: Runtime>(app: AppHandle<R>, group_name: String) -> Result<BGroupInfo, String> {
+pub async fn create_group<R: Runtime>(
+    app: AppHandle<R>,
+    group_name: String,
+) -> Result<BGroupInfo, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let group_info = client.create_group(&group_name, "")
+
+    let group_info = client
+        .create_group(group_name, "".into())
+        .await
         .map_err(|e| format!("Failed to create group: {}", e))?;
-    
+
     Ok(group_info_to_b_group_info(&group_info))
 }
 
@@ -646,25 +716,36 @@ pub async fn create_group<R: Runtime>(app: AppHandle<R>, group_name: String) -> 
 pub async fn get_group_infos<R: Runtime>(app: AppHandle<R>) -> Result<GroupInfosResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let groups = client.group_info_store().get_all_ffi()
+
+    let groups = client
+        .group_info_store()
+        .get_all_ffi()
+        .await
         .map_err(|e| format!("Failed to get group infos: {}", e))?;
-    
+
     let result = groups.iter().map(group_info_to_b_group_info).collect();
     Ok(GroupInfosResponse { result })
 }
 
 #[command]
-pub async fn get_group_info_and_extension<R: Runtime>(app: AppHandle<R>, group_id: u64) -> Result<GroupInfoAndExtension, String> {
+pub async fn get_group_info_and_extension<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+) -> Result<GroupInfoAndExtension, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let group_info = client.group_info_store().get_ffi(group_id)
+
+    let group_info = client
+        .group_info_store()
+        .get_ffi(group_id)
+        .await
         .map_err(|e| format!("Failed to get group info: {}", e))?;
-    
-    let extension = client.get_group_extension(group_id)
+
+    let extension = client
+        .get_group_extension(group_id)
+        .await
         .map_err(|e| format!("Failed to get group extension: {}", e))?;
-    
+
     Ok(GroupInfoAndExtension {
         name: group_info.name,
         group_id: group_info.id,
@@ -674,114 +755,184 @@ pub async fn get_group_info_and_extension<R: Runtime>(app: AppHandle<R>, group_i
 }
 
 #[command]
-pub async fn get_group_messages<R: Runtime>(app: AppHandle<R>, group_id: u64, start_before: u64, limit: u32) -> Result<LastGroupMessagesResponse, String> {
+pub async fn get_group_messages<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    start_before: u64,
+    limit: u32,
+) -> Result<LastGroupMessagesResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let messages = client.group_message_store().get_ffi(group_id, start_before, limit)
+
+    let messages = client
+        .group_message_store()
+        .get_ffi(group_id, start_before, limit)
+        .await
         .map_err(|e| format!("Failed to get group messages: {}", e))?;
-    
-    let result = messages.iter().map(group_message_to_b_group_message).collect();
+
+    let result = messages
+        .iter()
+        .map(group_message_to_b_group_message)
+        .collect();
     Ok(LastGroupMessagesResponse { result })
 }
 
 #[command]
-pub async fn update_group_channel<R: Runtime>(app: AppHandle<R>, group_id: u64, id: u32, delete: bool, name: String, channel_ty: u8, default_permissions: u32) -> Result<MessageIdResponse, String> {
+pub async fn update_group_channel<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    id: u32,
+    delete: bool,
+    name: String,
+    channel_ty: u8,
+    default_permissions: u32,
+) -> Result<MessageIdResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let message_id = client.update_group_channel(group_id, id, delete, &name, channel_ty, default_permissions)
+
+    let message_id = client
+        .update_group_channel(group_id, id, delete, name, channel_ty, default_permissions)
+        .await
         .map_err(|e| format!("Failed to update group channel: {}", e))?;
-    
+
     Ok(MessageIdResponse { message_id })
 }
 
 #[command]
-pub async fn update_group_roles<R: Runtime>(app: AppHandle<R>, group_id: u64, roles: Vec<UpdateRoleProposal>) -> Result<MessageIdResponse, String> {
+pub async fn update_group_roles<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    roles: Vec<UpdateRoleProposal>,
+) -> Result<MessageIdResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let ffi_roles: Vec<UpdateRoleProposalFfi> = roles.into_iter().map(|r| UpdateRoleProposalFfi {
-        name: r.name,
-        role_id: r.role_id,
-        permissions: r.permissions,
-        delete: r.delete,
-    }).collect();
-    
-    let message_id = client.update_group_roles(group_id, &ffi_roles)
+
+    let ffi_roles: Vec<UpdateRoleProposalFfi> = roles
+        .into_iter()
+        .map(|r| UpdateRoleProposalFfi {
+            name: r.name,
+            role_id: r.role_id,
+            permissions: r.permissions,
+            delete: r.delete,
+        })
+        .collect();
+
+    let message_id = client
+        .update_group_roles(group_id, ffi_roles)
+        .await
         .map_err(|e| format!("Failed to update group roles: {}", e))?;
-    
+
     Ok(MessageIdResponse { message_id })
 }
 
 #[command]
-pub async fn update_group_roles_in_channel<R: Runtime>(app: AppHandle<R>, group_id: u64, channel_id: u32, roles: Vec<UpdateRoleProposal>) -> Result<MessageIdResponse, String> {
+pub async fn update_group_roles_in_channel<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    channel_id: u32,
+    roles: Vec<UpdateRoleProposal>,
+) -> Result<MessageIdResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let ffi_roles: Vec<UpdateRoleProposalFfi> = roles.into_iter().map(|r| UpdateRoleProposalFfi {
-        name: r.name,
-        role_id: r.role_id,
-        permissions: r.permissions,
-        delete: r.delete,
-    }).collect();
-    
-    let message_id = client.update_group_roles_in_channel(group_id, channel_id, &ffi_roles)
+
+    let ffi_roles: Vec<UpdateRoleProposalFfi> = roles
+        .into_iter()
+        .map(|r| UpdateRoleProposalFfi {
+            name: r.name,
+            role_id: r.role_id,
+            permissions: r.permissions,
+            delete: r.delete,
+        })
+        .collect();
+
+    let message_id = client
+        .update_group_roles_in_channel(group_id, channel_id, ffi_roles)
+        .await
         .map_err(|e| format!("Failed to update group roles in channel: {}", e))?;
-    
+
     Ok(MessageIdResponse { message_id })
 }
 
 #[command]
-pub async fn update_group_users<R: Runtime>(app: AppHandle<R>, group_id: u64, users: Vec<UpdateUserProposal>) -> Result<MessageIdResponse, String> {
+pub async fn update_group_users<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    users: Vec<UpdateUserProposal>,
+) -> Result<MessageIdResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let ffi_users: Vec<UpdateUserProposalFfi> = users.into_iter().map(|u| UpdateUserProposalFfi {
-        username: u.username,
-        role_id: u.role_id,
-    }).collect();
-    
-    let message_id = client.update_group_users(group_id, &ffi_users)
+
+    let ffi_users: Vec<UpdateUserProposalFfi> = users
+        .into_iter()
+        .map(|u| UpdateUserProposalFfi {
+            username: u.username,
+            role_id: u.role_id,
+        })
+        .collect();
+
+    let message_id = client
+        .update_group_users(group_id, ffi_users)
+        .await
         .map_err(|e| format!("Failed to update group users: {}", e))?;
-    
+
     Ok(MessageIdResponse { message_id })
 }
 
 #[command]
-pub async fn get_conversations<R: Runtime>(app: AppHandle<R>, token: String) -> Result<ConversationsResponse, String> {
+pub async fn get_conversations<R: Runtime>(
+    app: AppHandle<R>,
+    token: String,
+) -> Result<ConversationsResponse, String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    let conversations = client.get_conversations(&token)
+
+    let conversations = client
+        .get_conversations(token)
+        .await
         .map_err(|e| format!("Failed to get conversations: {}", e))?;
-    
-    let result = conversations.into_iter().map(|c| Conversation {
-        other: c.other,
-        settings: c.settings,
-    }).collect();
-    
+
+    let result = conversations
+        .into_iter()
+        .map(|c| Conversation {
+            other: c.other,
+            settings: c.settings,
+        })
+        .collect();
+
     Ok(ConversationsResponse { result })
 }
 
 #[command]
-pub async fn add_group_member<R: Runtime>(app: AppHandle<R>, group_id: u64, username: String, role_id: u32) -> Result<(), String> {
+pub async fn add_group_member<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    username: String,
+    role_id: u32,
+) -> Result<(), String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    client.add_group_member(group_id, &username, role_id)
+
+    client
+        .add_group_member(group_id, username, role_id)
+        .await
         .map_err(|e| format!("Failed to add group member: {}", e))?;
-    
+
     Ok(())
 }
 
 #[command]
-pub async fn kick_group_member<R: Runtime>(app: AppHandle<R>, group_id: u64, username: String) -> Result<(), String> {
+pub async fn kick_group_member<R: Runtime>(
+    app: AppHandle<R>,
+    group_id: u64,
+    username: String,
+) -> Result<(), String> {
     let client_state: State<FireflyClient> = app.state();
     let client = client_state.inner().clone();
-    
-    client.kick_group_member(group_id, &username)
+
+    client
+        .kick_group_member(group_id, username)
+        .await
         .map_err(|e| format!("Failed to kick group member: {}", e))?;
-    
+
     Ok(())
 }
