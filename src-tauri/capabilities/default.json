@@ -9,6 +9,7 @@
     "core:default",
     "deep-link:default",
     "notification:default",
-    "log:default"
+    "log:default",
+    "shell:default"
   ]
 }

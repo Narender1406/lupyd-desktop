@@ -1,5 +1,5 @@
 "use client"
-
+import { listen } from "@tauri-apps/api/event";
 import * as fireflyClientJs from "firefly-client-js";
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
@@ -7,7 +7,8 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
+import { isTauri } from "@tauri-apps/api/core";
+import { bGroupMessageToGroupMessage, bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBGroupMessage, isBUserMessage, userMessageToBUserMessage, type EncryptionPluginType, type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -55,39 +56,77 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
 
-    const listener =
-      EncryptionPlugin.addListener("onUserMessage", (data) => {
-        const isValid = isBUserMessage(data)
-        console.log(`onUserMessage Recevied  ${isValid} ${JSON.stringify(data)}`)
-        const dmsg = bUserMessageToUserMessage(data)
+    const onUserMessage = (data: any) => {
 
-        {
+      const isValid = isBUserMessage(data)
+      console.log(`onUserMessage Recevied  ${isValid} ${JSON.stringify(data)}`)
+      const dmsg = bUserMessageToUserMessage(data)
 
-          const currentPathname = window.location.pathname
+      {
 
-          if (!currentPathname.includes(`/messages/${dmsg.other}`)) {
+        const currentPathname = window.location.pathname
 
-            console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
+        if (!currentPathname.includes(`/messages/${dmsg.other}`)) {
 
-            if (dmsg.sentByOther) {
-              const msg = FireflyProtos.UserMessageInner.decode(dmsg.text)
+          console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
 
-              if (msg.messagePayload && msg.messagePayload.text.length > 0) {
-                console.log(`showing notification for message sentByOther: ${dmsg.sentByOther} other: ${dmsg.other} id: ${dmsg.id}`)
-                EncryptionPlugin.showUserNotification(userMessageToBUserMessage(dmsg))
-              }
+          if (dmsg.sentByOther) {
+            const msg = FireflyProtos.UserMessageInner.decode(dmsg.text)
 
+            if (msg.messagePayload && msg.messagePayload.text.length > 0) {
+              console.log(`showing notification for message sentByOther: ${dmsg.sentByOther} other: ${dmsg.other} id: ${dmsg.id}`)
+              EncryptionPlugin.showUserNotification(userMessageToBUserMessage(dmsg))
             }
 
           }
 
         }
 
+      }
 
-        eventListeners.current.forEach(e => e(dmsg))
-      })
 
-    return () => { listener.then(_ => _.remove()) }
+      eventListeners.current.forEach(e => e(dmsg))
+    }
+
+    const listener = isTauri() ? listen("onUserMessage", (data) => onUserMessage(data.payload as any)).then(unlisten => { return { remove: unlisten } }) :
+      (EncryptionPlugin as EncryptionPluginType).addListener("onUserMessage", onUserMessage)
+
+    return () => { listener.then((_) => _.remove()) }
+
+  }, [])
+
+
+
+  useEffect(() => {
+
+    const onGroupMessage = (data: any) => {
+      if (!isBGroupMessage(data)) {
+        throw Error(`invalid group message received: ${JSON.stringify(data)}`)
+      }
+
+      const groupMessage = bGroupMessageToGroupMessage(data as any)
+
+      {
+
+        const currentPathname = window.location.pathname
+
+        if (!currentPathname.includes(`/groups/${groupMessage.groupId}`)) {
+
+          console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
+
+          if (groupMessage.sender != auth.username) {
+            console.warn("should show group message here")
+          }
+        }
+      }
+
+      groupEventListeners.current.forEach(e => e(groupMessage))
+
+    }
+
+    const listener = isTauri() ? listen("onGroupMessage", (data) => onGroupMessage(data.payload as any)) : (EncryptionPlugin as EncryptionPluginType).addListener("onGroupMessage", onGroupMessage).then(e => e.remove)
+
+    return () => { listener.then((_) => _()) }
 
   }, [])
 

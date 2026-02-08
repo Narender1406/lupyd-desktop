@@ -2,6 +2,7 @@ import { fromBase64, toBase64 } from "@/lib/utils";
 
 import { decryptBlobV1 } from "@/lib/utils";
 import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core';
+import { isTauri } from "@tauri-apps/api/core";
 import { protos as FireflyProtos } from "firefly-client-js";
 import { TauriEncryptionPluginInstance } from './tauri-encryption-plugin';
 
@@ -138,10 +139,7 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
   requestAllPermissions(options: { permissions: string[] }): Promise<any>
 
-  handleMessage(msg: BUserMessage): Promise<void>,
-
   getFileServerUrl(): Promise<{ url: string, token: string }>,
-
 
 
   getLastGroupMessages(): Promise<{ result: BGroupMessage[] }>
@@ -204,13 +202,12 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 };
 
 // Check if running in Tauri environment
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
-export const EncryptionPlugin = isTauri
+export const EncryptionPlugin = isTauri()
   ? TauriEncryptionPluginInstance
   : registerPlugin<EncryptionPluginType>("EncryptionPlugin");
 
-export const TestPlugin = isTauri
+export const TestPlugin = isTauri()
   ? TauriEncryptionPluginInstance
   : registerPlugin<EncryptionPluginType>("TestPlugin");
 

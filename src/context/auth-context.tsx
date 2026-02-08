@@ -3,11 +3,11 @@
 // import { AuthHandler, fbElement, initFbElement } from "lupyd-js"
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 
+import { launchBrowserUrl } from "@/lib/utils"
 import { Auth0Provider, useAuth0, User, type AppState } from "@auth0/auth0-react"
-import {  getPayloadFromAccessToken } from "lupyd-js"
-import { Browser } from "@capacitor/browser"
-import { EncryptionPlugin } from "./encryption-plugin"
+import { getPayloadFromAccessToken } from "lupyd-js"
 import { useNavigate } from "react-router-dom"
+import { EncryptionPlugin } from "./encryption-plugin"
 
 
 type AuthContextType = {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(() => {
     return auth0.loginWithRedirect({
       openUrl(url) {
-        return Browser.open({ url, windowName: "_self" })
+        return launchBrowserUrl(url)
       },
     })
   }, [auth0])

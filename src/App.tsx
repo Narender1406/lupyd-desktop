@@ -8,6 +8,8 @@ import { Browser } from "@capacitor/browser"
 import { useAuth } from './context/auth-context'
 import { EncryptionPlugin } from './context/encryption-plugin'
 
+import { isTauri } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import CommunityPage from './app/(landing)/community/page'
 import CreatorToolsPage from './app/(landing)/creator-tools/page'
 import ExperiencePage from './app/(landing)/experience/page'
@@ -54,7 +56,7 @@ function App() {
 
     const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
 
-    const listener = CapApp.addListener("appUrlOpen", async ({ url }) => {
+    const onDeeplinkUrl = async ({ url }: { url: string }) => {
       console.log(`RECEIVED A DEEPLINK ${url}`)
       if (url.startsWith(redirectUrl)) {
         if (
@@ -71,10 +73,12 @@ function App() {
           search: link.search
         })
       }
-    });
+    };
+
+    const unlisten = isTauri() ? listen("appUrlOpen", (data) => onDeeplinkUrl({ url: data.payload as string })) : CapApp.addListener("appUrlOpen", onDeeplinkUrl).then(e => e.remove);
 
     return () => {
-      listener.then((_) => _.remove())
+      unlisten.then((_) => _())
     }
   }, [handleRedirectCallback]);
 

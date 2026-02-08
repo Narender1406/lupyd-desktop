@@ -42,6 +42,7 @@ sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio", "chrono"] }
 anyhow = "1.0"
 thiserror = "1.0"
 async-trait = "0.1.89"
+tauri-plugin-shell = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"

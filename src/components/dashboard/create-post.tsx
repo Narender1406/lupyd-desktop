@@ -1,13 +1,10 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
-import { UserAvatar } from "../user-avatar"
 import { useNavigate } from "react-router-dom"
-import { CapacitorHttp } from "@capacitor/core"
-  // import { LocalNotifications } from "@capacitor/local-notifications"
+import { UserAvatar } from "../user-avatar"
 
 export function CreatePost() {
   const { username } = useAuth()
@@ -16,25 +13,6 @@ export function CreatePost() {
   const goToCreatePost = () => {
     router("/create-post")
   }
-
-  // async function dosomething() 
-  //  {
-  //   await CapacitorHttp.get({url :"http://192.168.1.4:8080"})
-  //   console.log("doing-------smthng")
-    
-  // }
-  // function showNotification() {
-  //   LocalNotifications.schedule({
-  //     notifications: [
-  //       {
-  //         title: "Hello!",
-  //         body: "This is a test notification.",
-  //         id: 1,
-  //         schedule: { at: new Date(Date.now() + 1000) }, // 1 second later
-  //       },
-  //     ],
-  //   });
-  // }
 
   return (
     <Card className="border-none shadow-sm bg-white dark:bg-black">

@@ -55,7 +55,7 @@ pub fn run() {
             if let Some(url) = args.iter().find(|arg| arg.starts_with("lupyd://")) {
                 log::info!("Deep link received in single-instance: {}", url);
                 // Emit deep link event to frontend
-                if let Err(err) = app.emit("deep-link", url) {
+                if let Err(err) = app.emit("appUrlOpen", url) {
                     log::error!("deep link emit failed: {:?}", err);
                 }
             }

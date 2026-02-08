@@ -1,3 +1,6 @@
+import { Browser } from "@capacitor/browser";
+import { isTauri } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-shell";
 import { clsx, type ClassValue } from "clsx";
 import { CDN_STORAGE, DEFAULT_USER_ICON } from "lupyd-js";
 import { twMerge } from "tailwind-merge";
@@ -187,4 +190,13 @@ export function formatNumber(
   return item
     ? (num / item.value).toFixed(digits).replace(rx, "$1") + item.symbol
     : "0";
+}
+
+
+export function launchBrowserUrl(url: string) {
+  if (isTauri()) {
+    open(url)
+  } else {
+    Browser.open({ url, windowName: "_self" })
+  }
 }
