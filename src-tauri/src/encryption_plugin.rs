@@ -5,6 +5,7 @@ use firefly_signal::{
         group_messages::GroupMessage,
         group_stores::GroupInfo,
         messages::{MessagesStore, UserMessage},
+        setup_pool_from_path,
     },
     group::{UpdateRoleProposalFfi, UpdateUserProposalFfi},
     websocket::{FfiFireflyWsClient, FireflyWsClientCallback},
@@ -282,24 +283,33 @@ impl<R: Runtime> NotificationHandler<R> {
 
 pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    tokio::fs::create_dir_all(&app_data_dir)
+
+    let app_dbs_dir = app_data_dir.join("dbs");
+    tokio::fs::create_dir_all(&app_dbs_dir)
         .await
         .map_err(|e| e.to_string())?;
 
-    let db_path = app_data_dir.join("app.db");
-    let database_url = format!("sqlite:{}", db_path.display());
-    let pool = SqlitePool::connect(&database_url)
+    log::info!("created dir: {:?}", app_dbs_dir);
+
+    let db_path = app_dbs_dir.join("app.db").canonicalize().map_err(|e| e.to_string())?;
+
+    log::info!("using app db path: {}", db_path.display());
+
+    let pool = setup_pool_from_path(&db_path.display().to_string(), 5)
         .await
         .map_err(|e| e.to_string())?;
     app.manage(Arc::new(pool));
 
-    let messages_db_path = app_data_dir.join("user_messages.db");
+    let messages_db_path = app_dbs_dir
+        .join("user_messages.db")
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
     let message_store = MessagesStore::from_path(messages_db_path.to_string_lossy().to_string())
         .await
         .map_err(|e| format!("Failed to create messages store: {}", e))?;
     app.manage(Arc::new(message_store));
 
-    let firefly_db_path = app_data_dir.join("firefly.db");
+    let firefly_db_path = app_dbs_dir.join("firefly.db");
     let app_handle = app.clone();
     let callback = FireflyCallbackHandler::new(app_handle);
 
@@ -323,8 +333,17 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
         .map(char::from)
         .collect();
 
+    let file_server_dir = app_data_dir
+        .join("files")
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
+    tokio::fs::create_dir_all(&file_server_dir)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    log::info!("created dir: {:?}", file_server_dir);
     let file_server = FfiFileServer::create(
-        app_data_dir.to_string_lossy().to_string(),
+        file_server_dir.to_string_lossy().to_string(),
         file_server_token,
     );
 

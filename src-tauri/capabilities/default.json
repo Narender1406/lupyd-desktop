@@ -10,6 +10,8 @@
     "deep-link:default",
     "notification:default",
     "log:default",
-    "shell:default"
+    "shell:default",
+    "fs:default",
+    "opener:default"
   ]
 }

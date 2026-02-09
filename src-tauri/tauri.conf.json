@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:8080",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "make"
+    "beforeBuildCommand": "make build"
   },
   "app": {
     "windows": [
@@ -54,17 +54,8 @@
         ]
       }
     },
-    "notification": {
-      "identifier": "com.lupyd.app"
-    },
-    "fs": {
-      "scope": [
-        "$APPDATA/**",
-        "$APPDATA/decrypted/**"
-      ]
-    },
-    "shell": {
-      "scope": []
-    }
+    "notification": null,
+    "fs": null,
+    "opener": null
   }
 }
