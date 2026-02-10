@@ -7,7 +7,7 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
+import { bGroupMessageToGroupMessage, bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBGroupMessage, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -87,6 +87,39 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
         eventListeners.current.forEach(e => e(dmsg))
       })
 
+    return () => { listener.then(_ => _.remove()) }
+
+  }, [])
+
+
+  useEffect(() => {
+    const onGroupMessage = (data: any) => {
+      if (!isBGroupMessage(data)) {
+        throw Error(`invalid group message received: ${JSON.stringify(data)}`)
+      }
+
+      const groupMessage = bGroupMessageToGroupMessage(data as any)
+
+      {
+
+        const currentPathname = window.location.pathname
+
+        if (!currentPathname.includes(`/groups/${groupMessage.groupId}`)) {
+
+          console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
+
+          if (groupMessage.sender != auth.username) {
+            console.warn("should show group message here")
+          }
+        }
+      }
+
+      groupEventListeners.current.forEach(e => e(groupMessage))
+
+    }
+
+
+    const listener = EncryptionPlugin.addListener("onGroupMessage", onGroupMessage)
     return () => { listener.then(_ => _.remove()) }
 
   }, [])
