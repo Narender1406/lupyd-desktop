@@ -25,10 +25,10 @@ type Database = SqlitePool;
 
 struct Constants;
 impl Constants {
-    const FIREFLY_API_URL: &'static str = "https://api.lupyd.com";
-    const FIREFLY_WS_URL: &'static str = "wss://ws.lupyd.com";
-    const AUTH0_DOMAIN: &'static str = "lupyd.us.auth0.com";
-    const AUTH0_CLIENT_ID: &'static str = "your_client_id";
+    const FIREFLY_API_URL: &'static str = env!("NEXT_PUBLIC_JS_ENV_CHAT_API_URL");
+    const FIREFLY_WS_URL: &'static str = env!("NEXT_PUBLIC_JS_ENV_CHAT_WEBSOCKET_URL");
+    const AUTH0_DOMAIN: &'static str = env!("NEXT_PUBLIC_JS_ENV_AUTH0_DOMAIN");
+    const AUTH0_CLIENT_ID: &'static str = env!("NEXT_PUBLIC_JS_ENV_AUTH0_CLIENT_ID");
 }
 
 #[derive(Debug, Clone)]
@@ -291,7 +291,7 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
 
     log::info!("created dir: {:?}", app_dbs_dir);
 
-    let db_path = app_dbs_dir.join("app.db").canonicalize().map_err(|e| e.to_string())?;
+    let db_path = app_dbs_dir.join("app.db");
 
     log::info!("using app db path: {}", db_path.display());
 
@@ -300,10 +300,7 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
         .map_err(|e| e.to_string())?;
     app.manage(Arc::new(pool));
 
-    let messages_db_path = app_dbs_dir
-        .join("user_messages.db")
-        .canonicalize()
-        .map_err(|e| e.to_string())?;
+    let messages_db_path = app_dbs_dir.join("user_messages.db");
     let message_store = MessagesStore::from_path(messages_db_path.to_string_lossy().to_string())
         .await
         .map_err(|e| format!("Failed to create messages store: {}", e))?;
@@ -333,10 +330,7 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
         .map(char::from)
         .collect();
 
-    let file_server_dir = app_data_dir
-        .join("files")
-        .canonicalize()
-        .map_err(|e| e.to_string())?;
+    let file_server_dir = app_data_dir.join("files");
     tokio::fs::create_dir_all(&file_server_dir)
         .await
         .map_err(|e| e.to_string())?;

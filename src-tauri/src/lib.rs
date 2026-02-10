@@ -133,3 +133,16 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_env_vars() {
+        let api_url = env!("NEXT_PUBLIC_JS_ENV_CHAT_API_URL");
+        assert!(
+            !api_url.is_empty(),
+            "NEXT_PUBLIC_JS_ENV_CHAT_API_URL should not be empty"
+        );
+        println!("NEXT_PUBLIC_JS_ENV_CHAT_API_URL: {}", api_url);
+    }
+}
