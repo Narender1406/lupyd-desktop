@@ -322,7 +322,9 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
     )
     .await
     .map_err(|e| format!("Failed to create firefly client: {}", e))?;
-    app.manage(Arc::new(client));
+
+    let client = Arc::new(client);
+    app.manage(client.clone());
 
     let file_server_token: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -349,6 +351,13 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
     });
 
     app.manage(file_server);
+
+    tokio::spawn(async move {
+        if let Err(err) = client.initialize_with_retrying().await {
+            log::error!("retry initing failed: {:?}", err);
+        }
+    });
+
     Ok(())
 }
 
@@ -449,7 +458,7 @@ pub async fn encrypt_and_send<R: Runtime>(
     let store = store_state.inner().clone();
 
     let b_user_message = user_message_to_b_user_message(&user_message);
-    let _ = store.insert_user_message(user_message);
+    let _ = store.insert_user_message(user_message).await;
 
     Ok(b_user_message)
 }
