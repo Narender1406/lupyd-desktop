@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EncryptionPlugin } from "@/context/encryption-plugin"
 import { useState } from "react"
+import { fromBase64 } from "@/lib/utils"
+import { protos } from "firefly-client-js"
 
 interface CreateChannelDialogProps {
     open: boolean
@@ -32,14 +34,21 @@ export function CreateChannelDialog({ open, onOpenChange, groupId, onSuccess }: 
 
         setCreating(true)
         try {
+
+        const extensionB64 = await EncryptionPlugin.getGroupExtension({ groupId })
+            const extension = protos.FireflyGroupExtension.decode(fromBase64(extensionB64.resultB64))
+
+            const channelId = extension.channels.reduce((max, channel) => Math.max(max, channel.id), 0) + 1
+
+
             await EncryptionPlugin.updateGroupChannel({
                 groupId,
-                id: Date.now(), // Use timestamp as unique ID
+                id: channelId, 
                 delete: false,
                 name: name.trim(),
                 channelTy: Number(channelType),
                 defaultPermissions: 0, // Default permissions
-            })
+            })            
 
             // Reset form
             setName("")
