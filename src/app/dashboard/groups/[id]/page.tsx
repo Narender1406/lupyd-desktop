@@ -100,8 +100,8 @@ export default function GroupChannelListPage() {
                 <TooltipTrigger asChild>
                   <button
                     className={`h-12 w-12 flex items-center justify-center rounded-2xl transition-all border ${group.groupId === Number(id)
-                        ? "rounded-xl bg-primary text-primary-foreground"
-                        : "bg-white hover:rounded-xl hover:bg-primary hover:text-primary-foreground"
+                      ? "rounded-xl bg-primary text-primary-foreground"
+                      : "bg-white hover:rounded-xl hover:bg-primary hover:text-primary-foreground"
                       }`}
                     onClick={() => handleSelectGroup(group.groupId)}
                     aria-label={`Open ${group.name}`}
@@ -203,6 +203,7 @@ export default function GroupChannelListPage() {
               Settings
             </Button>
           </div>
+          <div className="h-16 shrink-0" />
         </aside>
 
         {/* Desktop: Welcome/Empty State */}
@@ -246,8 +247,8 @@ export default function GroupChannelListPage() {
                         key={group.groupId}
                         onClick={() => handleSelectGroup(group.groupId)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${group.groupId === Number(id)
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-gray-100"
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-gray-100"
                           }`}
                       >
                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${group.groupId === Number(id) ? "bg-primary-foreground/20" : "bg-gray-200"
