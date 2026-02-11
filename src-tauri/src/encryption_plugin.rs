@@ -821,6 +821,19 @@ pub async fn update_group_channel<R: Runtime>(
 }
 
 #[command]
+pub async fn delete_group<R: Runtime>(app: AppHandle<R>, group_id: u64) -> Result<(), String> {
+    let client_state: State<FireflyClient> = app.state();
+    let client = client_state.inner().clone();
+
+    client
+        .delete_group(group_id)
+        .await
+        .map_err(|e| format!("Failed to delete group: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
 pub async fn update_group_roles<R: Runtime>(
     app: AppHandle<R>,
     group_id: u64,

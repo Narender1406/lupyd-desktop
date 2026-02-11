@@ -22,6 +22,7 @@ pub fn run() {
             encryption_plugin::mark_as_read_until,
             encryption_plugin::show_user_notification,
             encryption_plugin::show_call_notification,
+            encryption_plugin::delete_group,
             // encryption_plugin::request_all_required_permissions,
             encryption_plugin::handle_message,
             encryption_plugin::get_file_server_url,

@@ -116,6 +116,10 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
     return await invoke('get_group_infos');
   }
 
+  async deleteGroup(options: { groupId: number }): Promise<void> {
+    return await invoke('delete_group', { groupId: options.groupId });
+  }
+
   async getGroupInfoAndExtension(options: { groupId: number }): Promise<BGroupInfo & { extensionB64: string }> {
     return await invoke('get_group_info_and_extension', { groupId: options.groupId });
   }

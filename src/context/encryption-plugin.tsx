@@ -199,6 +199,8 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   addGroupMember(options: { groupId: number, username: string, roleId: number }): Promise<void>
 
   kickGroupMember(options: { groupId: number, username: string }): Promise<void>
+
+  deleteGroup(options: { groupId: number }): Promise<void>
 };
 
 // Check if running in Tauri environment
