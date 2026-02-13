@@ -13,13 +13,16 @@ import { UserImageProvider } from "@/context/user-image-context"
 import { App as CapacitorApp } from '@capacitor/app'
 
 // Handle Android back button
-CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-  if (canGoBack) {
-    window.history.back();
-  } else {
-    CapacitorApp.exitApp();
-  }
-});
+if (!isTauri()) {
+  CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+    if (canGoBack) {
+      window.history.back();
+    } else {
+      CapacitorApp.exitApp();
+    }
+  });
+
+}
 
 // No status bar configuration - letting native theme control it completely
 // All JS calls removed as per instructions
@@ -30,6 +33,7 @@ import { QueryClientProviderWrapper } from "@/context/query-client"
 import FireflyProvider from './context/firefly-context.tsx'
 import { BrowserRouter } from "react-router-dom"
 import { Toaster } from "@/components/ui/toaster"
+import { isTauri } from "@tauri-apps/api/core"
 
 
 createRoot(document.getElementById('root')!).render(

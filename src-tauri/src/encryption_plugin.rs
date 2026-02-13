@@ -13,10 +13,12 @@ use firefly_signal::{
 };
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
-use sqlx::{Row, SqlitePool};
+use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
 use tauri_plugin_notification::NotificationExt;
+
+use crate::notification::{NotificationHandler, NotificationStore};
 
 type FireflyClient = Arc<FfiFireflyWsClient>;
 type MessageStore = Arc<MessagesStore>;
@@ -29,14 +31,6 @@ impl Constants {
     const FIREFLY_WS_URL: &'static str = env!("NEXT_PUBLIC_JS_ENV_CHAT_WEBSOCKET_URL");
     const AUTH0_DOMAIN: &'static str = env!("NEXT_PUBLIC_JS_ENV_AUTH0_DOMAIN");
     const AUTH0_CLIENT_ID: &'static str = env!("NEXT_PUBLIC_JS_ENV_AUTH0_CLIENT_ID");
-}
-
-#[derive(Debug, Clone)]
-struct MessageNotification {
-    msg_id: i64,
-    other: String,
-    text: Vec<u8>,
-    sent_by_me: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -149,136 +143,6 @@ pub struct GroupInfosResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConversationsResponse {
     result: Vec<Conversation>,
-}
-
-struct NotificationStore {
-    pool: SqlitePool,
-}
-
-impl NotificationStore {
-    async fn new(pool: SqlitePool) -> Result<Self, String> {
-        let store = Self { pool };
-        store.init_tables().await?;
-        Ok(store)
-    }
-
-    async fn init_tables(&self) -> Result<(), String> {
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS user_message_notifications (
-                msg_id INTEGER NOT NULL,
-                other TEXT NOT NULL,
-                text BLOB NOT NULL,
-                sent_by_me BOOLEAN NOT NULL,
-                PRIMARY KEY (other, msg_id)
-            )",
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    async fn get_from_user(
-        &self,
-        user: &str,
-        limit: i32,
-    ) -> Result<Vec<MessageNotification>, String> {
-        let rows = sqlx::query(
-            "SELECT msg_id, other, text, sent_by_me FROM user_message_notifications WHERE other = ? ORDER BY msg_id LIMIT ?"
-        )
-        .bind(user)
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| e.to_string())?;
-
-        let notifications = rows
-            .into_iter()
-            .map(|row| MessageNotification {
-                msg_id: row.get("msg_id"),
-                other: row.get("other"),
-                text: row.get("text"),
-                sent_by_me: row.get("sent_by_me"),
-            })
-            .collect();
-
-        Ok(notifications)
-    }
-
-    async fn put(&self, notification: &MessageNotification) -> Result<(), String> {
-        sqlx::query(
-            "INSERT OR REPLACE INTO user_message_notifications (msg_id, other, text, sent_by_me) VALUES (?, ?, ?, ?)"
-        )
-        .bind(notification.msg_id)
-        .bind(&notification.other)
-        .bind(&notification.text)
-        .bind(notification.sent_by_me)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    async fn delete_all(&self) -> Result<(), String> {
-        sqlx::query("DELETE FROM user_message_notifications")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    async fn delete_until_of_sender(&self, sender: &str, message_id: i64) -> Result<(), String> {
-        sqlx::query("DELETE FROM user_message_notifications WHERE other = ? AND msg_id <= ?")
-            .bind(sender)
-            .bind(message_id)
-            .execute(&self.pool)
-            .await
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-}
-
-struct NotificationHandler<R: Runtime> {
-    app_handle: AppHandle<R>,
-    store: NotificationStore,
-}
-
-impl<R: Runtime> NotificationHandler<R> {
-    fn new(app_handle: AppHandle<R>, store: NotificationStore) -> Self {
-        Self { app_handle, store }
-    }
-
-    async fn show_user_bundled_notification(&self, msg: &UserMessage) -> Result<(), String> {
-        self.add_message_to_history(msg).await?;
-        let messages = self.store.get_from_user(&msg.other, 6).await?;
-
-        self.app_handle
-            .notification()
-            .builder()
-            .title(format!("Message from {}", msg.other))
-            .body(format!(
-                "{} new message{}",
-                messages.len(),
-                if messages.len() == 1 { "" } else { "s" }
-            ))
-            .show()
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
-    async fn add_message_to_history(&self, msg: &UserMessage) -> Result<(), String> {
-        let notification = MessageNotification {
-            msg_id: msg.id as i64,
-            other: msg.other.clone(),
-            text: msg.message.clone(),
-            sent_by_me: !msg.sent_by_other,
-        };
-        self.store.put(&notification).await
-    }
-
-    async fn clear_all(&self) -> Result<(), String> {
-        self.store.delete_all().await
-    }
 }
 
 pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {

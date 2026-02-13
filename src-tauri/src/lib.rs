@@ -1,13 +1,23 @@
-use tauri::menu::{Menu, MenuItem};
-use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 mod encryption_plugin;
+mod notification;
+
+#[cfg(desktop)]
+use tauri_plugin_single_instance;
+
+// pub const IS_DESKTOP: bool = cfg!(any(
+//     target_os = "linux",
+//     target_os = "windows",
+//     target_os = "macos"
+// ));
+
+pub const IS_DESKTOP: bool = cfg!(desktop);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         // .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
@@ -43,8 +53,11 @@ pub fn run() {
             encryption_plugin::kick_group_member,
             encryption_plugin::clear_notifications,
             encryption_plugin::test_method,
-        ])
-        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+        ]);
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             log::info!("Single Instance Args: {:?}", args);
             // Check for deep link in args
             if let Some(url) = args.iter().find(|arg| arg.starts_with("lupyd://")) {
@@ -59,26 +72,32 @@ pub fn run() {
                 let _ = w.show();
                 let _ = w.set_focus();
             }
-        }))
-        .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
+        }));
+    }
+
+    builder = builder.setup(|app| {
+        if cfg!(debug_assertions) {
+            app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .build(),
+            )?;
+        }
+
+        // Initialize firefly client and file server
+        let app_handle = app.handle().clone();
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) = encryption_plugin::initialize_firefly_client(&app_handle).await {
+                log::error!("Failed to initialize firefly client: {}", e);
+            } else {
+                log::info!("Firefly client initialized successfully");
             }
+        });
 
-            // Initialize firefly client and file server
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = encryption_plugin::initialize_firefly_client(&app_handle).await {
-                    log::error!("Failed to initialize firefly client: {}", e);
-                } else {
-                    log::info!("Firefly client initialized successfully");
-                }
-            });
-
+        #[cfg(desktop)]
+        {
+            use tauri::menu::{Menu, MenuItem};
+            use tauri::tray::{TrayIconBuilder, TrayIconEvent};
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i]).unwrap();
 
@@ -115,22 +134,32 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+        }
 
+        #[cfg(desktop)]
+        {
             app.deep_link().register_all()?;
             app.deep_link().register("lupyd")?;
-
             log::info!("Deep link scheme registered: lupyd");
-            log::info!("Lupyd Desktop initialized successfully");
+        }
 
-            Ok(())
-        })
-        .on_window_event(|window, event| {
+        log::info!("Lupyd Desktop initialized successfully");
+
+        Ok(())
+    });
+
+    #[cfg(desktop)]
+    {
+        builder = builder.on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 // Hide to tray instead of closing
                 api.prevent_close();
                 let _ = window.hide();
             }
-        })
+        });
+    }
+
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
