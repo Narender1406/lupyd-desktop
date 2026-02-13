@@ -7,6 +7,7 @@ export default function TermsOfUse() {
     { id: "introduction", title: "Introduction" },
     { id: "user-accounts", title: "User Accounts" },
     { id: "acceptable-use", title: "Acceptable Use" },
+    { id: "csam-policy", title: "Child Safety & CSAM Policy" },
     { id: "intellectual-property", title: "Intellectual Property" },
     { id: "user-content", title: "User Content" },
     { id: "limitation-liability", title: "Limitation of Liability" },
@@ -170,6 +171,112 @@ export default function TermsOfUse() {
               </ul>
             </section>
 
+            {/* Child Safety & CSAM Policy */}
+            <section id="csam-policy">
+              <h2 className="text-3xl font-bold mb-4 text-black dark:text-white">Child Safety & CSAM Policy</h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                Lupyd has a <strong>zero-tolerance policy</strong> for Child Sexual Abuse Material (CSAM) and any content
+                that exploits or endangers children. We are committed to maintaining a safe environment and protecting minors
+                from harm.
+              </p>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-3 text-black dark:text-white">Prohibited Content</h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                  The following activities are strictly prohibited on our platform:
+                </p>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Uploading, sharing, or distributing any form of CSAM</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Creating, possessing, or transmitting sexually explicit content involving minors</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Grooming, soliciting, or attempting to exploit children</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Sharing content that sexualizes minors in any way</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Facilitating or promoting child exploitation</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-3 text-black dark:text-white">Our Commitment</h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                  We actively monitor our platform and take immediate action when CSAM or child exploitation is detected:
+                </p>
+                <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Immediate removal of all CSAM content</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Permanent account termination for violators</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Reporting to the National Center for Missing & Exploited Children (NCMEC)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Cooperation with law enforcement agencies worldwide</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>Preservation of evidence for legal proceedings</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-600 p-4 mb-6">
+                <h3 className="text-xl font-bold mb-2 text-red-800 dark:text-red-400">Reporting CSAM</h3>
+                <p className="text-gray-800 dark:text-gray-200 leading-relaxed mb-3">
+                  If you encounter any content that may constitute CSAM or child exploitation, please report it immediately:
+                </p>
+                <ul className="space-y-2 text-gray-800 dark:text-gray-200">
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>
+                      <strong>Email:</strong>{" "}
+                      <a href="mailto:complaint@lupyd.com" className="underline hover:no-underline">
+                        complaint@lupyd.com
+                      </a>
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 font-bold">•</span>
+                    <span>
+                      <strong>NCMEC CyberTipline:</strong>{" "}
+                      <a
+                        href="https://www.cybertipline.org"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:no-underline"
+                      >
+                        www.cybertipline.org
+                      </a>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                <strong>Legal Consequences:</strong> Violations of this policy may result in criminal prosecution.
+                CSAM-related offenses are serious crimes punishable by imprisonment and other severe penalties under
+                federal and international law.
+              </p>
+            </section>
+
             {/* Intellectual Property */}
             <section id="intellectual-property">
               <h2 className="text-3xl font-bold mb-4 text-black dark:text-white">Intellectual Property Rights</h2>
@@ -299,7 +406,7 @@ export default function TermsOfUse() {
 
                 <h4 className="font-bold text-sm mb-2 text-black dark:text-white">Mailing Address</h4>
                 <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                  Lupyd 
+                  Lupyd
                   <br />
                   khanapuram
                   <br />
