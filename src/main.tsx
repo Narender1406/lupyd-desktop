@@ -24,9 +24,6 @@ if (!isTauri()) {
 
 }
 
-// No status bar configuration - letting native theme control it completely
-// All JS calls removed as per instructions
-
 import { ApiServiceProvider } from "@/context/apiService"
 import { PersistenceProvider } from "@/context/persistence-provider"
 import { QueryClientProviderWrapper } from "@/context/query-client"

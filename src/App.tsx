@@ -7,6 +7,7 @@ import { App as CapApp } from "@capacitor/app"
 import { Browser } from "@capacitor/browser"
 import { useAuth } from './context/auth-context'
 import { EncryptionPlugin } from './context/encryption-plugin'
+import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link"
 
 import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -49,31 +50,33 @@ function App() {
   const auth = useAuth();
 
 
+  const onDeeplinkUrl = async ({ url }: { url: string }) => {
+    const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
+    console.log(`RECEIVED A DEEPLINK ${url}`)
+    if (url.startsWith(redirectUrl)) {
+      if (
+        (url.includes("code") || url.includes("error"))
+      ) {
+        await auth.handleRedirectCallback(url)
+      }
 
+      if (!isTauri()) {
+        await Browser.close();
+      }
+
+    } else if (url.startsWith("lupyd://m.lupyd.com")) {
+      const link = new URL(url)
+      navigate({
+        pathname: link.pathname,
+        search: link.search
+      })
+    }
+  };
+
+  useEffect(() => { EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic", "notification"] }) })
 
   useEffect(() => {
-    EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic", "notification"] })
 
-    const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
-
-    const onDeeplinkUrl = async ({ url }: { url: string }) => {
-      console.log(`RECEIVED A DEEPLINK ${url}`)
-      if (url.startsWith(redirectUrl)) {
-        if (
-          (url.includes("code") || url.includes("error"))
-        ) {
-          await auth.handleRedirectCallback(url)
-        }
-
-        await Browser.close();
-      } else if (url.startsWith("lupyd://m.lupyd.com")) {
-        const link = new URL(url)
-        navigate({
-          pathname: link.pathname,
-          search: link.search
-        })
-      }
-    };
 
     const unlisten = isTauri() ? listen("appUrlOpen", (data) => onDeeplinkUrl({ url: data.payload as string })) : CapApp.addListener("appUrlOpen", onDeeplinkUrl).then(e => e.remove);
 
@@ -87,18 +90,23 @@ function App() {
 
   useEffect(() => {
     (async () => {
+
+      if (isTauri()) {
+        const startUrls = await getCurrent();
+
+        if (startUrls && startUrls.length > 0) {
+          for (const url of startUrls) {
+            onDeeplinkUrl({ url })
+          }
+        }
+      }
+
+
       const url = await CapApp.getLaunchUrl()
       if (!url) {
         return
       }
-
-      if (url.url.startsWith("lupyd://m.lupyd.com")) {
-        const link = new URL(url.url)
-        navigate({
-          pathname: link.pathname,
-          search: link.search
-        })
-      }
+      onDeeplinkUrl(url)
     })()
   }, [])
 

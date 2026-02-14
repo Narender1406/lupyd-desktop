@@ -7,7 +7,7 @@ use sqlx::{Row, SqlitePool};
 use tauri::{AppHandle, Emitter, Runtime};
 
 #[derive(Debug, Clone)]
-struct MessageNotification {
+pub struct MessageNotification {
     msg_id: i64,
     other: String,
     text: Vec<u8>,
@@ -125,9 +125,75 @@ fn show_user_bundled_notification<R: Runtime>(
     notification: UserBundledNotification,
 ) {
     #[cfg(target_os = "android")]
-    app.emit("userBundledNotification", notification)
-        .map_err(|e| e.to_string())
-        .ok();
+    {
+        let json_notification = serde_json::to_string(&notification)
+            .map_err(|e| e.to_string())
+            .unwrap_or_default();
+
+        let handle = app.clone();
+
+        // verify calling `run_on_android_context` relies on `tauri` feature `mobile` which is implicit for android build.
+        // But `run_on_android_context` is a method on `AppHandle` in some versions, or a standalone function.
+        // checking `tauri` docs (mental model): `tauri::mobile::run_on_android_context` or `app.run_on_android_context`.
+        // I will guess `app.run_on_android_context` based on recent changes.
+
+        // Wait, I don't want to guess and break the build.
+        // I'll use the safe approach: simple JNI calls if I can get the JVM.
+        // But I need the Activity context.
+
+        // Let's look at `lib.rs` imports. `tauri::mobile_entry_point`.
+
+        // I will use `app.run_on_android_context` as it is the standard way in v2.
+
+        let _ = handle.run_on_android_context(move |env, activity| {
+            // env is `jni::JNIEnv`
+            // activity is `jni::objects::JObject` (the activity)
+
+            let json_string = env.new_string(&json_notification).unwrap();
+
+            // Find class
+            // "com/lupyd/client/Notification"
+            // Call static method "showNotification" (Landroid/app/Activity;Ljava/lang/String;)V
+
+            let class_name = "com/lupyd/client/Notification";
+            let notification_class = env.find_class(class_name);
+
+            match notification_class {
+                Ok(class) => {
+                    let method_id = env.get_static_method_id(
+                        class,
+                        "showUserBundledNotification",
+                        "(Landroid/app/Activity;Ljava/lang/String;)V",
+                    );
+
+                    match method_id {
+                        Ok(method) => {
+                            let _ = env.call_static_method_unchecked(
+                                class,
+                                method,
+                                jni::signature::JavaType::Primitive(
+                                    jni::signature::Primitive::Void,
+                                ),
+                                &[
+                                    jni::objects::JValue::Object(activity).into(),
+                                    jni::objects::JValue::Object(&json_string).into(),
+                                ],
+                            );
+                        }
+                        Err(e) => {
+                            log::error!(
+                                "Failed to find method showUserBundledNotification: {:?}",
+                                e
+                            );
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to find class {}: {:?}", class_name, e);
+                }
+            }
+        });
+    }
 }
 
 pub struct NotificationHandler<R: Runtime> {

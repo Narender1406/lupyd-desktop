@@ -2,6 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    
+
+
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
@@ -46,5 +59,43 @@
             android:name="android.support.FILE_PROVIDER_PATHS"
             android:resource="@xml/file_paths" />
         </provider>
+
+
+                <!-- Firebase Messaging Service -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        
+        <!-- Broadcast Receivers for Notification Actions -->
+        <receiver
+            android:name=".ReplyReceiver"
+            android:exported="false" />
+        
+        <receiver
+            android:name=".CallActionReceiver"
+            android:exported="false" />
+        
+        <!-- Native Notification Receivers -->
+        <receiver
+            android:name=".ReplyReceiverNative"
+            android:exported="false" />
+        
+        <receiver
+            android:name=".CallActionReceiverNative"
+            android:exported="false" />
+            
+        <receiver
+            android:name=".MarkAsReadReceiver"
+            android:exported="false" />
+
+        <!-- Notification Channels -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="lupyd_notifications" />
+
     </application>
 </manifest>

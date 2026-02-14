@@ -216,6 +216,7 @@ dependencies = [
  "dotenvy",
  "firefly-protos",
  "firefly-signal",
+ "jni",
  "log",
  "once_cell",
  "rand 0.8.5",
