@@ -69,16 +69,16 @@ dependencies {
 
 
 
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
 
-  implementation("androidx.lifecycle:lifecycle-process:2.10.0")
+  implementation("androidx.lifecycle:lifecycle-process:2.6.2")
 
-  implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.21")
+//   implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.21")
 
   implementation("com.google.protobuf:protobuf-java:4.33.0")
 
-  implementation ("com.google.firebase:firebase-bom:33.1.2")
+  implementation (platform("com.google.firebase:firebase-bom:33.1.2"))
   implementation ("com.google.firebase:firebase-messaging")
 
 

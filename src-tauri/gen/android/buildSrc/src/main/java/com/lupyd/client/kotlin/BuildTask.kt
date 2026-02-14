@@ -63,6 +63,9 @@ open class BuildTask : DefaultTask() {
                 args("--release")
             }
             args(listOf("--target", target))
+            
+            // Pass all environment variables from the current process
+            environment(System.getenv())
         }.assertNormalExitValue()
     }
 }
