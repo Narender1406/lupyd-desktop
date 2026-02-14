@@ -8,15 +8,22 @@ use firefly_signal::{
         setup_pool_from_path,
     },
     group::{UpdateRoleProposalFfi, UpdateUserProposalFfi},
-    websocket::{FfiFireflyWsClient, FireflyWsClientCallback},
+    websocket::{ConnectionState, FfiFireflyWsClient, FireflyWsClientCallback},
     *,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{command, AppHandle, Emitter, Manager, Runtime, State};
 use tauri_plugin_notification::NotificationExt;
+use tokio::sync::{broadcast, OnceCell};
+
+#[cfg(target_os = "android")]
+use jni::objects::{JClass, JString};
+#[cfg(target_os = "android")]
+use jni::JNIEnv;
 
 use crate::notification::{NotificationHandler, NotificationStore};
 
@@ -24,6 +31,26 @@ type FireflyClient = Arc<FfiFireflyWsClient>;
 type MessageStore = Arc<MessagesStore>;
 type FileServer = Arc<FfiFileServer>;
 type Database = SqlitePool;
+
+static DATABASE: OnceCell<Database> = OnceCell::const_new();
+static MESSAGE_STORE: OnceCell<MessageStore> = OnceCell::const_new();
+static FIREFLY_CLIENT: OnceCell<FireflyClient> = OnceCell::const_new();
+static FILE_SERVER: OnceCell<FileServer> = OnceCell::const_new();
+
+// Using once_cell::sync::Lazy for the event channel as it doesn't require async initialization
+// and is simple to use for this purpose.
+use once_cell::sync::Lazy;
+
+static EVENT_CHANNEL: Lazy<broadcast::Sender<FireflyEvent>> = Lazy::new(|| {
+    let (tx, _) = broadcast::channel(100);
+    tx
+});
+
+#[derive(Clone)]
+pub enum FireflyEvent {
+    UserMessage(Arc<UserMessage>),
+    GroupMessage(Arc<GroupMessage>),
+}
 
 struct Constants;
 impl Constants {
@@ -55,7 +82,7 @@ pub struct Conversation {
     settings: u64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BUserMessage {
     id: u64,
     other: String,
@@ -65,7 +92,7 @@ pub struct BUserMessage {
     text_b64: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BGroupMessage {
     sender: String,
     #[serde(rename = "groupId")]
@@ -145,9 +172,8 @@ pub struct ConversationsResponse {
     result: Vec<Conversation>,
 }
 
-pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
-    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-
+pub async fn initialize_firefly_client(app_data_dir: String) -> Result<(), String> {
+    let app_data_dir = PathBuf::from(app_data_dir);
     let app_dbs_dir = app_data_dir.join("dbs");
     tokio::fs::create_dir_all(&app_dbs_dir)
         .await
@@ -155,120 +181,157 @@ pub async fn initialize_firefly_client<R: Runtime>(app: &AppHandle<R>) -> Result
 
     log::info!("created dir: {:?}", app_dbs_dir);
 
-    let db_path = app_dbs_dir.join("app.db");
+    // Initialize Database
+    DATABASE
+        .get_or_try_init(|| async {
+            let db_path = app_dbs_dir.join("app.db");
+            log::info!("using app db path: {}", db_path.display());
+            setup_pool_from_path(&db_path.display().to_string(), 5)
+                .await
+                .map_err(|e| e.to_string())
+        })
+        .await?;
 
-    log::info!("using app db path: {}", db_path.display());
+    // Initialize Message Store
+    MESSAGE_STORE
+        .get_or_try_init(|| async {
+            let messages_db_path = app_dbs_dir.join("user_messages.db");
+            let store = MessagesStore::from_path(messages_db_path.to_string_lossy().to_string())
+                .await
+                .map_err(|e| format!("Failed to create messages store: {}", e))?;
+            Ok::<Arc<MessagesStore>, String>(Arc::new(store))
+        })
+        .await?;
 
-    let pool = setup_pool_from_path(&db_path.display().to_string(), 5)
-        .await
-        .map_err(|e| e.to_string())?;
-    app.manage(Arc::new(pool));
+    // Initialize Firefly Client
+    let client = FIREFLY_CLIENT
+        .get_or_try_init(|| async {
+            let firefly_db_path = app_dbs_dir.join("firefly.db");
+            let callback = GlobalFireflyCallback;
 
-    let messages_db_path = app_dbs_dir.join("user_messages.db");
-    let message_store = MessagesStore::from_path(messages_db_path.to_string_lossy().to_string())
-        .await
-        .map_err(|e| format!("Failed to create messages store: {}", e))?;
-    app.manage(Arc::new(message_store));
+            let client = FfiFireflyWsClient::create(
+                Constants::FIREFLY_API_URL.to_string(),
+                Constants::FIREFLY_WS_URL.to_string(),
+                1000,
+                Box::new(callback),
+                firefly_db_path.to_string_lossy().to_string(),
+                5000,
+                Constants::AUTH0_CLIENT_ID.to_string(),
+                Constants::AUTH0_DOMAIN.to_string(),
+            )
+            .await
+            .map_err(|e| format!("Failed to create firefly client: {}", e))?;
 
-    let firefly_db_path = app_dbs_dir.join("firefly.db");
-    let app_handle = app.clone();
-    let callback = FireflyCallbackHandler::new(app_handle);
+            Ok::<Arc<FfiFireflyWsClient>, String>(Arc::new(client))
+        })
+        .await?;
 
-    let client = FfiFireflyWsClient::create(
-        Constants::FIREFLY_API_URL.to_string(),
-        Constants::FIREFLY_WS_URL.to_string(),
-        1000,
-        Box::new(callback),
-        firefly_db_path.to_string_lossy().to_string(),
-        5000,
-        Constants::AUTH0_CLIENT_ID.to_string(),
-        Constants::AUTH0_DOMAIN.to_string(),
-    )
-    .await
-    .map_err(|e| format!("Failed to create firefly client: {}", e))?;
+    // Initialize File Server
+    FILE_SERVER
+        .get_or_try_init(|| async {
+            let file_server_token: String = rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(32)
+                .map(char::from)
+                .collect();
 
-    let client = Arc::new(client);
-    app.manage(client.clone());
+            let file_server_dir = app_data_dir.join("files");
+            tokio::fs::create_dir_all(&file_server_dir)
+                .await
+                .map_err(|e| e.to_string())?;
 
-    let file_server_token: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
+            log::info!("created dir: {:?}", file_server_dir);
+            let file_server = FfiFileServer::create(
+                file_server_dir.to_string_lossy().to_string(),
+                file_server_token,
+            );
 
-    let file_server_dir = app_data_dir.join("files");
-    tokio::fs::create_dir_all(&file_server_dir)
-        .await
-        .map_err(|e| e.to_string())?;
+            let file_server = Arc::new(file_server);
+            let server_clone = file_server.clone();
+            tokio::spawn(async move {
+                let _ = server_clone.start_serving(None).await;
+            });
 
-    log::info!("created dir: {:?}", file_server_dir);
-    let file_server = FfiFileServer::create(
-        file_server_dir.to_string_lossy().to_string(),
-        file_server_token,
-    );
+            Ok::<Arc<FfiFileServer>, String>(file_server)
+        })
+        .await?;
 
-    let file_server = Arc::new(file_server);
-
-    let server_clone = file_server.clone();
+    // Initialize client connection
+    let client_clone = client.clone();
     tokio::spawn(async move {
-        let _ = server_clone.start_serving(None).await;
-    });
-
-    app.manage(file_server);
-
-    tokio::spawn(async move {
-        if let Err(err) = client.initialize_with_retrying().await {
-            log::error!("retry initing failed: {:?}", err);
+        if matches!(
+            client_clone.get_connection_state(),
+            ConnectionState::Disconnected
+        ) {
+            if let Err(err) = client_clone.initialize_with_retrying().await {
+                log::error!("retry initing failed: {:?}", err);
+            }
         }
     });
 
     Ok(())
 }
 
-struct FireflyCallbackHandler<R: Runtime> {
-    app_handle: AppHandle<R>,
+pub fn register_state<R: Runtime>(app: &AppHandle<R>) {
+    // Register Database
+    if let Some(db) = DATABASE.get() {
+        app.manage(db.clone());
+    }
+
+    // Register Message Store
+    if let Some(store) = MESSAGE_STORE.get() {
+        app.manage(store.clone());
+    }
+
+    // Register Firefly Client
+    if let Some(client) = FIREFLY_CLIENT.get() {
+        app.manage(client.clone());
+    }
+
+    // Register File Server
+    if let Some(server) = FILE_SERVER.get() {
+        app.manage(server.clone());
+    }
+
+    // Spawn event listener
+    let mut rx = EVENT_CHANNEL.subscribe();
+    let app_handle = app.clone();
+
+    tauri::async_runtime::spawn(async move {
+        while let Ok(event) = rx.recv().await {
+            match event {
+                FireflyEvent::UserMessage(user_message) => {
+                    let b_message = user_message_to_b_user_message(&user_message);
+                    let _ = app_handle.emit("onUserMessage", &b_message);
+
+                    let app_handle_clone = app_handle.clone();
+                    if let Some(pool) = DATABASE.get() {
+                        if let Ok(store) = NotificationStore::new(pool.clone()).await {
+                            let handler = NotificationHandler::new(app_handle_clone, store);
+                            // Pass the original UserMessage (dereferenced from Arc)
+                            let _ = handler.show_user_bundled_notification(&user_message).await;
+                        }
+                    }
+                }
+                FireflyEvent::GroupMessage(group_message) => {
+                    let b_message = group_message_to_b_group_message(&group_message);
+                    let _ = app_handle.emit("onGroupMessage", &b_message);
+                }
+            }
+        }
+    });
 }
 
-impl<R: Runtime> FireflyCallbackHandler<R> {
-    fn new(app_handle: AppHandle<R>) -> Self {
-        Self { app_handle }
-    }
-}
+struct GlobalFireflyCallback;
 
 #[async_trait::async_trait]
-impl<R: Runtime> FireflyWsClientCallback for FireflyCallbackHandler<R> {
+impl FireflyWsClientCallback for GlobalFireflyCallback {
     async fn on_message(&self, message: UserMessage) {
-        let user_message = BUserMessage {
-            id: message.id,
-            other: message.other.clone(),
-            sent_by_other: message.sent_by_other,
-            text_b64: general_purpose::STANDARD.encode(&message.message),
-        };
-
-        let _ = self.app_handle.emit("onUserMessage", &user_message);
-
-        let app_handle = self.app_handle.clone();
-        tauri::async_runtime::spawn(async move {
-            let db_state: State<Database> = app_handle.state();
-            let pool = db_state.inner().clone();
-            if let Ok(store) = NotificationStore::new(pool.clone()).await {
-                let handler = NotificationHandler::new(app_handle, store);
-                let _ = handler.show_user_bundled_notification(&message).await;
-            }
-        });
+        let _ = EVENT_CHANNEL.send(FireflyEvent::UserMessage(Arc::new(message)));
     }
 
     async fn on_group_message(&self, message: GroupMessage) {
-        let group_message = BGroupMessage {
-            sender: message.by.clone(),
-            group_id: message.group_id,
-            text_b64: general_purpose::STANDARD.encode(&message.message),
-            id: message.id,
-            channel_id: message.channel_id,
-            epoch: message.epoch,
-        };
-
-        let _ = self.app_handle.emit("onGroupMessage", &group_message);
+        let _ = EVENT_CHANNEL.send(FireflyEvent::GroupMessage(Arc::new(message)));
     }
 }
 
@@ -834,4 +897,23 @@ pub async fn kick_group_member<R: Runtime>(
         .map_err(|e| format!("Failed to kick group member: {}", e))?;
 
     Ok(())
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "C" fn Java_com_lupyd_client_EncryptionPlugin_initializeFireflyClient(
+    mut env: JNIEnv,
+    _class: JClass,
+    app_data_dir: JString,
+) {
+    let app_data_dir: String = env
+        .get_string(&app_data_dir)
+        .expect("Couldn't get java string!")
+        .into();
+
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = initialize_firefly_client(app_data_dir).await {
+            log::error!("Failed to initialize firefly client from Kotlin: {}", e);
+        }
+    });
 }

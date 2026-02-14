@@ -7,5 +7,8 @@ class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+
+    val filesDir = this.applicationContext.filesDir
+    EncryptionPlugin.initializeFireflyClient(filesDir.absolutePath)
   }
 }

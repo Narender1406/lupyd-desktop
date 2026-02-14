@@ -87,10 +87,23 @@ pub fn run() {
         // Initialize firefly client and file server
         let app_handle = app.handle().clone();
         tauri::async_runtime::spawn(async move {
-            if let Err(e) = encryption_plugin::initialize_firefly_client(&app_handle).await {
+            let app_data_dir = app_handle
+                .path()
+                .app_data_dir()
+                .expect("failed to get app data dir");
+            if let Err(e) = encryption_plugin::initialize_firefly_client(
+                app_data_dir
+                    .canonicalize()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
+            )
+            .await
+            {
                 log::error!("Failed to initialize firefly client: {}", e);
             } else {
                 log::info!("Firefly client initialized successfully");
+                encryption_plugin::register_state(&app_handle);
             }
         });
 
