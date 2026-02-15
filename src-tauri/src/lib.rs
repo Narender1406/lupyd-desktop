@@ -1,4 +1,4 @@
-use tauri::{Emitter, Manager, WindowEvent};
+use tauri::{plugin::Builder, Emitter, Manager, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 mod encryption_plugin;
@@ -33,7 +33,7 @@ pub fn run() {
             encryption_plugin::show_user_notification,
             encryption_plugin::show_call_notification,
             encryption_plugin::delete_group,
-            // encryption_plugin::request_all_required_permissions,
+            encryption_plugin::request_all_required_permissions,
             encryption_plugin::handle_message,
             encryption_plugin::get_file_server_url,
             encryption_plugin::get_last_group_messages,
@@ -73,6 +73,11 @@ pub fn run() {
                 let _ = w.set_focus();
             }
         }));
+    }
+
+    #[cfg(target_os = "android")]
+    {
+        builder = builder.plugin(notification::init_plugin());
     }
 
     builder = builder.setup(|app| {

@@ -2,9 +2,16 @@ use std::sync::Arc;
 
 use firefly_protos::{deserialize_proto, firefly::UserMessageInner};
 use firefly_signal::db::messages::UserMessage;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
-use tauri::{AppHandle, Emitter, Runtime};
+#[cfg(target_os = "android")]
+use tauri::plugin::TauriPlugin;
+use tauri::{
+    plugin::{PluginApi, PluginHandle},
+    AppHandle, Emitter, Manager, Runtime,
+};
+
+use crate::encryption_plugin::DATABASE;
 
 #[derive(Debug, Clone)]
 pub struct MessageNotification {
@@ -124,91 +131,62 @@ fn show_user_bundled_notification<R: Runtime>(
     app: &AppHandle<R>,
     notification: UserBundledNotification,
 ) {
-    #[cfg(target_os = "android")]
-    {
-        let json_notification = serde_json::to_string(&notification)
-            .map_err(|e| e.to_string())
-            .unwrap_or_default();
-
-        let handle = app.clone();
-
-        // verify calling `run_on_android_context` relies on `tauri` feature `mobile` which is implicit for android build.
-        // But `run_on_android_context` is a method on `AppHandle` in some versions, or a standalone function.
-        // checking `tauri` docs (mental model): `tauri::mobile::run_on_android_context` or `app.run_on_android_context`.
-        // I will guess `app.run_on_android_context` based on recent changes.
-
-        // Wait, I don't want to guess and break the build.
-        // I'll use the safe approach: simple JNI calls if I can get the JVM.
-        // But I need the Activity context.
-
-        // Let's look at `lib.rs` imports. `tauri::mobile_entry_point`.
-
-        // I will use `app.run_on_android_context` as it is the standard way in v2.
-
-        let _ = handle.run_on_android_context(move |env, activity| {
-            // env is `jni::JNIEnv`
-            // activity is `jni::objects::JObject` (the activity)
-
-            let json_string = env.new_string(&json_notification).unwrap();
-
-            // Find class
-            // "com/lupyd/client/Notification"
-            // Call static method "showNotification" (Landroid/app/Activity;Ljava/lang/String;)V
-
-            let class_name = "com/lupyd/client/Notification";
-            let notification_class = env.find_class(class_name);
-
-            match notification_class {
-                Ok(class) => {
-                    let method_id = env.get_static_method_id(
-                        class,
-                        "showUserBundledNotification",
-                        "(Landroid/app/Activity;Ljava/lang/String;)V",
-                    );
-
-                    match method_id {
-                        Ok(method) => {
-                            let _ = env.call_static_method_unchecked(
-                                class,
-                                method,
-                                jni::signature::JavaType::Primitive(
-                                    jni::signature::Primitive::Void,
-                                ),
-                                &[
-                                    jni::objects::JValue::Object(activity).into(),
-                                    jni::objects::JValue::Object(&json_string).into(),
-                                ],
-                            );
-                        }
-                        Err(e) => {
-                            log::error!(
-                                "Failed to find method showUserBundledNotification: {:?}",
-                                e
-                            );
-                        }
-                    }
-                }
-                Err(e) => {
-                    log::error!("Failed to find class {}: {:?}", class_name, e);
-                }
-            }
-        });
+    if let Err(err) = app.emit(
+        "plugin:NotificationHandler|showUserBundledNotification",
+        notification,
+    ) {
+        log::error!("failed to invoke showUserBundledNotification {:?}", err);
     }
 }
 
+#[cfg(target_os = "android")]
+pub fn init<R: Runtime, C: DeserializeOwned>(
+    app: &AppHandle<R>,
+    api: PluginApi<R, C>,
+) -> Result<(), String> {
+    const PLUGIN_IDENTIFIER: &str = "com.lupyd.client";
+
+    let handle = api
+        .register_android_plugin(PLUGIN_IDENTIFIER, "NotificationHandlerPlugin")
+        .map_err(|e| e.to_string())?;
+    // #[cfg(target_os = "ios")]
+    // let handle = api.register_ios_plugin(init_plugin_notification)?;
+    let handler = (NotificationHandler {
+        plugin_handle: handle,
+    });
+
+    app.manage(handler);
+
+    Ok(())
+}
+
+#[cfg(target_os = "android")]
+pub fn init_plugin<R: Runtime>() -> TauriPlugin<R> {
+    use tauri::plugin::Builder;
+
+    Builder::new("notification_handler")
+        .setup(|app, api| {
+            init(app, api)?;
+            Ok(())
+        })
+        .build()
+}
+
 pub struct NotificationHandler<R: Runtime> {
-    app_handle: AppHandle<R>,
-    store: NotificationStore,
+    plugin_handle: PluginHandle<R>,
 }
 
 impl<R: Runtime> NotificationHandler<R> {
-    pub fn new(app_handle: AppHandle<R>, store: NotificationStore) -> Self {
-        Self { app_handle, store }
+    pub fn new(plugin_handle: PluginHandle<R>) -> Self {
+        Self { plugin_handle }
     }
 
     pub async fn show_user_bundled_notification(&self, msg: &UserMessage) -> Result<(), String> {
         self.add_message_to_history(msg).await?;
-        let messages = self.store.get_from_user(&msg.other, 6).await?;
+
+        let store = NotificationStore::new(DATABASE.get().unwrap().clone()).await?;
+
+        let messages = store.get_from_user(&msg.other, 6).await?;
 
         let mut notification = UserBundledNotification {
             other: msg.other.clone(),
@@ -242,7 +220,10 @@ impl<R: Runtime> NotificationHandler<R> {
             });
         }
 
-        show_user_bundled_notification(&self.app_handle, notification);
+        #[cfg(target_os = "android")]
+        self.plugin_handle
+            .run_mobile_plugin::<()>("showUserBundledNotification", notification)
+            .map_err(|e| e.to_string())?;
 
         Ok(())
     }
@@ -254,10 +235,20 @@ impl<R: Runtime> NotificationHandler<R> {
             text: msg.message.clone(),
             sent_by_me: !msg.sent_by_other,
         };
-        self.store.put(&notification).await
+        let store = NotificationStore::new(DATABASE.get().unwrap().clone()).await?;
+        store.put(&notification).await
     }
 
     pub async fn clear_all(&self) -> Result<(), String> {
-        self.store.delete_all().await
+        let store = NotificationStore::new(DATABASE.get().unwrap().clone()).await?;
+        store.delete_all().await
+    }
+
+    pub async fn request_all_permissions(&self) -> Result<(), String> {
+        #[cfg(target_os = "android")]
+        self.plugin_handle
+            .run_mobile_plugin::<()>("requestAllPermissions", vec!["POST_NOTIFICATIONS"])
+            .map_err(|e| e.to_string())?;
+        Ok(())
     }
 }

@@ -32,10 +32,10 @@ type MessageStore = Arc<MessagesStore>;
 type FileServer = Arc<FfiFileServer>;
 type Database = SqlitePool;
 
-static DATABASE: OnceCell<Database> = OnceCell::const_new();
-static MESSAGE_STORE: OnceCell<MessageStore> = OnceCell::const_new();
-static FIREFLY_CLIENT: OnceCell<FireflyClient> = OnceCell::const_new();
-static FILE_SERVER: OnceCell<FileServer> = OnceCell::const_new();
+pub static DATABASE: OnceCell<Database> = OnceCell::const_new();
+pub static MESSAGE_STORE: OnceCell<MessageStore> = OnceCell::const_new();
+pub static FIREFLY_CLIENT: OnceCell<FireflyClient> = OnceCell::const_new();
+pub static FILE_SERVER: OnceCell<FileServer> = OnceCell::const_new();
 
 // Using once_cell::sync::Lazy for the event channel as it doesn't require async initialization
 // and is simple to use for this purpose.
@@ -307,7 +307,8 @@ pub fn register_state<R: Runtime>(app: &AppHandle<R>) {
                     let app_handle_clone = app_handle.clone();
                     if let Some(pool) = DATABASE.get() {
                         if let Ok(store) = NotificationStore::new(pool.clone()).await {
-                            let handler = NotificationHandler::new(app_handle_clone, store);
+                            let handler = app_handle.state::<NotificationHandler<R>>();
+
                             // Pass the original UserMessage (dereferenced from Arc)
                             let _ = handler.show_user_bundled_notification(&user_message).await;
                         }
@@ -516,12 +517,8 @@ pub async fn show_call_notification<R: Runtime>(
 
 #[command]
 pub async fn clear_notifications<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    let db_state: State<Database> = app.state();
-    let pool = db_state.inner().clone();
-    if let Ok(store) = NotificationStore::new(pool).await {
-        let handler = NotificationHandler::new(app, store);
-        handler.clear_all().await?;
-    }
+    let handler = app.state::<NotificationHandler<R>>();
+    handler.clear_all().await?;
     Ok(())
 }
 
@@ -540,10 +537,14 @@ pub async fn get_file_server_url<R: Runtime>(
 
 #[command]
 pub async fn request_all_required_permissions<R: Runtime>(
-    _app: AppHandle<R>,
-    permissions: Vec<String>,
+    app: AppHandle<R>,
+    _permissions: Vec<String>,
 ) -> Result<bool, String> {
-    let _ = permissions;
+    app.state::<NotificationHandler<R>>()
+        .request_all_permissions()
+        .await
+        .map_err(|e| format!("Failed to request permissions: {}", e))?;
+
     Ok(true)
 }
 

@@ -78,12 +78,28 @@ function App() {
   useEffect(() => {
 
 
-    const unlisten = isTauri() ? listen("appUrlOpen", (data) => onDeeplinkUrl({ url: data.payload as string })) : CapApp.addListener("appUrlOpen", onDeeplinkUrl).then(e => e.remove);
+    const unlisten = isTauri() ? listen("appUrlOpen", (data) => { console.log({ listenData: data }); onDeeplinkUrl({ url: data.payload as string }) }) : CapApp.addListener("appUrlOpen", onDeeplinkUrl).then(e => e.remove);
 
     return () => {
       unlisten.then((_) => _())
     }
   }, [handleRedirectCallback]);
+
+  useEffect(() => {
+    if (isTauri()) {
+      const unlisten = onOpenUrl((urls) => {
+
+        console.log({ openUrls: urls })
+        for (const url of urls) {
+          onDeeplinkUrl({ url })
+        }
+      })
+
+      return () => {
+        unlisten.then(_ => _())
+      }
+    }
+  }, [handleRedirectCallback])
 
 
   const navigate = useNavigate()
@@ -94,6 +110,7 @@ function App() {
       if (isTauri()) {
         const startUrls = await getCurrent();
 
+        console.log({ startUrls })
         if (startUrls && startUrls.length > 0) {
           for (const url of startUrls) {
             onDeeplinkUrl({ url })

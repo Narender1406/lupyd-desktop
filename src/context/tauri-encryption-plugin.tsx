@@ -77,7 +77,7 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
   }
 
   async requestAllPermissions(options: { permissions: string[] }): Promise<any> {
-    return await invoke('request_all_permissions', {
+    return await invoke('request_all_required_permissions', {
       permissions: options.permissions,
     });
   }

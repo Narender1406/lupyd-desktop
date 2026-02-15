@@ -12,13 +12,33 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.Rect
 import android.content.Context
+import app.tauri.annotation.Command
+import app.tauri.annotation.TauriPlugin
+import app.tauri.plugin.Invoke
+import app.tauri.plugin.JSObject
 
-class Notification(private val activity: Activity): Plugin(activity) {
+
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
+import android.Manifest
+import android.os.Build
+
+@TauriPlugin
+class NotificationHandlerPlugin(private val activity: Activity): Plugin(activity) {
+    private val PERMISSION_REQUEST_CODE = 56789
+    private var pendingPermissionInvoke: Invoke? = null
+    
+    init {
+        instance = java.lang.ref.WeakReference(this)
+    }
+
     companion object {
-        @JvmStatic
-        fun showUserBundledNotification(activity: Activity, json: String) {
+        var instance: java.lang.ref.WeakReference<NotificationHandlerPlugin>? = null
+
+        fun showUserBundledNotificationInner(activity: Activity, jsObj: JSObject) {
             try {
-                val jsonObject = JSONObject(json)
+                val jsonObject = jsObj
                 val other = jsonObject.optString("other", "Unknown")
                 val messagesArray = jsonObject.optJSONArray("messages")
 
@@ -102,4 +122,67 @@ class Notification(private val activity: Activity): Plugin(activity) {
             }
         }
     }
+  
+    @Command
+    fun showUserBundledNotification(invoke: Invoke) {
+      val obj = invoke.getArgs()
+      showUserBundledNotificationInner(activity, obj)
+      invoke.resolve()
+    }
+
+
+    @Command
+    fun requestAllPermissions(invoke: Invoke) {
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+             if (ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                 permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+             }
+        }
+
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.CAMERA)
+        }
+
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+
+        if (permissionsToRequest.isEmpty()) {
+            val ret = JSObject()
+            ret.put("granted", true)
+            invoke.resolve(ret)
+            return
+        }
+
+        pendingPermissionInvoke = invoke
+        ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), PERMISSION_REQUEST_CODE)
+    }
+
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+             if (pendingPermissionInvoke == null) return
+
+             val invoke = pendingPermissionInvoke!!
+             pendingPermissionInvoke = null
+
+             var allGranted = true
+             for (result in grantResults) {
+                 if (result != PackageManager.PERMISSION_GRANTED) {
+                     allGranted = false
+                     break
+                 }
+             }
+
+             if (allGranted) {
+                 val ret = JSObject()
+                 ret.put("granted", true)
+                 invoke.resolve(ret)
+             } else {
+                 invoke.reject("Permissions denied")
+             }
+        }
+    }
+
 }
