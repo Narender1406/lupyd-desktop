@@ -303,16 +303,6 @@ pub fn register_state<R: Runtime>(app: &AppHandle<R>) {
                 FireflyEvent::UserMessage(user_message) => {
                     let b_message = user_message_to_b_user_message(&user_message);
                     let _ = app_handle.emit("onUserMessage", &b_message);
-
-                    let app_handle_clone = app_handle.clone();
-                    if let Some(pool) = DATABASE.get() {
-                        if let Ok(store) = NotificationStore::new(pool.clone()).await {
-                            let handler = app_handle.state::<NotificationHandler<R>>();
-
-                            // Pass the original UserMessage (dereferenced from Arc)
-                            let _ = handler.show_user_bundled_notification(&user_message).await;
-                        }
-                    }
                 }
                 FireflyEvent::GroupMessage(group_message) => {
                     let b_message = group_message_to_b_group_message(&group_message);
@@ -517,7 +507,7 @@ pub async fn show_call_notification<R: Runtime>(
 
 #[command]
 pub async fn clear_notifications<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    let handler = app.state::<NotificationHandler<R>>();
+    let handler = app.state::<Arc<NotificationHandler<R>>>();
     handler.clear_all().await?;
     Ok(())
 }
@@ -540,7 +530,7 @@ pub async fn request_all_required_permissions<R: Runtime>(
     app: AppHandle<R>,
     _permissions: Vec<String>,
 ) -> Result<bool, String> {
-    app.state::<NotificationHandler<R>>()
+    app.state::<Arc<NotificationHandler<R>>>()
         .request_all_permissions()
         .await
         .map_err(|e| format!("Failed to request permissions: {}", e))?;

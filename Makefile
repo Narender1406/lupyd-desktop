@@ -8,7 +8,7 @@ node_modules: package.json
 	yarn install
 
 dist/index.html: node_modules $(SRC_FILES) $(PUBLIC_FILES) $(CONFIG_FILES)
-	yarn build --mode development
+	yarn build
 
 build: dist/index.html
 

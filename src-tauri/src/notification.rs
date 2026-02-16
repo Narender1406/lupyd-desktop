@@ -4,12 +4,12 @@ use firefly_protos::{deserialize_proto, firefly::UserMessageInner};
 use firefly_signal::db::messages::UserMessage;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
-#[cfg(target_os = "android")]
-use tauri::plugin::TauriPlugin;
 use tauri::{
-    plugin::{PluginApi, PluginHandle},
-    AppHandle, Emitter, Manager, Runtime,
+    plugin::{PluginApi, PluginHandle, TauriPlugin},
+    AppHandle, Runtime,
 };
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use tauri_plugin_notification::NotificationExt;
 
 use crate::encryption_plugin::DATABASE;
 
@@ -127,40 +127,78 @@ struct UserBundledNotification {
     messages: Vec<NotificationData>,
 }
 
-fn show_user_bundled_notification<R: Runtime>(
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+fn show_user_bundled_notification_desktop<R: Runtime>(
     app: &AppHandle<R>,
-    notification: UserBundledNotification,
-) {
-    if let Err(err) = app.emit(
-        "plugin:NotificationHandler|showUserBundledNotification",
-        notification,
-    ) {
-        log::error!("failed to invoke showUserBundledNotification {:?}", err);
-    }
-}
-
-#[cfg(target_os = "android")]
-pub fn init<R: Runtime, C: DeserializeOwned>(
-    app: &AppHandle<R>,
-    api: PluginApi<R, C>,
+    notification: &UserBundledNotification,
 ) -> Result<(), String> {
-    const PLUGIN_IDENTIFIER: &str = "com.lupyd.client";
+    // Format messages similar to Android inbox style
+    let mut body = String::new();
+    let message_count = notification.messages.len();
 
-    let handle = api
-        .register_android_plugin(PLUGIN_IDENTIFIER, "NotificationHandlerPlugin")
-        .map_err(|e| e.to_string())?;
-    // #[cfg(target_os = "ios")]
-    // let handle = api.register_ios_plugin(init_plugin_notification)?;
-    let handler = (NotificationHandler {
-        plugin_handle: handle,
-    });
+    for (i, msg) in notification.messages.iter().enumerate() {
+        let prefix = if msg.sent_by_me { "Me: " } else { "" };
+        body.push_str(&format!("{}{}", prefix, msg.text));
 
-    app.manage(handler);
+        // Add newline between messages, but not after the last one
+        if i < message_count - 1 {
+            body.push('\n');
+        }
+    }
+
+    // Show summary if multiple messages
+    if message_count > 1 {
+        body.push_str(&format!("\n\n{} messages", message_count));
+    }
+
+    // Hash sender name to i32 for notification ID (for grouping)
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut hasher = DefaultHasher::new();
+    notification.other.hash(&mut hasher);
+    let notification_id = hasher.finish() as i32;
+
+    // Create notification using Tauri's notification API
+    app.notification()
+        .builder()
+        .id(notification_id) // Group notifications by sender using hashed ID
+        .title(&notification.other)
+        .body(&body)
+        .show()
+        .map_err(|e| format!("Failed to show notification: {}", e))?;
 
     Ok(())
 }
 
-#[cfg(target_os = "android")]
+pub fn init<R: Runtime, C: DeserializeOwned>(
+    app: &AppHandle<R>,
+    api: PluginApi<R, C>,
+) -> Result<(), String> {
+    use tauri::Manager;
+    #[cfg(target_os = "android")]
+    {
+        const PLUGIN_IDENTIFIER: &str = "com.lupyd.client";
+
+        let handle = api
+            .register_android_plugin(PLUGIN_IDENTIFIER, "NotificationHandlerPlugin")
+            .map_err(|e| e.to_string())?;
+        // #[cfg(target_os = "ios")]
+        // let handle = api.register_ios_plugin(init_plugin_notification)?;
+        let handler = Arc::new(NotificationHandler {
+            plugin_handle: handle,
+        });
+        app.manage(handler);
+    }
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        let handler = Arc::new(NotificationHandler::<R>::new());
+        app.manage(handler);
+    }
+
+    Ok(())
+}
+
 pub fn init_plugin<R: Runtime>() -> TauriPlugin<R> {
     use tauri::plugin::Builder;
 
@@ -173,15 +211,26 @@ pub fn init_plugin<R: Runtime>() -> TauriPlugin<R> {
 }
 
 pub struct NotificationHandler<R: Runtime> {
+    #[cfg(target_os = "android")]
     plugin_handle: PluginHandle<R>,
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    _marker: std::marker::PhantomData<fn() -> R>,
 }
 
 impl<R: Runtime> NotificationHandler<R> {
-    pub fn new(plugin_handle: PluginHandle<R>) -> Self {
-        Self { plugin_handle }
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    pub fn new() -> Self {
+        Self {
+            _marker: std::marker::PhantomData,
+        }
     }
 
-    pub async fn show_user_bundled_notification(&self, msg: &UserMessage) -> Result<(), String> {
+    pub async fn show_user_bundled_notification<R2: Runtime>(
+        &self,
+        msg: &UserMessage,
+        app: &AppHandle<R2>,
+    ) -> Result<(), String> {
         self.add_message_to_history(msg).await?;
 
         let store = NotificationStore::new(DATABASE.get().unwrap().clone()).await?;
@@ -222,8 +271,11 @@ impl<R: Runtime> NotificationHandler<R> {
 
         #[cfg(target_os = "android")]
         self.plugin_handle
-            .run_mobile_plugin::<()>("showUserBundledNotification", notification)
+            .run_mobile_plugin::<()>("showUserBundledNotification", notification.clone())
             .map_err(|e| e.to_string())?;
+
+        #[cfg(not(any(target_os = "android", target_os = "ios")))]
+        show_user_bundled_notification_desktop(app, &notification)?;
 
         Ok(())
     }

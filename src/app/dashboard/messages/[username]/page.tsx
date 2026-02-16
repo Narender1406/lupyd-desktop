@@ -39,6 +39,7 @@ import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
 import { toast } from "@/hooks/use-toast"
 import { encryptBlobV1, formatNumber, SIZE_LOOKUP_TABLE } from "@/lib/utils"
 import InfiniteScroll from "react-infinite-scroll-component"
+import { SortedArray } from "sorted-array"
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -57,7 +58,10 @@ export default function UserMessagePage() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
 
-  const [messages, setMessages] = useState<UserMessage[]>([])
+  // const [messages, setMessages] = useState<UserMessage[]>([])
+
+  const messagesRef = useRef(new SortedArray<UserMessage>((a, b) => a.id - b.id))
+  const [messagesUpdatedTs, setMessagesUpdatedTs] = useState(0) // just dummy variable to redraw page, whenever we add elements to ref
 
   const [files, setFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -100,28 +104,34 @@ export default function UserMessagePage() {
   // Apply the scroll boundary guard hook
   useScrollBoundaryGuard(messagesContainerRef)
 
-  function addMessage(prev: UserMessage[], msg: UserMessage) {
-    const message = FireflyProtos.UserMessageInner.decode(msg.text)
-    if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
-      return prev;
-    }
 
-    // Robust merge: concat + dedupe + sort
-    const combined = [...prev, msg]
-    const uniqueMap = new Map<number, UserMessage>()
-
-    // Deduplicate by id, keeping the latest version
-    for (const m of combined) {
-      uniqueMap.set(m.id, m)
-    }
-
-    // Sort by id (ascending)
-    return Array.from(uniqueMap.values()).sort((a, b) => {
-      if (a.id < b.id) return -1
-      if (a.id > b.id) return 1
-      return 0
-    })
+  function addMessageToRef(msg: UserMessage) {
+    messagesRef.current.upsert(msg)
+    setMessagesUpdatedTs(Date.now())
   }
+
+  // function addMessage(prev: UserMessage[], msg: UserMessage) {
+  //   const message = FireflyProtos.UserMessageInner.decode(msg.text)
+  //   if (message.callMessage && !(message.callMessage.type == FireflyProtos.CallMessageType.ended || message.callMessage.type == FireflyProtos.CallMessageType.rejected)) {
+  //     return prev;
+  //   }
+
+  //   // Robust merge: concat + dedupe + sort
+  //   const combined = [...prev, msg]
+  //   const uniqueMap = new Map<number, UserMessage>()
+
+  //   // Deduplicate by id, keeping the latest version
+  //   for (const m of combined) {
+  //     uniqueMap.set(m.id, m)
+  //   }
+
+  //   // Sort by id (ascending)
+  //   return Array.from(uniqueMap.values()).sort((a, b) => {
+  //     if (a.id < b.id) return -1
+  //     if (a.id > b.id) return 1
+  //     return 0
+  //   })
+  // }
 
   // Check if user is at bottom of messages
   const checkIfAtBottom = () => {
@@ -191,8 +201,8 @@ export default function UserMessagePage() {
   }, [])
 
   const getOlderMessages = async () => {
-    const lastTs = messages.length == 0 ? Date.now() * 1000 : messages[0].id
-    const COUNT = 15
+    const lastTs = messagesRef.current.length == 0 ? Date.now() * 1000 : messagesRef.current[0].id
+    const COUNT = 36
 
     // TODO: this is not good
 
@@ -201,16 +211,12 @@ export default function UserMessagePage() {
 
     const { result } = await EncryptionPlugin.getLastMessages({ other: receiver!, limit: COUNT, before: lastTs })
 
-    setMessages((prev) => {
-      let newMessages = prev
 
-      // not the most efficient way, but good enough
-      for (const msg of result) {
-        newMessages = addMessage(newMessages, bUserMessageToUserMessage(msg))
-      }
+    // not the most efficient way, but good enough
+    for (const msg of result) {
+      addMessageToRef(bUserMessageToUserMessage(msg))
+    }
 
-      return newMessages
-    })
   }
 
 
@@ -222,8 +228,7 @@ export default function UserMessagePage() {
 
         return
       }
-
-      setMessages(prev => addMessage(prev, message))
+      addMessageToRef(message)
 
       // Increment new messages counter if not at bottom
       if (!isAtBottom) {
@@ -319,7 +324,7 @@ export default function UserMessagePage() {
       // We need a proper UserMessage object. 
       // construct temp message manually since UserMessageInner is just part of it.
 
-      const tempId = 0
+      const tempId = Date.now() * 1000 + Math.floor(Math.random() * 1000)
       const tempMsg: UserMessage = {
         id: tempId,
         other: receiver!,
@@ -327,7 +332,7 @@ export default function UserMessagePage() {
         text: FireflyProtos.UserMessageInner.encode(userMessage).finish(),
       }
 
-      setMessages(prev => addMessage(prev, tempMsg))
+      addMessageToRef(tempMsg)
       setMessageText("")
       setReplyingTo(null)
       setFiles([])
@@ -337,18 +342,15 @@ export default function UserMessagePage() {
 
       // Don't await here, let it run
       sendMessage(userMessage).then(finalMsg => {
-        setMessages(prev => {
-          // Remove optimistic message(s) with ID 0
-          const filtered = prev.filter(m => m.id !== 0)
-          // Add the confirmed message
-          // finalMsg is now guaranteed by the updated sendMessage
-          return addMessage(filtered, finalMsg)
-        })
+
+        messagesRef.current.delete(tempMsg)
+        addMessageToRef(finalMsg)
+
       }).catch(err => {
         console.error(err)
         toast({ title: "Failed to send", variant: "destructive" })
         // Remove temp message and restore text
-        setMessages(prev => prev.filter(m => m.id !== 0))
+        messagesRef.current.delete(tempMsg)
         setMessageText(msg)
       }).finally(() => {
         setSendingMessage(false)
@@ -392,13 +394,13 @@ export default function UserMessagePage() {
 
   // Scroll to bottom when messages change or when chat opens
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messagesRef.current.length > 0) {
       // Always scroll to bottom when new messages arrive
       setTimeout(() => {
         scrollToBottom()
       }, 50)
     }
-  }, [messages])
+  }, [messagesUpdatedTs])
 
   return (
     <div
@@ -461,11 +463,11 @@ export default function UserMessagePage() {
             next={getOlderMessages}
             hasMore={!endOfOlderMessages}
             loader={null} // Remove the loader icon at the bottom
-            dataLength={messages.length}
+            dataLength={messagesRef.current.length}
             inverse={false}
             style={{ display: 'flex', flexDirection: 'column' }}
           >
-            {messages.map((message) => (
+            {messagesRef.current.map((message) => (
               <div key={message.id.toString()} className="space-y-4">
                 <MessageElement message={message} sender={sender!} />
               </div>

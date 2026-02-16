@@ -75,7 +75,6 @@ pub fn run() {
         }));
     }
 
-    #[cfg(target_os = "android")]
     {
         builder = builder.plugin(notification::init_plugin());
     }
