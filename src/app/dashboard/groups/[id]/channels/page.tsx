@@ -37,7 +37,8 @@ import {
   X,
 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { usePathParams } from "@/hooks/use-path-params"
 
 const emojiOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "✨", "🎉", "👏"]
 
@@ -48,7 +49,7 @@ enum ContentType {
 }
 
 export default function GroupChannelChatPage() {
-  const { id } = useParams()
+  const { id } = usePathParams<{ id: string }>('/groups/:id')
   const navigate = useNavigate()
   const auth = useAuth()
   const firefly = useFirefly()

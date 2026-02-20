@@ -20,7 +20,8 @@ import { useUserData } from "@/context/userdata-context"
 import { Ban, Bookmark, Grid, List, MessageSquare, MoreHorizontal, Settings, UserMinus, UserPlus } from "lucide-react"
 import { FetchType, PostProtos, ulidStringify, UserProtos } from "lupyd-js"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { usePathParams } from "@/hooks/use-path-params"
 
 export default function ProfilePage() {
   const router = useNavigate()
@@ -30,17 +31,9 @@ export default function ProfilePage() {
   const [savedPosts, setSavedPosts] = useState<PostProtos.FullPost[]>([])
   const [user, setUser] = useState<UserProtos.User | null>(null)
 
-  const params = useParams()
+  const { username: paramUsername } = usePathParams<{ username: string }>('/user/:username')
 
-  // Ref for the main content area
-
-
-  const getUsername = () => {
-    const username = params.username
-    if (typeof username === "string") {
-      return username
-    }
-  }
+  const getUsername = () => paramUsername
 
   const bio = useMemo(() => {
     if (!user) return undefined
@@ -53,6 +46,10 @@ export default function ProfilePage() {
     const username = getUsername()
     if (!username) return
 
+    // Clear stale data immediately so we don't flash old profile
+    setUser(null)
+    setPosts([])
+
     api.getUser(username).then((user) => {
       setUser(user || null)
     }).catch(console.error)
@@ -63,7 +60,7 @@ export default function ProfilePage() {
     }).then((posts) => {
       setPosts(posts)
     }).catch(console.error)
-  }, [])
+  }, [paramUsername])
 
   const auth = useAuth()
   const userData = useUserData()
@@ -85,7 +82,7 @@ export default function ProfilePage() {
           // For now, we'll simulate loading saved posts from localStorage or a similar mechanism
           // This is a placeholder implementation
           console.log("Loading saved posts for current user");
-          
+
           // For now, we'll just set an empty array since the API doesn't seem to have a method for this
           setSavedPosts([]);
         } catch (error) {
@@ -139,7 +136,7 @@ export default function ProfilePage() {
     icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
     text: string;
   };
-  
+
   function EmptyState({ icon: Icon, text }: EmptyStateProps) {
     return (
       <div className="py-16 text-center text-gray-400">

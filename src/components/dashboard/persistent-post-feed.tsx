@@ -26,21 +26,5 @@ export function PersistentPostFeed() {
     loadCachedData()
   }, [queryClient])
 
-  // Save and restore scroll position
-  useEffect(() => {
-    const savedScroll = sessionStorage.getItem('feed-scroll')
-    if (savedScroll) {
-      // Restore scroll position after a short delay to ensure content is loaded
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScroll))
-      }, 100)
-    }
-
-    // Save scroll position before unmount
-    return () => {
-      sessionStorage.setItem('feed-scroll', window.scrollY.toString())
-    }
-  }, [])
-
   return <PostFeed />
 }

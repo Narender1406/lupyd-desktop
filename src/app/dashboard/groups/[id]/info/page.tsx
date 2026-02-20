@@ -23,12 +23,13 @@ import {
   Video
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { usePathParams } from "@/hooks/use-path-params"
 
 
 export default function GroupInfoPage() {
   const navigate = useNavigate()
-  const { id } = useParams()
+  const { id } = usePathParams<{ id: string }>('/groups/:id')
   const [activeTab, setActiveTab] = useState("overview")
 
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
