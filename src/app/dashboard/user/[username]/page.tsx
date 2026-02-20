@@ -46,10 +46,6 @@ export default function ProfilePage() {
     const username = getUsername()
     if (!username) return
 
-    // Clear stale data immediately so we don't flash old profile
-    setUser(null)
-    setPosts([])
-
     api.getUser(username).then((user) => {
       setUser(user || null)
     }).catch(console.error)
