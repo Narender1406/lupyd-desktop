@@ -83,6 +83,13 @@ export function bGroupMessageToGroupMessage(msg: BGroupMessage): GroupMessage {
   }
 }
 
+export function groupMessageToBGroupMessage(msg: GroupMessage): BGroupMessage {
+  return {
+    ...msg,
+    textB64: toBase64(msg.text)
+  }
+}
+
 export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
   const o = {
     ...msg,
@@ -154,32 +161,32 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   getGroupInfoAndExtension(options: { groupId: number }): Promise<BGroupInfo & { extensionB64: string }>
 
 
-  
-  getGroupMessages(options: { groupId: number, startBefore: number, limit: number }): Promise<{ result: BGroupMessage[]}>
 
-  updateGroupChannel(options: { 
-    groupId: number, 
-    id: number, 
-    delete: boolean, 
-    name: string, 
-    channelTy: number, 
-    defaultPermissions: number 
+  getGroupMessages(options: { groupId: number, startBefore: number, limit: number }): Promise<{ result: BGroupMessage[] }>
+
+  updateGroupChannel(options: {
+    groupId: number,
+    id: number,
+    delete: boolean,
+    name: string,
+    channelTy: number,
+    defaultPermissions: number
   }): Promise<{ messageId: number }>
 
-  updateGroupRoles(options: { 
-    groupId: number, 
-    roles: UpdateRoleProposal[] 
+  updateGroupRoles(options: {
+    groupId: number,
+    roles: UpdateRoleProposal[]
   }): Promise<{ messageId: number }>
 
-  updateGroupRolesInChannel(options: { 
-    groupId: number, 
-    channelId: number, 
-    roles: UpdateRoleProposal[] 
+  updateGroupRolesInChannel(options: {
+    groupId: number,
+    channelId: number,
+    roles: UpdateRoleProposal[]
   }): Promise<{ messageId: number }>
 
-  updateGroupUsers(options: { 
-    groupId: number, 
-    users: UpdateUserProposal[] 
+  updateGroupUsers(options: {
+    groupId: number,
+    users: UpdateUserProposal[]
   }): Promise<{ messageId: number }>
 
   getConversations(options: { token: string }): Promise<{ result: Conversation[] }>
@@ -193,13 +200,17 @@ export interface EncryptionPluginType extends CapacitorPlugin {
   addGroupMember(options: { groupId: number, username: string, roleId: number }): Promise<void>
 
   kickGroupMember(options: { groupId: number, username: string }): Promise<void>
+
+
+  deleteGroup(options: { groupId: number }): Promise<void>
+
 };
 
 export const EncryptionPlugin = registerPlugin<EncryptionPluginType>("EncryptionPlugin")
 export const TestPlugin = registerPlugin<EncryptionPluginType>("TestPlugin")
 
 //@ts-ignore
-window["_plugins"] = { TestPlugin,EncryptionPlugin }
+window["_plugins"] = { TestPlugin, EncryptionPlugin }
 
 
 
@@ -218,7 +229,7 @@ async function streamToUint8Array(stream: ReadableStream<Uint8Array>, capacity: 
       newOut.set(out.subarray(0, bytesRead), 0)
       out = newOut
     }
-    
+
     out.set(value, bytesRead)
     bytesRead += value.byteLength
   }
@@ -256,7 +267,7 @@ export const decryptStreamAndSave = async (
 
     const response = await fetch(getFileUrl(file.url, url, token), {
       method: "PUT",
-      body: bufferAll ? await streamToUint8Array(stream, file.contentLength): stream, // stupid browsers won't let you stream request
+      body: bufferAll ? await streamToUint8Array(stream, file.contentLength) : stream, // stupid browsers won't let you stream request
       //@ts-ignore
       duplex: "half",
     })
@@ -282,9 +293,9 @@ export const checkIfFileExists = async (file: FireflyProtos.EncryptedFile) => {
 
 
 export enum GroupPermission {
-    AddMessage = 4,
-    ManageChannel = 8,
-    ManageRole = 16,
-    ManageMember = 32,
-    ManageGroup = 64,
+  AddMessage = 4,
+  ManageChannel = 8,
+  ManageRole = 16,
+  ManageMember = 32,
+  ManageGroup = 64,
 }

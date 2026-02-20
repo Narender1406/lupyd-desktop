@@ -1,3 +1,4 @@
+
 "use client"
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
@@ -39,6 +40,7 @@ export default function GroupSettingsPage() {
   const { id } = usePathParams<{ id: string }>('/groups/:id')
   const auth = useAuth()
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
+  const [newMemberUsername, setNewMemberUsername] = useState("")
 
   const [extension, setExtension] = useState<protos.FireflyGroupExtension | undefined>(undefined)
 
@@ -115,24 +117,66 @@ export default function GroupSettingsPage() {
 
 
 
-  const addMember = async (username: string, role: number) => {
-    await EncryptionPlugin.addGroupMember({ groupId: Number(id), username, roleId: role })
-    updateState()
-  }
+  const addMember = async () => {
+    if (!newMemberUsername.trim()) return
 
+    try {
+      await EncryptionPlugin.addGroupMember({
+        groupId: Number(id),
+        username: newMemberUsername,
+        roleId: 0
+      })
+
+      toast({
+        title: "Member added",
+        description: `${newMemberUsername} has been added to the group.`
+      })
+
+      setNewMemberUsername("")
+      updateState()
+    } catch (error) {
+      console.error("Failed to add member:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add member. Please check the username and try again.",
+        variant: "destructive"
+      })
+    }
+  }
 
   const updateMember = async (username: string, role: number) => {
-    await EncryptionPlugin.updateGroupUsers({
-      groupId: Number(id),
-      users: [{ username, roleId: role }]
-    })
-    updateState()
+    try {
+      await EncryptionPlugin.updateGroupUsers({
+        groupId: Number(id),
+        users: [{ username, roleId: role }]
+      })
+      updateState()
+    } catch (error) {
+      console.error("Failed to update member role:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update member role.",
+        variant: "destructive"
+      })
+    }
   }
 
-
   const deleteMember = async (username: string) => {
-    await EncryptionPlugin.kickGroupMember({ groupId: Number(id), username })
-    updateState()
+    try {
+      await EncryptionPlugin.kickGroupMember({ groupId: Number(id), username })
+      toast({
+        title: "Member removed",
+        description: `${username} has been removed from the group.`
+      })
+      updateState()
+    } catch (error) {
+      console.error("Failed to remove member:", error)
+      toast({
+        title: "Error",
+        description: "Failed to remove member.",
+        variant: "destructive"
+      })
+    }
   }
 
 
@@ -335,24 +379,54 @@ export default function GroupSettingsPage() {
                 <CardDescription>Manage roles and remove members from the group</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {extension?.members?.map((member: any) => (
-                    <div
-                      key={member.username}
-                      className="flex flex-col md:flex-row md:items-center gap-3 p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <UserAvatar username={member.username} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium truncate">{member.username}</h3>
-                            {getRoleIcon(member.role)}
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Username to add"
+                      value={newMemberUsername}
+                      onChange={(e) => setNewMemberUsername(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          addMember()
+                        }
+                      }}
+                    />
+                    <Button onClick={addMember} disabled={!newMemberUsername.trim()}>
+                      Add Member
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {extension?.members?.map((member: any) => (
+                      <div
+                        key={member.username}
+                        className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <UserAvatar username={member.username} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium truncate">{member.username}</h3>
+                              {getRoleIcon(member.role)}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{member.username}</p>
                           </div>
-                          <p className="text-sm text-muted-foreground">{member.username}</p>
                         </div>
+
+                        {canManageMembers && member.username !== auth.username && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0"
+                            onClick={() => deleteMember(member.username)}
+                            title="Remove member"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>

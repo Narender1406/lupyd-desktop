@@ -683,6 +683,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_create_group(
     ): Short
+    external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_delete_group(
+    ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_dispose(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_encrypt_and_send(
@@ -715,6 +717,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token(
     ): Short
+    external fun uniffi_firefly_signal_checksum_method_groupinfostore_delete_ffi(
+    ): Short
     external fun uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_groupinfostore_get_ffi(
@@ -722,6 +726,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_firefly_signal_checksum_method_groupinfostore_set_ffi(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi(
+    ): Short
+    external fun uniffi_firefly_signal_checksum_method_groupmessagesstore_delete_by_group_id_ffi(
     ): Short
     external fun uniffi_firefly_signal_checksum_method_groupmessagesstore_get_all_last_messages_ffi(
     ): Short
@@ -788,6 +794,8 @@ external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_add_group_member
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_create_group(`ptr`: Long,`name`: RustBuffer.ByValue,`description`: RustBuffer.ByValue,
 ): Long
+external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_delete_group(`ptr`: Long,`groupId`: Long,
+): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_dispose(`ptr`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_ffifireflywsclient_encrypt_and_send(`ptr`: Long,`to`: RustBuffer.ByValue,`payload`: RustBuffer.ByValue,
@@ -828,6 +836,8 @@ external fun uniffi_firefly_signal_fn_clone_groupinfostore(`handle`: Long,uniffi
 ): Long
 external fun uniffi_firefly_signal_fn_free_groupinfostore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
+external fun uniffi_firefly_signal_fn_method_groupinfostore_delete_ffi(`ptr`: Long,`id`: Long,
+): Long
 external fun uniffi_firefly_signal_fn_method_groupinfostore_get_all_ffi(`ptr`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_groupinfostore_get_ffi(`ptr`: Long,`id`: Long,
@@ -839,6 +849,8 @@ external fun uniffi_firefly_signal_fn_clone_groupmessagesstore(`handle`: Long,un
 external fun uniffi_firefly_signal_fn_free_groupmessagesstore(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_firefly_signal_fn_method_groupmessagesstore_add_ffi(`ptr`: Long,`id`: Long,`groupId`: Long,`channelId`: Int,`epoch`: Int,`by`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,
+): Long
+external fun uniffi_firefly_signal_fn_method_groupmessagesstore_delete_by_group_id_ffi(`ptr`: Long,`groupId`: Long,
 ): Long
 external fun uniffi_firefly_signal_fn_method_groupmessagesstore_get_all_last_messages_ffi(`ptr`: Long,
 ): Long
@@ -1001,6 +1013,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_create_group() != 41744.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_delete_group() != 23208.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_dispose() != 10445.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1049,6 +1064,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_firefly_signal_checksum_method_ffifireflywsclient_upload_fcm_token() != 37401.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_delete_ffi() != 4583.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_firefly_signal_checksum_method_groupinfostore_get_all_ffi() != 52813.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1059,6 +1077,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_add_ffi() != 58115.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_delete_by_group_id_ffi() != 19861.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_firefly_signal_checksum_method_groupmessagesstore_get_all_last_messages_ffi() != 37117.toShort()) {
@@ -2029,6 +2050,8 @@ public interface FfiFireflyWsClientInterface {
     
     suspend fun `createGroup`(`name`: kotlin.String, `description`: kotlin.String): GroupInfo
     
+    suspend fun `deleteGroup`(`groupId`: kotlin.ULong)
+    
     suspend fun `dispose`()
     
     suspend fun `encryptAndSend`(`to`: kotlin.String, `payload`: kotlin.ByteArray): UserMessage
@@ -2198,6 +2221,28 @@ open class FfiFireflyWsClient: Disposable, AutoCloseable, FfiFireflyWsClientInte
         { future -> UniffiLib.ffi_firefly_signal_rust_future_free_rust_buffer(future) },
         // lift function
         { FfiConverterTypeGroupInfo.lift(it) },
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `deleteGroup`(`groupId`: kotlin.ULong) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_ffifireflywsclient_delete_group(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
         // Error FFI converter
         DumbException.ErrorHandler,
     )
@@ -2906,6 +2951,8 @@ public object FfiConverterTypeFfiKeyStores: FfiConverter<FfiKeyStores, Long> {
 //
 public interface GroupInfoStoreInterface {
     
+    suspend fun `deleteFfi`(`id`: kotlin.ULong)
+    
     suspend fun `getAllFfi`(): List<GroupInfo>
     
     suspend fun `getFfi`(`id`: kotlin.ULong): GroupInfo
@@ -3009,6 +3056,28 @@ open class GroupInfoStore: Disposable, AutoCloseable, GroupInfoStoreInterface
         return uniffiRustCall() { status ->
             UniffiLib.uniffi_firefly_signal_fn_clone_groupinfostore(handle, status)
         }
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `deleteFfi`(`id`: kotlin.ULong) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_groupinfostore_delete_ffi(
+                uniffiHandle,
+                FfiConverterULong.lower(`id`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
     }
 
     
@@ -3214,6 +3283,8 @@ public interface GroupMessagesStoreInterface {
     
     suspend fun `addFfi`(`id`: kotlin.ULong, `groupId`: kotlin.ULong, `channelId`: kotlin.UInt, `epoch`: kotlin.UInt, `by`: kotlin.String, `message`: kotlin.ByteArray)
     
+    suspend fun `deleteByGroupIdFfi`(`groupId`: kotlin.ULong)
+    
     suspend fun `getAllLastMessagesFfi`(): List<GroupMessage>
     
     suspend fun `getFfi`(`groupId`: kotlin.ULong, `startBefore`: kotlin.ULong, `limit`: kotlin.UInt): List<GroupMessage>
@@ -3328,6 +3399,28 @@ open class GroupMessagesStore: Disposable, AutoCloseable, GroupMessagesStoreInte
             UniffiLib.uniffi_firefly_signal_fn_method_groupmessagesstore_add_ffi(
                 uniffiHandle,
                 FfiConverterULong.lower(`id`),FfiConverterULong.lower(`groupId`),FfiConverterUInt.lower(`channelId`),FfiConverterUInt.lower(`epoch`),FfiConverterString.lower(`by`),FfiConverterByteArray.lower(`message`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_firefly_signal_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_firefly_signal_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+        
+        // Error FFI converter
+        DumbException.ErrorHandler,
+    )
+    }
+
+    
+    @Throws(DumbException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `deleteByGroupIdFfi`(`groupId`: kotlin.ULong) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_firefly_signal_fn_method_groupmessagesstore_delete_by_group_id_ffi(
+                uniffiHandle,
+                FfiConverterULong.lower(`groupId`),
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_firefly_signal_rust_future_poll_void(future, callback, continuation) },

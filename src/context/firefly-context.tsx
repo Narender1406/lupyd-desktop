@@ -7,7 +7,7 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { bUserMessageToUserMessage, EncryptionPlugin, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
+import { bGroupMessageToGroupMessage, bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBGroupMessage, isBUserMessage, userMessageToBUserMessage, type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -21,6 +21,7 @@ type FireflyContextType = {
   addGroupEventListener: (cb: GroupMessageCallbackType) => void,
   removeGroupEventListener: (cb: GroupMessageCallbackType) => void,
 
+  encryptAndSendGroupMessage: (groupMessage: GroupMessage) => Promise<GroupMessage>,
 
   encryptAndSend: (other: string, text: Uint8Array) => Promise<UserMessage>,
   service: fireflyClientJs.FireflyService
@@ -90,6 +91,39 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
 
   }, [])
 
+
+  useEffect(() => {
+    const onGroupMessage = (data: any) => {
+      if (!isBGroupMessage(data)) {
+        throw Error(`invalid group message received: ${JSON.stringify(data)}`)
+      }
+
+      const groupMessage = bGroupMessageToGroupMessage(data as any)
+
+      {
+
+        const currentPathname = window.location.pathname
+
+        if (!currentPathname.includes(`/groups/${groupMessage.groupId}`)) {
+
+          console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
+
+          if (groupMessage.sender != auth.username) {
+            console.warn("should show group message here")
+          }
+        }
+      }
+
+      groupEventListeners.current.forEach(e => e(groupMessage))
+
+    }
+
+
+    const listener = EncryptionPlugin.addListener("onGroupMessage", onGroupMessage)
+    return () => { listener.then(_ => _.remove()) }
+
+  }, [])
+
   const service = useMemo(() => new fireflyClientJs.FireflyService(apiUrl, async () => {
     if (!auth.username) throw Error(`Not authenticated`);
     const token = await auth.getToken(); if (!token) {
@@ -130,10 +164,18 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
   }
 
 
+  async function encryptAndSendGroupMessage(groupMessage: GroupMessage) {
+    const result = await EncryptionPlugin.encryptAndSendGroupMessage(groupMessageToBGroupMessage(groupMessage))
+
+    groupMessage.id = result.messageId
+    return groupMessage
+  }
+
+
 
   return <FireflyContext.Provider value={{
     addEventListener, removeEventListener,
-    addGroupEventListener, removeGroupEventListener,
+    addGroupEventListener, removeGroupEventListener, encryptAndSendGroupMessage,
     service,
     encryptAndSend,
   }}> {children} </FireflyContext.Provider>

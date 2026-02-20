@@ -6,11 +6,9 @@ import { useAuth } from "@/context/auth-context"
 import { bGroupMessageToGroupMessage, EncryptionPlugin, type GroupMessage } from "@/context/encryption-plugin"
 import { useFirefly, type GroupMessageCallbackType } from "@/context/firefly-context"
 import { useScrollBoundaryGuard } from "@/hooks/use-scroll-boundary-guard"
-import { toBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
-import { useRef, useMemo, useState, useEffect, memo } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { UserAvatar } from "../user-avatar"
-import React from "react"
 
 const GroupChatMessageItem = memo(({ m }: { m: GroupMessage }) => {
   const decodedText = useMemo(() => {
@@ -164,13 +162,10 @@ export function ChannelChat({
 
       // Send message in background (fire and forget)
       // We don't await here so the UI thread is not blocked from clearing the input
-      EncryptionPlugin.encryptAndSendGroupMessage({
-        textB64: toBase64(text),
-        ...msg
-      }).then((msgId) => {
+      firefly.encryptAndSendGroupMessage(msg).then((result) => {
         // Update message ID after successful send
         setMessages((prev) => {
-          const newMsg = { ...msg, id: msgId.messageId }
+          const newMsg = result
 
           // Remove the optimistic message (id 0) and add the real one
           const filtered = prev.filter(m => m.id !== 0)
