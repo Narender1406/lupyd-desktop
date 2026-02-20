@@ -16,6 +16,7 @@ import InfiniteScroll from "react-infinite-scroll-component"
 import { useApiService } from "@/context/apiService"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
+import { PostFeed } from "@/components/dashboard/post-feed"
 // import NotificationTestButton from "@/components/NotificationTestButton"
 
 
@@ -62,7 +63,7 @@ export default function DashboardPage() {
               {/* Create Post - removed as per requirements */}
 
               {/* Posts Feed with Infinite Scrolling */}
-              <PersistentPostFeed />
+              <PostFeed />
 
             </div>
 
