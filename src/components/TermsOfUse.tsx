@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 
 export default function TermsOfUse() {
   const sections = [
@@ -17,9 +16,7 @@ export default function TermsOfUse() {
     { id: "contact-us", title: "Contact Us" },
   ]
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [])
+
 
   const handleSectionClick = (id: string) => {
     const element = document.getElementById(id)

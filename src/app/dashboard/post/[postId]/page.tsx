@@ -2,23 +2,22 @@
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { PostCard } from "@/components/dashboard/post-card"
-import {  PostProtos, } from "lupyd-js"
-import { useParams } from "react-router-dom"
+import { PostProtos, } from "lupyd-js"
+import { usePathParams } from "@/hooks/use-path-params"
 import { useEffect, useState } from "react"
 import { useApiService } from "@/context/apiService"
 
 export default function PostPage() {
 
-  const params = useParams()
+  const { postId } = usePathParams<{ postId: string }>('/post/:postId')
 
   const [post, setPost] = useState<PostProtos.FullPost | undefined>(undefined)
   const { api } = useApiService()
 
   useEffect(() => {
-    const id = params.postId
-    if (typeof id !== "string") return
-    api.getPost(id).then(setPost).catch(console.error)
-  }, [])
+    if (!postId) return
+    api.getPost(postId).then(setPost).catch(console.error)
+  }, [postId])
 
   return (
 
