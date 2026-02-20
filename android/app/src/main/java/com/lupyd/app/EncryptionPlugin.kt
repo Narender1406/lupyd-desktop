@@ -325,6 +325,20 @@ class EncryptionPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun deleteGroup(call: PluginCall) {
+        bridge.activity.lifecycleScope.launch {
+            try {
+                val groupId = call.data.getLong("groupId")!!
+                fireflyClient.deleteGroup(groupId)
+                call.resolve()
+            } catch (e: Exception) {
+                Log.e(tag, e.toString(), e)
+                call.reject(e.toString())
+            }
+        }
+    }
+
+    @PluginMethod
     fun getGroupExtension(call: PluginCall) {
         bridge.activity.lifecycleScope.launch {
             try {

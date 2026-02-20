@@ -10,10 +10,11 @@ import { fromBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
 import { Hash, Menu, Plus, Settings, Volume2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { usePathParams } from "@/hooks/use-path-params"
 
 export default function GroupChannelListPage() {
-  const { id } = useParams()
+  const { id } = usePathParams<{ id: string }>('/groups/:id')
   const navigate = useNavigate()
 
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
@@ -69,7 +70,7 @@ export default function GroupChannelListPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout title={groupInfo?.name}>
       <div className="flex h-[calc(100vh-65px)] -m-4 md:-m-6">
         {/* Desktop: Server Rail */}
         <aside className="hidden md:flex flex-col gap-3 items-center py-3 w-[72px] shrink-0 bg-gray-50 border-r overflow-y-auto">
@@ -86,7 +87,7 @@ export default function GroupChannelListPage() {
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <div className="text-sm">Create Server</div>
+                <div className="text-sm">Create Group</div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -239,7 +240,7 @@ export default function GroupChannelListPage() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0 flex flex-col">
                   <SheetHeader className="p-4 border-b shrink-0">
-                    <SheetTitle>Your Servers</SheetTitle>
+                    <SheetTitle>Your Groups</SheetTitle>
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {groupInfos.map((group) => (
@@ -269,7 +270,7 @@ export default function GroupChannelListPage() {
                       variant="outline"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create Server
+                      Create Group
                     </Button>
                   </div>
                 </SheetContent>

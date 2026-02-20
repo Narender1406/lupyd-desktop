@@ -49,7 +49,7 @@ export function CreateChannelDialog({ open, onOpenChange, groupId, onSuccess }: 
                 name: name.trim(),
                 channelTy: Number(channelType),
                 defaultPermissions: 0, // Default permissions
-            })
+            })            
 
             // Reset form
             setName("")

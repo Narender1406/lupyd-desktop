@@ -1,7 +1,6 @@
 "use client"
 
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { PersistentPostFeed } from "@/components/dashboard/persistent-post-feed"
 import { PostCard } from "@/components/dashboard/post-card"
 import { TrendingTopic as TrendingHashtag } from "@/components/dashboard/trending-topic"
 import { UserCard } from "@/components/dashboard/user-card"
@@ -13,6 +12,7 @@ import { FetchType, PostProtos, ulidFromString, ulidStringify, UserProtos, type 
 import { useEffect, useState } from "react"
 import InfiniteScroll from "react-infinite-scroll-component"
 
+import { PostFeed } from "@/components/dashboard/post-feed"
 import { useApiService } from "@/context/apiService"
 import { useUserData } from "@/context/userdata-context"
 import store from "store2"
@@ -62,7 +62,7 @@ export default function DashboardPage() {
               {/* Create Post - removed as per requirements */}
 
               {/* Posts Feed with Infinite Scrolling */}
-              <PersistentPostFeed />
+              <PostFeed />
 
             </div>
 

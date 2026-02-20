@@ -13,17 +13,13 @@ import store from "store2"
 import { useUserData } from "@/context/userdata-context"
 import { useAuth } from "@/context/auth-context"
 import { useApiService } from "@/context/apiService"
-import { usePersistedFeed } from "@/hooks/use-persisted-feed"
 
 export function PostFeed() {
   const { api } = useApiService()
   const queryClient = useQueryClient()
   const [hasMore, setHasMore] = useState(true)
   const [minimumPostId, setMinimumPostId] = useState<Uint8Array | undefined>(undefined)
-  
-  // Persist scroll position and feed state
-  const [scrollPosition, setScrollPosition] = usePersistedFeed<number>('postFeedScrollPosition', 0)
-  
+
   const userData = useUserData()
   const auth = useAuth()
 
@@ -38,7 +34,7 @@ export function PostFeed() {
     console.log({ details })
 
     const posts = await api.getPosts(details)
-    
+
     // Update hasMore state
     if (posts.length === 0) {
       setHasMore(false)
@@ -94,7 +90,7 @@ export function PostFeed() {
     }
 
     const posts = await api.getPosts(details)
-    
+
     if (posts.length === 0) {
       setHasMore(false)
       return
@@ -119,7 +115,7 @@ export function PostFeed() {
     if (follows.length == 0) return
 
     const usersPosts = await api.getPosts({ fetchType: FetchType.Users, fetchTypeFields: follows })
-    
+
     queryClient.setQueryData(["posts"], (oldPosts: PostProtos.FullPost[] = []) => {
       const oldIds = new Set(oldPosts.map((p) => ulidStringify(p.id)))
       const uniqueNewPosts = usersPosts.filter((p) => !oldIds.has(ulidStringify(p.id)))
@@ -132,23 +128,6 @@ export function PostFeed() {
       fetchFollowedUsersPosts()
     }
   }, [auth])
-
-  // Restore scroll position on mount
-  useEffect(() => {
-    if (scrollPosition > 0) {
-      window.scrollTo(0, scrollPosition)
-    }
-  }, [])
-
-  // Save scroll position before unmounting
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollPosition(window.scrollY)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [setScrollPosition])
 
   // ✅ AFTER MERGING, PERSIST THE MERGED DATA
   useEffect(() => {

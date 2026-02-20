@@ -272,6 +272,10 @@ class FireflyClient() {
         return client!!.createGroup(name, "")
     }
 
+    suspend fun deleteGroup(groupId: Long) {
+        client!!.deleteGroup(groupId.toULong())
+    }
+
     suspend fun getAllGroups(): List<GroupInfo> {
         return client!!.groupInfoStore().getAllFfi()
     }

@@ -234,6 +234,7 @@ async function streamToUint8Array(stream: ReadableStream<Uint8Array>, capacity: 
       out = newOut
     }
 
+
     out.set(value, bytesRead)
     bytesRead += value.byteLength
   }
