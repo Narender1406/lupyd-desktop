@@ -186,6 +186,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
         // let handle = api.register_ios_plugin(init_plugin_notification)?;
         let handler = Arc::new(NotificationHandler {
             plugin_handle: handle,
+            _marker: std::marker::PhantomData,
         });
         app.manage(handler);
     }
@@ -214,7 +215,6 @@ pub struct NotificationHandler<R: Runtime> {
     #[cfg(target_os = "android")]
     plugin_handle: PluginHandle<R>,
 
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     _marker: std::marker::PhantomData<fn() -> R>,
 }
 

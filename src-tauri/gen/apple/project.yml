@@ -10,7 +10,7 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: lupyd-desktop
+      PRODUCT_NAME: Lupyd
       PRODUCT_BUNDLE_IDENTIFIER: com.lupyd.client
 targetTemplates:
   app:
