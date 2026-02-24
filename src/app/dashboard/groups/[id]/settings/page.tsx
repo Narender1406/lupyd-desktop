@@ -27,8 +27,7 @@ import {
   Upload
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { usePathParams } from "@/hooks/use-path-params"
+import { useNavigate, useParams } from "react-router-dom"
 
 
 
@@ -37,7 +36,7 @@ export default function GroupSettingsPage() {
 
 
   const navigate = useNavigate()
-  const { id } = usePathParams<{ id: string }>('/groups/:id')
+  const { id } = useParams()
   const auth = useAuth()
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
   const [newMemberUsername, setNewMemberUsername] = useState("")

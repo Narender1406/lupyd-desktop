@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 import './App.css'
 
 import { useAuth0 } from '@auth0/auth0-react'
@@ -40,10 +40,9 @@ import ProfilePage from './app/dashboard/user/[username]/page'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfUse from './components/TermsOfUse'
 
-// Shared style for every page container div — just toggle display
-const page = (active: boolean): React.CSSProperties => ({
-  display: active ? 'block' : 'none',
-})
+
+
+
 
 function App() {
 
@@ -103,7 +102,11 @@ function App() {
   }, [handleRedirectCallback])
 
 
-  const navigate = useNavigate()
+  const { handleRedirectCallback } = useAuth0();
+  const auth = useAuth();
+
+
+
 
   useEffect(() => {
     (async () => {
@@ -128,136 +131,40 @@ function App() {
     })()
   }, [])
 
-  const location = useLocation()
-  const currentPath = location.pathname
 
-  // Lazy-mount: only render a page after it has been visited at least once
-  const [mountedPages, setMountedPages] = useState<Set<string>>(new Set([currentPath]))
-  useEffect(() => {
-    setMountedPages(prev => new Set(prev).add(currentPath))
-  }, [currentPath])
-
-  // ─── Scroll save / restore ────────────────────────────────────────────────
-  // Critical ordering: useLayoutEffect cleanups fire BEFORE useLayoutEffect bodies.
-  //
-  // On path change:
-  //   1. cleanup of BOTH useLayoutEffects runs (removes old scroll listener)
-  //   2. body of listener useLayoutEffect runs (registers NEW path listener)
-  //   3. body of restore useLayoutEffect runs (window.scrollTo → scroll event
-  //      caught ONLY by NEW path's listener — saves correct value, not old path)
-  //
-  // If we used useEffect instead, its cleanup runs AFTER useLayoutEffect bodies,
-  // so the OLD listener would catch window.scrollTo's scroll event and save 0
-  // to the wrong path (the one we just left).
-  const scrollPositions = useRef<Map<string, number>>(new Map())
-
-  useLayoutEffect(() => {
-    const save = () => {
-      scrollPositions.current.set(currentPath, window.scrollY)
-    }
-    window.addEventListener('scroll', save, { passive: true })
-    return () => window.removeEventListener('scroll', save)
-  }, [currentPath])
-
-  useLayoutEffect(() => {
-    const saved = scrollPositions.current.get(currentPath) ?? 0
-    window.scrollTo(0, saved)
-  }, [currentPath, mountedPages])
-  // ─────────────────────────────────────────────────────────────────────────
-
-  // Route helpers
-  const is = (p: string) => currentPath === p
-  const startsWith = (p: string) => currentPath.startsWith(p)
-  const matches = (pattern: string) =>
-    new RegExp(`^${pattern.replace(/:\w+/g, '[^/]+')}$`).test(currentPath)
-
-  const mounted = (p: string) => mountedPages.has(p)
-  const mountedPrefix = (p: string) => Array.from(mountedPages).some(m => m.startsWith(p))
-  const mountedPattern = (pattern: string) => {
-    const regex = new RegExp(`^${pattern.replace(/:\w+/g, '[^/]+')}$`)
-    return Array.from(mountedPages).some(m => regex.test(m)) || regex.test(currentPath)
-  }
+  console.log(`App redrew`)
 
   return (
-    <>
-      {/* Landing */}
-      {mounted('/about/') && <div style={page(is('/about/'))}><LandingPage /></div>}
-      {mounted('/about/community') && <div style={page(is('/about/community'))}><CommunityPage /></div>}
-      {mounted('/about/features') && <div style={page(is('/about/features'))}><FeaturesPage /></div>}
-      {mounted('/about/experience') && <div style={page(is('/about/experience'))}><ExperiencePage /></div>}
-      {mounted('/about/creator-tools') && <div style={page(is('/about/creator-tools'))}><CreatorToolsPage /></div>}
-      {mounted('/about/privacy') && <div style={page(is('/about/privacy'))}><PrivacyPage /></div>}
-
-      {/* Auth */}
-      {mounted('/signin') && <div style={page(is('/signin'))}><AssignUsernamePage /></div>}
-
-      {/* Dashboard */}
-      {mounted('/') && <div style={page(is('/'))}><DashboardPage /></div>}
-      {mounted('/saved-posts') && <div style={page(is('/saved-posts'))}><SavedPostsPage /></div>}
-      {mounted('/create-post') && <div style={page(is('/create-post'))}><CreatePostPage /></div>}
-      {mounted('/connections') && <div style={page(is('/connections'))}><ConnectionsPage /></div>}
-      {mounted('/settings') && <div style={page(is('/settings'))}><SettingsPage /></div>}
-      {mounted('/blocked-accounts') && <div style={page(is('/blocked-accounts'))}><BlockedAccountsPage /></div>}
-
-      {/* Groups — specific patterns first */}
-      {mountedPattern('/groups/create') && (
-        <div style={page(matches('/groups/create'))}><CreateGroupPage /></div>
-      )}
-      {mountedPattern('/groups/[^/]+/settings') && (
-        <div style={page(matches('/groups/[^/]+/settings'))}><GroupSettingsPage /></div>
-      )}
-      {mountedPattern('/groups/[^/]+/info') && (
-        <div style={page(matches('/groups/[^/]+/info'))}><GroupInfoPage /></div>
-      )}
-      {mountedPattern('/groups/[^/]+/channels') && (
-        <div style={page(matches('/groups/[^/]+/channels'))}><GroupChannelsPage /></div>
-      )}
-      {mountedPattern('/groups/[^/]+') && (
-        <div style={page(
-          matches('/groups/[^/]+') &&
-          !matches('/groups/create') &&
-          !currentPath.includes('/settings') &&
-          !currentPath.includes('/info') &&
-          !currentPath.includes('/channels')
-        )}>
-          <GroupWorkspaceRoutePage />
-        </div>
-      )}
-      {mounted('/groups') && <div style={page(is('/groups'))}><GroupsPage /></div>}
-
-      {/* Discover */}
-      {mountedPrefix('/discover') && <div style={page(startsWith('/discover'))}><DiscoverPage /></div>}
-
-      {/* Posts */}
-      {mountedPattern('/post/[^/]+') && (
-        <div style={page(matches('/post/[^/]+'))}><PostPage /></div>
-      )}
-
-      {/* Profiles */}
-      {mountedPattern('/user/[^/]+') && (
-        <div style={page(matches('/user/[^/]+'))}><ProfilePage /></div>
-      )}
-
-      {/* Messages */}
-      {mountedPattern('/messages/[^/]+/call') && (
-        <div style={page(matches('/messages/[^/]+/call'))}><UserCallPage /></div>
-      )}
-      {mountedPattern('/messages/[^/]+') && (
-        <div style={page(matches('/messages/[^/]+') && !currentPath.includes('/call'))}>
-          <UserMessagePage />
-        </div>
-      )}
-      {mounted('/messages') && <div style={page(is('/messages'))}><MessagesPage /></div>}
-
-      {/* Notifications */}
-      {mountedPrefix('/notification') && (
-        <div style={page(startsWith('/notification'))}><NotificationsPage /></div>
-      )}
-
-      {/* Legal */}
-      {mounted('/terms-of-use') && <div style={page(is('/terms-of-use'))}><TermsOfUse /></div>}
-      {mounted('/privacy') && <div style={page(is('/privacy'))}><PrivacyPolicy /></div>}
-    </>
+    <Routes>
+      <Route path="/about/" element={<LandingPage />} />
+      <Route path="/about/community" element={<CommunityPage />} />
+      <Route path="/about/features" element={<FeaturesPage />} />
+      <Route path="/about/experience" element={<ExperiencePage />} />
+      <Route path="/about/creator-tools" element={<CreatorToolsPage />} />
+      <Route path="/about/privacy" element={<PrivacyPage />} />
+      <Route path="/signin" element={<AssignUsernamePage />} />
+      <Route path="/" element={<DashboardPage />} />
+      <Route path="/saved-posts" element={<SavedPostsPage />} />
+      <Route path="/create-post" element={<CreatePostPage />} />
+      <Route path="/connections" element={<ConnectionsPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/blocked-accounts" element={<BlockedAccountsPage />} />
+      <Route path="/groups" element={<GroupsPage />} />
+      <Route path="/groups/create" element={<CreateGroupPage />} />
+      <Route path="/groups/:id" element={<GroupWorkspaceRoutePage />} />
+      <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
+      <Route path="/groups/:id/info" element={<GroupInfoPage />} />
+      <Route path="/groups/:id/channels" element={<GroupChannelsPage />} />
+      <Route path="/discover" element={<DiscoverPage />} />
+      <Route path="/post/:postId" element={<PostPage />} />
+      <Route path="/user/:username" element={<ProfilePage />} />
+      <Route path="/messages" element={<MessagesPage />} />
+      <Route path="/messages/:username" element={<UserMessagePage />} />
+      <Route path="/messages/:username/call" element={<UserCallPage />} />
+      <Route path="/notification" element={<NotificationsPage />} />
+      <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+    </Routes>
   )
 }
 

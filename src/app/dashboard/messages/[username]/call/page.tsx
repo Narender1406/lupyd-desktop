@@ -6,8 +6,7 @@ import { CallSession } from "@/context/user-call-context"
 import { protos as FireflyProtos } from "firefly-client-js"
 import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, RefreshCw, Video, VideoOff } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { usePathParams } from "@/hooks/use-path-params"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 
 
 enum SessionInitiationStatus {
@@ -20,9 +19,9 @@ enum SessionInitiationStatus {
 export default function UserCallPage() {
 
   const [searchParams, _setSearchParams] = useSearchParams()
-  const { username } = usePathParams<{ username: string }>('/messages/:username')
-  const other = username!
+  const params = useParams()
   const auth = useAuth()
+  const other = params.username!.toString()
 
   const firefly = fireflyContext.useFirefly()
 

@@ -51,11 +51,12 @@ export default function CreateGroupPage() {
           description: "Please enter a name for your group.",
           variant: "destructive",
         })
-        setIsCreating(false)
         return
       }
       const groupInfo = await EncryptionPlugin.createGroup({
         groupName: groupData.name,
+        //@ts-ignore
+        description: groupData.description
       })
 
       toast({

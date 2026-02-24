@@ -8,8 +8,7 @@ import { protos as FireflyProtos } from "firefly-client-js"
 
 import { useAuth } from '@/context/auth-context'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from "react-router-dom"
-import { usePathParams } from "@/hooks/use-path-params"
+import { useNavigate, useParams } from "react-router-dom"
 
 import {
   DropdownMenu,
@@ -51,7 +50,8 @@ enum ContentType {
 }
 
 export default function UserMessagePage() {
-  const { username: receiver } = usePathParams<{ username: string }>('/messages/:username')
+  const params = useParams()
+  const receiver = params.username?.toString()
   const auth = useAuth()
   const navigate = useNavigate();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
