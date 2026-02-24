@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:8080",
     "beforeDevCommand": "yarn dev",
-    "beforeBuildCommand": "yarn build"
+    "beforeBuildCommand": "make build"
   },
   "app": {
     "windows": [
