@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Route, Routes, useNavigate } from 'react-router-dom'
+import { Route, Routes, useNavigate  } from 'react-router-dom'
 import './App.css'
 
 import { useAuth0 } from '@auth0/auth0-react'
@@ -48,6 +48,7 @@ function App() {
 
   const { handleRedirectCallback } = useAuth0();
   const auth = useAuth();
+  const navigate = useNavigate()
 
 
   const onDeeplinkUrl = async ({ url }: { url: string }) => {
@@ -100,12 +101,6 @@ function App() {
       }
     }
   }, [handleRedirectCallback])
-
-
-  const { handleRedirectCallback } = useAuth0();
-  const auth = useAuth();
-
-
 
 
   useEffect(() => {
