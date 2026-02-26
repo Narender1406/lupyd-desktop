@@ -40,121 +40,102 @@ import ProfilePage from './app/dashboard/user/[username]/page'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfUse from './components/TermsOfUse'
 
-// Shared style for every page container div — just toggle display
-const page = (active: boolean): React.CSSProperties => ({
+// ─── Style helper ──────────────────────────────────────────────────────────
+// Shows a page when active; hides it (without unmounting) otherwise.
+const pageStyle = (active: boolean): React.CSSProperties => ({
   display: active ? 'block' : 'none',
 })
 
 function App() {
+  const { handleRedirectCallback } = useAuth0()
+  const auth = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const currentPath = location.pathname
 
-  const { handleRedirectCallback } = useAuth0();
-  const auth = useAuth();
-
-
+  // ─── Deep link / OAuth redirect handler ────────────────────────────────
   const onDeeplinkUrl = async ({ url }: { url: string }) => {
-    const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
+    const redirectUrl =
+      process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ??
+      `${window.location.origin}/signin`
     console.log(`RECEIVED A DEEPLINK ${url}`)
     if (url.startsWith(redirectUrl)) {
-      if (
-        (url.includes("code") || url.includes("error"))
-      ) {
+      if (url.includes('code') || url.includes('error')) {
         await auth.handleRedirectCallback(url)
       }
-
       if (!isTauri()) {
-        await Browser.close();
+        await Browser.close()
       }
-
-    } else if (url.startsWith("lupyd://m.lupyd.com")) {
+    } else if (url.startsWith('lupyd://m.lupyd.com')) {
       const link = new URL(url)
-      navigate({
-        pathname: link.pathname,
-        search: link.search
-      })
+      navigate({ pathname: link.pathname, search: link.search })
     }
-  };
-
-  useEffect(() => { EncryptionPlugin.requestAllPermissions({ permissions: ["camera", "mic", "notification"] }) })
+  }
 
   useEffect(() => {
+    EncryptionPlugin.requestAllPermissions({ permissions: ['camera', 'mic', 'notification'] })
+  })
 
-
-    const unlisten = isTauri() ? listen("appUrlOpen", (data) => { console.log({ listenData: data }); onDeeplinkUrl({ url: data.payload as string }) }) : CapApp.addListener("appUrlOpen", onDeeplinkUrl).then(e => e.remove);
-
-    return () => {
-      unlisten.then((_) => _())
-    }
-  }, [handleRedirectCallback]);
+  useEffect(() => {
+    const unlisten = isTauri()
+      ? listen('appUrlOpen', (data) => {
+        console.log({ listenData: data })
+        onDeeplinkUrl({ url: data.payload as string })
+      })
+      : CapApp.addListener('appUrlOpen', onDeeplinkUrl).then((e) => e.remove)
+    return () => { unlisten.then((_) => _()) }
+  }, [handleRedirectCallback])
 
   useEffect(() => {
     if (isTauri()) {
       const unlisten = onOpenUrl((urls) => {
-
         console.log({ openUrls: urls })
-        for (const url of urls) {
-          onDeeplinkUrl({ url })
-        }
+        for (const url of urls) onDeeplinkUrl({ url })
       })
-
-      return () => {
-        unlisten.then(_ => _())
-      }
+      return () => { unlisten.then((_) => _()) }
     }
   }, [handleRedirectCallback])
 
-
-  const navigate = useNavigate()
-
   useEffect(() => {
-    (async () => {
-
+    ; (async () => {
       if (isTauri()) {
-        const startUrls = await getCurrent();
-
+        const startUrls = await getCurrent()
         console.log({ startUrls })
         if (startUrls && startUrls.length > 0) {
-          for (const url of startUrls) {
-            onDeeplinkUrl({ url })
-          }
+          for (const url of startUrls) onDeeplinkUrl({ url })
         }
       }
-
-
       const url = await CapApp.getLaunchUrl()
-      if (!url) {
-        return
-      }
+      if (!url) return
       onDeeplinkUrl(url)
     })()
   }, [])
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const location = useLocation()
-  const currentPath = location.pathname
-
-  // Lazy-mount: only render a page after it has been visited at least once
-  const [mountedPages, setMountedPages] = useState<Set<string>>(new Set([currentPath]))
+  // ─── Keep-alive mount tracking ────────────────────────────────────────
+  // A page is added to mountedPaths the first time it becomes the current
+  // path. It is never removed — its component stays in the DOM forever,
+  // just toggled visible/hidden via display.
+  //
+  // IMPORTANT: we initialise with currentPath already in the Set AND we
+  // check `|| p === currentPath` in isMounted(). This guarantees that the
+  // very first render of a new path is never skipped — eliminating the
+  // "blank first visit" race that occurs when using useEffect for tracking.
+  const [mountedPaths, setMountedPaths] = useState<Set<string>>(
+    () => new Set([currentPath])
+  )
   useEffect(() => {
-    setMountedPages(prev => new Set(prev).add(currentPath))
+    setMountedPaths((prev) => {
+      if (prev.has(currentPath)) return prev   // no re-render if already tracked
+      return new Set(prev).add(currentPath)
+    })
   }, [currentPath])
 
-  // ─── Scroll save / restore ────────────────────────────────────────────────
-  // Critical ordering: useLayoutEffect cleanups fire BEFORE useLayoutEffect bodies.
-  //
-  // On path change:
-  //   1. cleanup of BOTH useLayoutEffects runs (removes old scroll listener)
-  //   2. body of listener useLayoutEffect runs (registers NEW path listener)
-  //   3. body of restore useLayoutEffect runs (window.scrollTo → scroll event
-  //      caught ONLY by NEW path's listener — saves correct value, not old path)
-  //
-  // If we used useEffect instead, its cleanup runs AFTER useLayoutEffect bodies,
-  // so the OLD listener would catch window.scrollTo's scroll event and save 0
-  // to the wrong path (the one we just left).
+  // ─── Scroll save / restore ────────────────────────────────────────────
   const scrollPositions = useRef<Map<string, number>>(new Map())
 
   useLayoutEffect(() => {
-    const save = () => {
-      scrollPositions.current.set(currentPath, window.scrollY)
-    }
+    const save = () => scrollPositions.current.set(currentPath, window.scrollY)
     window.addEventListener('scroll', save, { passive: true })
     return () => window.removeEventListener('scroll', save)
   }, [currentPath])
@@ -162,59 +143,96 @@ function App() {
   useLayoutEffect(() => {
     const saved = scrollPositions.current.get(currentPath) ?? 0
     window.scrollTo(0, saved)
-  }, [currentPath, mountedPages])
+  }, [currentPath])
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Route helpers
+  // ─── Route helpers ────────────────────────────────────────────────────
+  // isMounted: returns true if this path has ever been visited OR is current.
+  // The `|| p === currentPath` is the critical fix — the current path is
+  // always considered mounted even before the async useEffect fires.
+  const isMounted = (p: string) => mountedPaths.has(p) || p === currentPath
+
+  // isMountedPrefix: same logic for prefix-matched routes (e.g. /discover/*)
+  const isMountedPrefix = (p: string) =>
+    Array.from(mountedPaths).some((m) => m.startsWith(p)) ||
+    currentPath.startsWith(p)
+
+  // isMountedPattern: same logic for parameterised routes (e.g. /groups/:id)
+  const isMountedPattern = (pattern: string) => {
+    const regex = new RegExp(`^${pattern.replace(/:\w+/g, '[^/]+')}$`)
+    return Array.from(mountedPaths).some((m) => regex.test(m)) || regex.test(currentPath)
+  }
+
+  // active helpers — control display:block vs display:none
   const is = (p: string) => currentPath === p
   const startsWith = (p: string) => currentPath.startsWith(p)
   const matches = (pattern: string) =>
     new RegExp(`^${pattern.replace(/:\w+/g, '[^/]+')}$`).test(currentPath)
-
-  const mounted = (p: string) => mountedPages.has(p)
-  const mountedPrefix = (p: string) => Array.from(mountedPages).some(m => m.startsWith(p))
-  const mountedPattern = (pattern: string) => {
-    const regex = new RegExp(`^${pattern.replace(/:\w+/g, '[^/]+')}$`)
-    return Array.from(mountedPages).some(m => regex.test(m)) || regex.test(currentPath)
-  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Landing */}
-      {mounted('/about/') && <div style={page(is('/about/'))}><LandingPage /></div>}
-      {mounted('/about/community') && <div style={page(is('/about/community'))}><CommunityPage /></div>}
-      {mounted('/about/features') && <div style={page(is('/about/features'))}><FeaturesPage /></div>}
-      {mounted('/about/experience') && <div style={page(is('/about/experience'))}><ExperiencePage /></div>}
-      {mounted('/about/creator-tools') && <div style={page(is('/about/creator-tools'))}><CreatorToolsPage /></div>}
-      {mounted('/about/privacy') && <div style={page(is('/about/privacy'))}><PrivacyPage /></div>}
+      {/* ── Landing / Marketing ──────────────────────────────────────────── */}
+      {isMounted('/about/') && (
+        <div style={pageStyle(is('/about/'))}><LandingPage /></div>
+      )}
+      {isMounted('/about/community') && (
+        <div style={pageStyle(is('/about/community'))}><CommunityPage /></div>
+      )}
+      {isMounted('/about/features') && (
+        <div style={pageStyle(is('/about/features'))}><FeaturesPage /></div>
+      )}
+      {isMounted('/about/experience') && (
+        <div style={pageStyle(is('/about/experience'))}><ExperiencePage /></div>
+      )}
+      {isMounted('/about/creator-tools') && (
+        <div style={pageStyle(is('/about/creator-tools'))}><CreatorToolsPage /></div>
+      )}
+      {isMounted('/about/privacy') && (
+        <div style={pageStyle(is('/about/privacy'))}><PrivacyPage /></div>
+      )}
 
-      {/* Auth */}
-      {mounted('/signin') && <div style={page(is('/signin'))}><AssignUsernamePage /></div>}
+      {/* ── Auth ──────────────────────────────────────────────────────────── */}
+      {isMounted('/signin') && (
+        <div style={pageStyle(is('/signin'))}><AssignUsernamePage /></div>
+      )}
 
-      {/* Dashboard */}
-      {mounted('/') && <div style={page(is('/'))}><DashboardPage /></div>}
-      {mounted('/saved-posts') && <div style={page(is('/saved-posts'))}><SavedPostsPage /></div>}
-      {mounted('/create-post') && <div style={page(is('/create-post'))}><CreatePostPage /></div>}
-      {mounted('/connections') && <div style={page(is('/connections'))}><ConnectionsPage /></div>}
-      {mounted('/settings') && <div style={page(is('/settings'))}><SettingsPage /></div>}
-      {mounted('/blocked-accounts') && <div style={page(is('/blocked-accounts'))}><BlockedAccountsPage /></div>}
+      {/* ── Dashboard ─────────────────────────────────────────────────────── */}
+      {isMounted('/') && (
+        <div style={pageStyle(is('/'))}><DashboardPage /></div>
+      )}
+      {isMounted('/saved-posts') && (
+        <div style={pageStyle(is('/saved-posts'))}><SavedPostsPage /></div>
+      )}
+      {isMounted('/create-post') && (
+        <div style={pageStyle(is('/create-post'))}><CreatePostPage /></div>
+      )}
+      {isMounted('/connections') && (
+        <div style={pageStyle(is('/connections'))}><ConnectionsPage /></div>
+      )}
+      {isMounted('/settings') && (
+        <div style={pageStyle(is('/settings'))}><SettingsPage /></div>
+      )}
+      {isMounted('/blocked-accounts') && (
+        <div style={pageStyle(is('/blocked-accounts'))}><BlockedAccountsPage /></div>
+      )}
 
-      {/* Groups — specific patterns first */}
-      {mountedPattern('/groups/create') && (
-        <div style={page(matches('/groups/create'))}><CreateGroupPage /></div>
+      {/* ── Groups — specific patterns before generic :id ─────────────────── */}
+      {isMountedPattern('/groups/create') && (
+        <div style={pageStyle(matches('/groups/create'))}><CreateGroupPage /></div>
       )}
-      {mountedPattern('/groups/[^/]+/settings') && (
-        <div style={page(matches('/groups/[^/]+/settings'))}><GroupSettingsPage /></div>
+      {isMountedPattern('/groups/:id/settings') && (
+        <div style={pageStyle(matches('/groups/:id/settings'))}><GroupSettingsPage /></div>
       )}
-      {mountedPattern('/groups/[^/]+/info') && (
-        <div style={page(matches('/groups/[^/]+/info'))}><GroupInfoPage /></div>
+      {isMountedPattern('/groups/:id/info') && (
+        <div style={pageStyle(matches('/groups/:id/info'))}><GroupInfoPage /></div>
       )}
-      {mountedPattern('/groups/[^/]+/channels') && (
-        <div style={page(matches('/groups/[^/]+/channels'))}><GroupChannelsPage /></div>
+      {isMountedPattern('/groups/:id/channels') && (
+        <div style={pageStyle(matches('/groups/:id/channels'))}><GroupChannelsPage /></div>
       )}
-      {mountedPattern('/groups/[^/]+') && (
-        <div style={page(
-          matches('/groups/[^/]+') &&
+      {isMountedPattern('/groups/:id') && (
+        <div style={pageStyle(
+          matches('/groups/:id') &&
           !matches('/groups/create') &&
           !currentPath.includes('/settings') &&
           !currentPath.includes('/info') &&
@@ -223,40 +241,52 @@ function App() {
           <GroupWorkspaceRoutePage />
         </div>
       )}
-      {mounted('/groups') && <div style={page(is('/groups'))}><GroupsPage /></div>}
-
-      {/* Discover */}
-      {mountedPrefix('/discover') && <div style={page(startsWith('/discover'))}><DiscoverPage /></div>}
-
-      {/* Posts */}
-      {mountedPattern('/post/[^/]+') && (
-        <div style={page(matches('/post/[^/]+'))}><PostPage /></div>
+      {isMounted('/groups') && (
+        <div style={pageStyle(is('/groups'))}><GroupsPage /></div>
       )}
 
-      {/* Profiles */}
-      {mountedPattern('/user/[^/]+') && (
-        <div style={page(matches('/user/[^/]+'))}><ProfilePage /></div>
+      {/* ── Discover ─────────────────────────────────────────────────────── */}
+      {isMountedPrefix('/discover') && (
+        <div style={pageStyle(startsWith('/discover'))}><DiscoverPage /></div>
       )}
 
-      {/* Messages */}
-      {mountedPattern('/messages/[^/]+/call') && (
-        <div style={page(matches('/messages/[^/]+/call'))}><UserCallPage /></div>
+      {/* ── Posts ────────────────────────────────────────────────────────── */}
+      {isMountedPattern('/post/:id') && (
+        <div style={pageStyle(matches('/post/:id'))}><PostPage /></div>
       )}
-      {mountedPattern('/messages/[^/]+') && (
-        <div style={page(matches('/messages/[^/]+') && !currentPath.includes('/call'))}>
+
+      {/* ── User Profiles ────────────────────────────────────────────────── */}
+      {isMountedPattern('/user/:username') && (
+        <div style={pageStyle(matches('/user/:username'))}><ProfilePage /></div>
+      )}
+
+      {/* ── Messages — call route before DM route ────────────────────────── */}
+      {isMountedPattern('/messages/:username/call') && (
+        <div style={pageStyle(matches('/messages/:username/call'))}><UserCallPage /></div>
+      )}
+      {isMountedPattern('/messages/:username') && (
+        <div style={pageStyle(
+          matches('/messages/:username') && !currentPath.includes('/call')
+        )}>
           <UserMessagePage />
         </div>
       )}
-      {mounted('/messages') && <div style={page(is('/messages'))}><MessagesPage /></div>}
-
-      {/* Notifications */}
-      {mountedPrefix('/notification') && (
-        <div style={page(startsWith('/notification'))}><NotificationsPage /></div>
+      {isMounted('/messages') && (
+        <div style={pageStyle(is('/messages'))}><MessagesPage /></div>
       )}
 
-      {/* Legal */}
-      {mounted('/terms-of-use') && <div style={page(is('/terms-of-use'))}><TermsOfUse /></div>}
-      {mounted('/privacy') && <div style={page(is('/privacy'))}><PrivacyPolicy /></div>}
+      {/* ── Notifications ───────────────────────────────────────────────── */}
+      {isMountedPrefix('/notification') && (
+        <div style={pageStyle(startsWith('/notification'))}><NotificationsPage /></div>
+      )}
+
+      {/* ── Legal ────────────────────────────────────────────────────────── */}
+      {isMounted('/terms-of-use') && (
+        <div style={pageStyle(is('/terms-of-use'))}><TermsOfUse /></div>
+      )}
+      {isMounted('/privacy') && (
+        <div style={pageStyle(is('/privacy'))}><PrivacyPolicy /></div>
+      )}
     </>
   )
 }

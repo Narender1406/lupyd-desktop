@@ -1,9 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useRef, useState } from "react"
-import { useInView } from "framer-motion"
 
 interface AnimatedCardProps {
   children: React.ReactNode
@@ -11,24 +9,39 @@ interface AnimatedCardProps {
   className?: string
 }
 
+/**
+ * AnimatedCard
+ *
+ * Animates its children in with a fade + slide-up effect.
+ * Uses requestAnimationFrame to start the animation on the very next
+ * frame after mount — guaranteeing content is visible immediately
+ * without waiting for an async IntersectionObserver callback.
+ *
+ * The delay prop staggers multiple cards (e.g. 0.1s, 0.2s apart).
+ */
 export function AnimatedCard({ children, delay = 0, className = "" }: AnimatedCardProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true, amount: 0.1 })
   const [hasAnimated, setHasAnimated] = useState(false)
+  const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (isInView && !hasAnimated) {
+    // requestAnimationFrame fires after the browser has painted the first
+    // frame. This is the earliest possible moment to start the transition
+    // and ensures the opacity:0 → opacity:1 animation is always visible
+    // (vs IntersectionObserver which can miss elements already in-viewport).
+    rafRef.current = requestAnimationFrame(() => {
       setHasAnimated(true)
+    })
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [isInView, hasAnimated])
+  }, [])
 
   return (
     <div
-      ref={ref}
-      className={`transition-all duration-700 ease-in-out ${className}`}
+      className={`transition-all duration-500 ease-out ${className}`}
       style={{
         opacity: hasAnimated ? 1 : 0,
-        transform: hasAnimated ? "translateY(0)" : "translateY(30px)",
+        transform: hasAnimated ? "translateY(0)" : "translateY(20px)",
         transitionDelay: `${delay}s`,
       }}
     >

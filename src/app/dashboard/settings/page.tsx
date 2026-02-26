@@ -1,6 +1,5 @@
 "use client"
 
-import { AnimatedCard } from "@/components/animated-card"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -240,8 +239,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="w-full overflow-hidden">
-            <TabsContent value="account" className="mt-0 space-y-6 w-full">
-              <AnimatedCard>
+            <TabsContent forceMount value="account" className="mt-0 space-y-6 w-full data-[state=inactive]:hidden">
+              <div>
                 <Card className="border-none shadow-sm w-full overflow-hidden">
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle>Profile Information</CardTitle>
@@ -303,9 +302,9 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </AnimatedCard>
+              </div>
 
-              <AnimatedCard delay={0.2}>
+              <div>
                 <Card className="border-none shadow-sm">
                   <CardHeader className="p-4 sm:p-6">
                     <CardTitle className="text-red-600">Danger Zone</CardTitle>
@@ -349,20 +348,20 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </AnimatedCard>
+              </div>
             </TabsContent>
 
-            <TabsContent value="privacy" className="mt-0 space-y-6">
+            <TabsContent forceMount value="privacy" className="mt-0 space-y-6 data-[state=inactive]:hidden">
               <PrivacySection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
 
-            <TabsContent value="notifications" className="mt-0 space-y-6">
+            <TabsContent forceMount value="notifications" className="mt-0 space-y-6 data-[state=inactive]:hidden">
               <NotificationsSection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
-            <TabsContent value="preferences" className="mt-0 space-y-6">
+            <TabsContent forceMount value="preferences" className="mt-0 space-y-6 data-[state=inactive]:hidden">
               <PreferencesSection onSave={() => setShowSuccessDialog(true)} />
             </TabsContent>
-            <TabsContent value="about" className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg">
+            <TabsContent forceMount value="about" className="mt-0 flex flex-col items-start space-y-4 bg-white text-black dark:bg-black dark:text-white p-6 rounded-lg data-[state=inactive]:hidden">
               <div className="flex flex-col items-center justify-center text-center w-full px-6 py-10 
                   bg-white text-black dark:bg-black dark:text-white rounded-lg space-y-8">
 
@@ -472,7 +471,7 @@ function PrivacySection({ onSave }: { onSave: () => void }) {
 
 
   return (
-    <AnimatedCard>
+    <div>
       <Card className="border-none shadow-sm">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>Privacy Settings</CardTitle>
@@ -578,7 +577,7 @@ function PrivacySection({ onSave }: { onSave: () => void }) {
           </div>
         </CardContent>
       </Card>
-    </AnimatedCard>
+    </div>
 
   )
 
@@ -587,7 +586,7 @@ function PrivacySection({ onSave }: { onSave: () => void }) {
 function PreferencesSection({ onSave }: { onSave: () => void }) {
   const { theme, setTheme } = useTheme()
   return (
-    <AnimatedCard>
+    <div>
       <Card className="border-none shadow-sm">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>App Preferences</CardTitle>
@@ -708,14 +707,14 @@ function PreferencesSection({ onSave }: { onSave: () => void }) {
           </div>
         </CardContent>
       </Card>
-    </AnimatedCard>
+    </div>
   )
 }
 
 
 function NotificationsSection({ onSave }: { onSave: () => void }) {
   return <>
-    <AnimatedCard>
+    <div>
       <Card className="border-none shadow-sm">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle>Notification Preferences</CardTitle>
@@ -820,6 +819,6 @@ function NotificationsSection({ onSave }: { onSave: () => void }) {
           </div>
         </CardContent>
       </Card>
-    </AnimatedCard>
+    </div>
   </>
 }
