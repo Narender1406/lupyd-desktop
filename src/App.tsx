@@ -74,7 +74,8 @@ function App() {
 
   useEffect(() => {
     EncryptionPlugin.requestAllPermissions({ permissions: ['camera', 'mic', 'notification'] })
-  })
+  }, [])
+
 
   useEffect(() => {
     const unlisten = isTauri()

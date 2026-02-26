@@ -5,7 +5,7 @@ import { ConflictStatusError, getPayloadFromAccessToken, isValidUsername, NotAut
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LandingLayout from "./(landing)/layout";
-import { AnimatedCard } from "@/components/animated-card";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
@@ -108,7 +108,7 @@ export default function AssignUsernamePage() {
       <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
 
         <div className="space-y-2">
-          <AnimatedCard>
+          <div>
             <Card>
               <CardContent>
                 <Label htmlFor="username">
@@ -124,7 +124,7 @@ export default function AssignUsernamePage() {
                 <p>{bottomText}</p>
               </CardContent>
             </Card>
-          </AnimatedCard>
+          </div>
         </div>
       </div>
 
@@ -132,3 +132,4 @@ export default function AssignUsernamePage() {
   )
 
 }
+
