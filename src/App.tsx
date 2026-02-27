@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Route, Routes, useNavigate  } from 'react-router-dom'
 import './App.css'
 
 import { useAuth0 } from '@auth0/auth0-react'
@@ -96,6 +96,7 @@ function App() {
       return () => { unlisten.then((_) => _()) }
     }
   }, [handleRedirectCallback])
+
 
   useEffect(() => {
     ; (async () => {

@@ -10,11 +10,10 @@ import { fromBase64 } from "@/lib/utils"
 import { protos } from "firefly-client-js"
 import { Hash, Menu, Plus, Settings, Volume2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { usePathParams } from "@/hooks/use-path-params"
+import { useNavigate, useParams } from "react-router-dom"
 
 export default function GroupChannelListPage() {
-  const { id } = usePathParams<{ id: string }>('/groups/:id')
+  const { id } = useParams()
   const navigate = useNavigate()
 
   const [groupInfo, setGroupInfo] = useState<BGroupInfo | undefined>(undefined)
@@ -70,7 +69,7 @@ export default function GroupChannelListPage() {
   }
 
   return (
-    <DashboardLayout title={groupInfo?.name}>
+    <DashboardLayout>
       <div className="flex h-[calc(100vh-65px)] -m-4 md:-m-6">
         {/* Desktop: Server Rail */}
         <aside className="hidden md:flex flex-col gap-3 items-center py-3 w-[72px] shrink-0 bg-gray-50 border-r overflow-y-auto">
@@ -87,7 +86,7 @@ export default function GroupChannelListPage() {
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <div className="text-sm">Create Group</div>
+                <div className="text-sm">Create Server</div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -101,8 +100,8 @@ export default function GroupChannelListPage() {
                 <TooltipTrigger asChild>
                   <button
                     className={`h-12 w-12 flex items-center justify-center rounded-2xl transition-all border ${group.groupId === Number(id)
-                      ? "rounded-xl bg-primary text-primary-foreground"
-                      : "bg-white hover:rounded-xl hover:bg-primary hover:text-primary-foreground"
+                        ? "rounded-xl bg-primary text-primary-foreground"
+                        : "bg-white hover:rounded-xl hover:bg-primary hover:text-primary-foreground"
                       }`}
                     onClick={() => handleSelectGroup(group.groupId)}
                     aria-label={`Open ${group.name}`}
@@ -240,7 +239,7 @@ export default function GroupChannelListPage() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0 flex flex-col">
                   <SheetHeader className="p-4 border-b shrink-0">
-                    <SheetTitle>Your Groups</SheetTitle>
+                    <SheetTitle>Your Servers</SheetTitle>
                   </SheetHeader>
                   <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {groupInfos.map((group) => (
@@ -248,8 +247,8 @@ export default function GroupChannelListPage() {
                         key={group.groupId}
                         onClick={() => handleSelectGroup(group.groupId)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg transition ${group.groupId === Number(id)
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-gray-100"
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-gray-100"
                           }`}
                       >
                         <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${group.groupId === Number(id) ? "bg-primary-foreground/20" : "bg-gray-200"
@@ -270,7 +269,7 @@ export default function GroupChannelListPage() {
                       variant="outline"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Create Group
+                      Create Server
                     </Button>
                   </div>
                 </SheetContent>

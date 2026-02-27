@@ -31,13 +31,13 @@ import { toast } from "@/hooks/use-toast"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  title?: string
 }
 
-export function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const [searchText, setSearchText] = useState("")
   const [username, setUsername] = useState<string | null>(null)
   const auth = useAuth()
@@ -95,10 +95,20 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   ]
   const dedupedNavItems = navItems.filter((item, idx, arr) => arr.findIndex((x) => x.path === item.path) === idx)
 
+  // Handle client-side hydration
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
-
-
-
+  // Lock background scroll when mobile menu is open
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const original = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = original
+    };
+  }, [mobileMenuOpen])
 
   // Set safe area insets as CSS variables
   useEffect(() => {
@@ -112,9 +122,19 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     return () => window.removeEventListener('resize', setSafeArea);
   }, [])
 
+  // Allow body scrolling but handle mobile keyboard properly
+  useEffect(() => {
+    // Don't prevent body scrolling by default
+    document.body.style.overflow = '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [])
 
 
-
+  if (!isMounted) {
+    return null
+  }
 
   const searchSubmit = async (e: React.KeyboardEvent) => {
     const keyCode = e.code || e.key
@@ -214,15 +234,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
           }}
         >
           <div className="flex items-center justify-between p-4 md:ml-64">
-            {/* Logo / Title */}
+            {/* Logo - shown on both mobile and desktop */}
             <div className="flex items-center">
-              {title ? (
-                <span className="font-bold text-xl truncate max-w-[180px]">{title}</span>
-              ) : (
-                <Link to="/" className="font-bold text-xl">
-                  Lupyd
-                </Link>
-              )}
+              <Link to="/" className="font-bold text-xl">
+                Lupyd
+              </Link>
             </div>
 
             {/* Search - shown only on desktop */}

@@ -8,6 +8,7 @@ fn main() {
                 if let Ok((key, value)) = item {
                     println!("cargo:rustc-env={}={}", key, value);
                     println!("cargo:warning=Loaded env var: {}", key);
+                    println!("cargo:rerun-if-env-changed={}", key);
                 }
             }
         }
