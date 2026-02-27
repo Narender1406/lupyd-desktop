@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if ("refresh_token" in result && typeof result["refresh_token"] === "string") {
         const refreshToken = result.refresh_token;
-        console.log(`Saving tokens `, { accessToken,refreshToken })
+        console.log(`Saving tokens `, { accessToken, refreshToken })
         EncryptionPlugin.saveTokens({ accessToken, refreshToken })
       } else {
         console.warn(`Unable to get refresh token`, JSON.stringify(result))
@@ -89,13 +89,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return undefined;
   }, [auth0])
 
-  // const handleRedirectCallback = () => getAuthHandler()!.handleRedirectCallback()
   const handleRedirectCallback = useCallback(async (url?: string) => {
     console.log(`Handling redirect callback ${url}`)
-    const result = await auth0.handleRedirectCallback(url)
-    console.log(`Redirect handled `, result)
-    navigate("/signin")
-    
+
+    // Bail out on stale deep-link URLs (e.g. getCurrent() returning a previous
+    // session's code which is already consumed). Without this, a stale code
+    // causes auth0.handleRedirectCallback to throw, and navigate('/signin')
+    // would still fire — sending the user to /signin on every cold start.
+    try {
+      await auth0.handleRedirectCallback(url)
+    } catch (e) {
+      console.warn('handleRedirectCallback failed — likely a stale deep link, ignoring:', e)
+      return
+    }
+
+    // Callback succeeded. Auth0 has the session internally but React state
+    // hasn't propagated yet. Pre-fetch the token so username is set BEFORE
+    // navigating to /signin, preventing the stuck-screen for existing users.
+    try {
+      const result = await auth0.getAccessTokenSilently({
+        detailedResponse: true,
+        cacheMode: 'off',
+      })
+      onUpdateUser(result.access_token)
+    } catch (e) {
+      console.warn('Could not pre-fetch token after redirect callback:', e)
+    }
+
+    navigate('/signin')
   }, [auth0])
 
 
@@ -122,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{  isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
   )
 }
 

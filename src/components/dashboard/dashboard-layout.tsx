@@ -128,19 +128,12 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     if (username) {
       auth.logout()
     } else {
-      if (!auth.username) {
-        auth.getToken().then((value) => {
-          if (value) {
-            if (!getPayloadFromAccessToken(value).uname) {
-              navigate("/signin")
-            }
-          } else {
-            auth.login()
-          }
-        })
-      }
+      // Always go through Auth0 — it handles SSO silently if already authenticated.
+      // This guarantees the flow is always: Auth0 → redirect back → /signin.
+      auth.login()
     }
   }
+
 
   return (
     <>
