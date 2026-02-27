@@ -10,19 +10,6 @@ import './index.css'
 // import { SnackbarProvider } from "@/components/snackbar"
 import { DialogProvider } from "@/context/dialog-context"
 import { UserImageProvider } from "@/context/user-image-context"
-import { App as CapacitorApp } from '@capacitor/app'
-
-// Handle Android back button
-if (!isTauri()) {
-  CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-    if (canGoBack) {
-      window.history.back();
-    } else {
-      CapacitorApp.exitApp();
-    }
-  });
-
-}
 
 import { ApiServiceProvider } from "@/context/apiService"
 import { PersistenceProvider } from "@/context/persistence-provider"
@@ -30,7 +17,6 @@ import { QueryClientProviderWrapper } from "@/context/query-client"
 import FireflyProvider from './context/firefly-context.tsx'
 import { BrowserRouter } from "react-router-dom"
 import { Toaster } from "@/components/ui/toaster"
-import { isTauri } from "@tauri-apps/api/core"
 
 
 createRoot(document.getElementById('root')!).render(

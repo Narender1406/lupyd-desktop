@@ -1,10 +1,8 @@
-import { useEffect } from 'react'
-import { Route, Routes, useNavigate  } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Route, Routes, useLocation, useNavigate  } from 'react-router-dom'
 import './App.css'
 
 import { useAuth0 } from '@auth0/auth0-react'
-import { App as CapApp } from "@capacitor/app"
-import { Browser } from "@capacitor/browser"
 import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link"
 import { useAuth } from './context/auth-context'
 import { EncryptionPlugin } from './context/encryption-plugin'
@@ -63,9 +61,6 @@ function App() {
       if (url.includes('code') || url.includes('error')) {
         await auth.handleRedirectCallback(url)
       }
-      if (!isTauri()) {
-        await Browser.close()
-      }
     } else if (url.startsWith('lupyd://m.lupyd.com')) {
       const link = new URL(url)
       navigate({ pathname: link.pathname, search: link.search })
@@ -78,12 +73,11 @@ function App() {
 
 
   useEffect(() => {
-    const unlisten = isTauri()
-      ? listen('appUrlOpen', (data) => {
+    const unlisten = listen('appUrlOpen', (data) => {
         console.log({ listenData: data })
         onDeeplinkUrl({ url: data.payload as string })
       })
-      : CapApp.addListener('appUrlOpen', onDeeplinkUrl).then((e) => e.remove)
+      
     return () => { unlisten.then((_) => _()) }
   }, [handleRedirectCallback])
 
@@ -107,9 +101,6 @@ function App() {
           for (const url of startUrls) onDeeplinkUrl({ url })
         }
       }
-      const url = await CapApp.getLaunchUrl()
-      if (!url) return
-      onDeeplinkUrl(url)
     })()
   }, [])
   // ─────────────────────────────────────────────────────────────────────────

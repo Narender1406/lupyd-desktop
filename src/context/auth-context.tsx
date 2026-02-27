@@ -176,7 +176,6 @@ export function LupydAuth0Provider({ children }: { children: ReactNode }) {
   const redirectUrl = process.env.NEXT_PUBLIC_JS_ENV_AUTH0_REDIRECT_CALLBACK ?? `${window.location.origin}/signin`
 
 
-  // const redirectUrl = `com.example.app://lupyd-dev.eu.auth0.com/capacitor/com.example.app/callback`;
 
 
   const onRedirectCallback = (state: AppState | undefined, user: User | undefined) => {

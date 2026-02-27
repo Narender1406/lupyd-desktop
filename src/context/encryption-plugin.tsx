@@ -1,7 +1,6 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 
 import { decryptBlobV1 } from "@/lib/utils";
-import { type Plugin as CapacitorPlugin, registerPlugin, } from '@capacitor/core';
 import { isTauri } from "@tauri-apps/api/core";
 import { protos as FireflyProtos } from "firefly-client-js";
 import { TauriEncryptionPluginInstance } from './tauri-encryption-plugin';
@@ -104,7 +103,7 @@ export function userMessageToBUserMessage(msg: UserMessage): BUserMessage {
 }
 
 
-export interface EncryptionPluginType extends CapacitorPlugin {
+export interface EncryptionPluginType {
 
   encryptAndSend(options: {
     textB64: string,
@@ -205,13 +204,11 @@ export interface EncryptionPluginType extends CapacitorPlugin {
 
 // Check if running in Tauri environment
 
-export const EncryptionPlugin = isTauri()
-  ? TauriEncryptionPluginInstance
-  : registerPlugin<EncryptionPluginType>("EncryptionPlugin");
+export const EncryptionPlugin =
+  TauriEncryptionPluginInstance
 
-export const TestPlugin = isTauri()
-  ? TauriEncryptionPluginInstance
-  : registerPlugin<EncryptionPluginType>("TestPlugin");
+export const TestPlugin =
+  TauriEncryptionPluginInstance
 
 //@ts-ignore
 window["_plugins"] = { TestPlugin, EncryptionPlugin }

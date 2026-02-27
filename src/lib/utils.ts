@@ -1,4 +1,3 @@
-import { Browser } from "@capacitor/browser";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { clsx, type ClassValue } from "clsx";
@@ -192,11 +191,6 @@ export function formatNumber(
     : "0";
 }
 
-
 export function launchBrowserUrl(url: string) {
-  if (isTauri()) {
-    openUrl(url)
-  } else {
-    Browser.open({ url, windowName: "_self" })
-  }
+  openUrl(url);
 }

@@ -1,4 +1,3 @@
-import type { PluginListenerHandle } from '@capacitor/core';
 import { invoke } from '@tauri-apps/api/core';
 import type {
   BGroupInfo,
@@ -11,12 +10,6 @@ import type {
 } from './encryption-plugin';
 
 export class TauriEncryptionPlugin implements EncryptionPluginType {
-  addListener(eventName: string, listenerFunc: (...args: any[]) => any): Promise<PluginListenerHandle> {
-    throw new Error('Method not implemented.');
-  }
-  removeAllListeners(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
   async encryptAndSend(options: {
     textB64: string;
     to: string;

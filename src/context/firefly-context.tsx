@@ -7,8 +7,7 @@ import { protos as FireflyProtos } from "firefly-client-js";
 import { useAuth } from "./auth-context";
 
 import { toBase64 } from "@/lib/utils";
-import { isTauri } from "@tauri-apps/api/core";
-import { bGroupMessageToGroupMessage, bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBGroupMessage, isBUserMessage, userMessageToBUserMessage, type EncryptionPluginType, type GroupMessage, type UserMessage } from "./encryption-plugin";
+import { bGroupMessageToGroupMessage, bUserMessageToUserMessage, EncryptionPlugin, groupMessageToBGroupMessage, isBGroupMessage, isBUserMessage, userMessageToBUserMessage,  type GroupMessage, type UserMessage } from "./encryption-plugin";
 
 
 export type MessageCallbackType = (message: UserMessage) => void;
@@ -88,8 +87,8 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
       eventListeners.current.forEach(e => e(dmsg))
     }
 
-    const listener = isTauri() ? listen("onUserMessage", (data) => onUserMessage(data.payload as any)).then(unlisten => { return { remove: unlisten } }) :
-      (EncryptionPlugin as EncryptionPluginType).addListener("onUserMessage", onUserMessage)
+    const listener = listen("onUserMessage", (data) => onUserMessage(data.payload as any)).then(unlisten => { return { remove: unlisten } }) 
+      
 
     return () => { listener.then((_) => _.remove()) }
 
@@ -124,8 +123,7 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
 
     }
 
-    const listener = isTauri() ? listen("onGroupMessage", (data) => onGroupMessage(data.payload as any)) : (EncryptionPlugin as EncryptionPluginType).addListener("onGroupMessage", onGroupMessage).then(e => e.remove)
-
+    const listener = listen("onGroupMessage", (data) => onGroupMessage(data.payload as any)) 
     return () => { listener.then((_) => _()) }
 
   }, [])
@@ -158,8 +156,8 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
     }
 
 
-    const listener = EncryptionPlugin.addListener("onGroupMessage", onGroupMessage)
-    return () => { listener.then(_ => _.remove()) }
+    const listener = listen("onGroupMessage", (e) => onGroupMessage(e.payload))
+    return () => { listener.then(_ => _()) }
 
   }, [])
 
