@@ -155,6 +155,6 @@ html {
 }
 
 
-.dark html {
-  background-color: black;
+html.dark {
+  background-color: #030711;
 }

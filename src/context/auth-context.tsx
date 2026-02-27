@@ -128,6 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (auth0.isLoading) return
       const token = await getToken()
+
+      //@ts-ignore
+      window["_auth0_token"] = token
+      
       onUpdateUser(token ?? null)
     })()
   }, [auth0])
