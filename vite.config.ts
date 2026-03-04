@@ -98,6 +98,12 @@ export default defineConfig(({ mode }) => {
       mimeTypes: {
         "application/wasm": ["wasm"],
       },
+
+      hmr: {
+        protocol: "ws",
+        host: emulatorAddr, // your laptop IP
+        port: 8080,
+      },
     },
   };
 });
