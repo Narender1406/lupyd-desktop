@@ -1,5 +1,5 @@
 import { ApiService } from "lupyd-js"
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useEffect } from "react"
+import { createContext, type ReactNode, useContext, useMemo, useRef } from "react"
 import { useAuth } from "./auth-context"
 
 type ApiServiceContextType = {
@@ -34,20 +34,29 @@ export function ApiServiceProvider({ children }: { children: ReactNode }) {
     throw Error(`NEXT_PUBLIC_JS_ENV_CDN_STORAGE env var not set`)
   }
 
+  // Keep getToken in a ref so the ApiService closure always calls the latest
+  // version without needing to be in the useMemo dependency array.
+  // This is critical: if [auth] were a dep, every auth context update (e.g.
+  // username change) would recreate `api`, triggering useEffect([api]) re-runs
+  // everywhere and hammering the server with redundant requests.
+  const getTokenRef = useRef(auth.getToken)
+  getTokenRef.current = auth.getToken
 
   const api = useMemo(() => new ApiService(apiUrl, apiCdnUrl,
     async () => {
-      const token = await auth.getToken()
+      const token = await getTokenRef.current()
       if (!token) {
         throw new Error("User not authenticated")
       }
       return token
-    }), [auth])
+    }), [apiUrl, apiCdnUrl])  // no auth dep — api is created once per session
 
 
   return <ApiServiceContext.Provider value={{ api, apiCdnUrl, apiUrl, cdnUrl }}>{children}</ApiServiceContext.Provider>
 
 }
+
+
 
 
 export function useApiService() {
