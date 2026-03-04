@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       //@ts-ignore
       window["_auth0_token"] = token
-      
+
       onUpdateUser(token ?? null)
     })()
   }, [auth0])
@@ -142,12 +142,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = useMemo(() => username != null, [username])
 
+  // CRITICAL: memoize the context value so its reference only changes when
+  // actual values change. Without this, every AuthProvider re-render creates
+  // a new object → all consumers see a changed `auth` → infinite re-renders.
+  const contextValue = useMemo(() => ({
+    isAuthenticated,
+    logout,
+    username,
+    login,
+    getToken,
+    handleRedirectCallback,
+  }), [isAuthenticated, username, logout, login, getToken, handleRedirectCallback])
+
   if (!isReady) {
+
     return (<div />);
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: isAuthenticated, logout, username, login, getToken, handleRedirectCallback }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   )
 }
 
