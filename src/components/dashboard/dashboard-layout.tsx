@@ -157,76 +157,75 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <>
-      {/* Header stays visible */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black">
-        {/* Sidebar - Desktop Only - Hidden on mobile */}
-        <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto">
-          {/* Logo */}
-          <div className="p-4 border-b dark:border-neutral-800">
-            <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
-            </Link>
-          </div>
+      {/* Sidebar - Desktop Only - Fixed, outside header so it doesn't interfere with sticky positioning */}
+      <aside className="hidden md:flex fixed top-0 left-0 h-screen flex-col w-64 border-r bg-white dark:bg-black dark:border-neutral-800 overflow-y-auto z-40">
+        {/* Logo */}
+        <div className="p-4 border-b dark:border-neutral-800">
+          <Link to="/" className="flex items-center">
+            <span className="text-xl font-bold text-gray-900 dark:text-white">Lupyd</span>
+          </Link>
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 p-4 space-y-1">
-            {dedupedNavItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <div key={index}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center px-3 py-2 rounded-md ${isActive
-                      ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
-                      }`}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    <span>{item.label}</span>
-                  </Link>
-
-
-                </div>
-              );
-            })}
-          </nav>
-
-          {/* Profile / Sign In or Out */}
-          <div className="p-4 border-t dark:border-neutral-800">
-            {username ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Link to={`/user/${username}`}>
-                    <UserAvatar username={username} />
-                  </Link>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onSigninButtonClick}
-                  className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
+        {/* Navigation Links */}
+        <nav className="flex-1 p-4 space-y-1">
+          {dedupedNavItems.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <div key={index}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center px-3 py-2 rounded-md ${isActive
+                    ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-700 dark:text-gray-300"
+                    }`}
                 >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                onClick={onSigninButtonClick}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                <span>Sign In</span>
-              </Button>
-            )}
-          </div>
-        </aside>
+                  <Icon className="mr-3 h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
 
-        {/* Top Bar - No sidebar toggle on mobile in header anymore */}
+
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Profile / Sign In or Out */}
+        <div className="p-4 border-t dark:border-neutral-800">
+          {username ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Link to={`/user/${username}`}>
+                  <UserAvatar username={username} />
+                </Link>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{username}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">@{username}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onSigninButtonClick}
+                className="text-gray-500 hover:text-black hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-neutral-900"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              className="w-full bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              onClick={onSigninButtonClick}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
+        </div>
+      </aside>
+
+      {/* Sticky Top Bar */}
+      <header className="sticky top-0 z-50 bg-white dark:bg-black">
         <div
           className="border-b bg-white dark:bg-black"
           style={{
@@ -234,8 +233,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           }}
         >
           <div className="flex items-center justify-between p-4 md:ml-64">
-            {/* Logo - shown on both mobile and desktop */}
-            <div className="flex items-center">
+            {/* Logo - hidden on desktop since sidebar shows it */}
+            <div className="flex items-center md:hidden">
               <Link to="/" className="font-bold text-xl">
                 Lupyd
               </Link>
@@ -343,11 +342,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Content flows normally */}
       <main>
-        <div className="container mx-auto p-4 pt-6 max-w-full md:ml-64">
+        {/* pb-20 on mobile gives clearance above the fixed bottom navbar; no padding needed on md+ */}
+        <div className="p-4 pt-6 md:ml-64 pb-20 md:pb-6">
           {children}
         </div>
 
-        {/* Mobile Navbar */}
+        {/* Bottom Navbar - mobile only (hidden on md+ where sidebar is shown) */}
         <NavBar
           items={[
             { name: 'Home', url: '/', icon: Home },
@@ -371,7 +371,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             },
             { name: 'Settings', url: '/settings', icon: Settings },
           ]}
-          className="fixed bottom-0"
+          className="md:hidden fixed bottom-0"
         />
       </main>
     </>

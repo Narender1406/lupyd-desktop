@@ -1,4 +1,4 @@
-use tauri::{plugin::Builder, Emitter, Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 mod encryption_plugin;
@@ -95,10 +95,17 @@ pub fn run() {
                 .path()
                 .app_data_dir()
                 .expect("failed to get app data dir");
+            log::info!("app data_dir == {:?}", app_data_dir);
+            if let Err(e) = std::fs::create_dir_all(&app_data_dir)
+                .map_err(|e| format!("failed to create app data dir: {}", e))
+                .and(Ok(()))
+            {
+                log::error!("Failed to create app data dir: {}", e);
+                return;
+            }
             if let Err(e) = encryption_plugin::initialize_firefly_client(
                 app_data_dir
-                    .canonicalize()
-                    .unwrap()
+                    
                     .to_string_lossy()
                     .to_string(),
             )
@@ -114,16 +121,15 @@ pub fn run() {
         #[cfg(desktop)]
         {
             use tauri::menu::{Menu, MenuItem};
-            use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+            use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i]).unwrap();
 
             let _tray = TrayIconBuilder::with_id("main")
                 .menu(&menu)
-                .show_menu_on_left_click(true)
+                .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id().as_ref() {
                     "quit" => {
-                        // Cleanup before exit
                         tauri::async_runtime::block_on(async {
                             let _ = encryption_plugin::dispose(app.clone()).await;
                         });
@@ -133,20 +139,19 @@ pub fn run() {
                 })
                 .icon(app.default_window_icon().unwrap().clone())
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
+                    // Only show window on left-click; right-click shows the menu
+                    // automatically via Tauri. Handling right-click here would steal
+                    // focus from the menu and cause it to immediately disappear.
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
                         let app = tray.app_handle();
-
-                        #[cfg(not(target_os = "macos"))]
-                        {
-                            if let Some(webview_window) = app.get_webview_window("main") {
-                                let _ = webview_window.show();
-                                let _ = webview_window.set_focus();
-                            }
-                        }
-
-                        #[cfg(target_os = "macos")]
-                        {
-                            let _ = tauri::AppHandle::show(&app.app_handle());
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.set_focus();
                         }
                     }
                 })
