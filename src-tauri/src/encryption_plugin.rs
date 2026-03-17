@@ -8,7 +8,7 @@ use firefly_signal::{
         setup_pool_from_path,
     },
     group::{UpdateRoleProposalFfi, UpdateUserProposalFfi},
-    websocket::{ConnectionState, FfiFireflyWsClient, FireflyWsClientCallback},
+    websocket::{FfiFireflyWsClient, FireflyWsClientCallback},
     *,
 };
 use rand::{distributions::Alphanumeric, Rng};
@@ -259,13 +259,8 @@ pub async fn initialize_firefly_client(app_data_dir: String) -> Result<(), Strin
     // Initialize client connection
     let client_clone = client.clone();
     tokio::spawn(async move {
-        if matches!(
-            client_clone.get_connection_state(),
-            ConnectionState::Disconnected
-        ) {
-            if let Err(err) = client_clone.initialize_with_retrying().await {
-                log::error!("retry initing failed: {:?}", err);
-            }
+        if let Err(err) = client_clone.initialize_with_retrying().await {
+            log::error!("retry initing failed: {:?}", err);
         }
     });
 
@@ -444,6 +439,18 @@ pub async fn save_tokens<R: Runtime>(
         .set_auth_tokens(tokens)
         .await
         .map_err(|e| format!("Failed to save tokens: {}", e))?;
+
+    // Always run check_setup after tokens are saved so key bundles get uploaded.
+    // initialize_with_retrying() ran at startup before tokens existed — now that
+    // we have a valid token, re-run check_setup regardless of connection state.
+    let client_clone = client.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(err) = client_clone.check_setup().await {
+            log::error!("check_setup after token save failed: {:?}", err);
+        } else {
+            log::info!("check_setup after token save succeeded");
+        }
+    });
 
     Ok(())
 }

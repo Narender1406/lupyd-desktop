@@ -129,37 +129,7 @@ export default function FireflyProvider({ children }: { children: ReactNode }) {
   }, [])
 
 
-  useEffect(() => {
-    const onGroupMessage = (data: any) => {
-      if (!isBGroupMessage(data)) {
-        throw Error(`invalid group message received: ${JSON.stringify(data)}`)
-      }
 
-      const groupMessage = bGroupMessageToGroupMessage(data as any)
-
-      {
-
-        const currentPathname = window.location.pathname
-
-        if (!currentPathname.includes(`/groups/${groupMessage.groupId}`)) {
-
-          console.log(`current pathname not matching sender ${currentPathname}, showing notification `)
-
-          if (groupMessage.sender != auth.username) {
-            console.warn("should show group message here")
-          }
-        }
-      }
-
-      groupEventListeners.current.forEach(e => e(groupMessage))
-
-    }
-
-
-    const listener = listen("onGroupMessage", (e) => onGroupMessage(e.payload))
-    return () => { listener.then(_ => _()) }
-
-  }, [])
 
   const service = useMemo(() => new fireflyClientJs.FireflyService(apiUrl, async () => {
     if (!auth.username) throw Error(`Not authenticated`);

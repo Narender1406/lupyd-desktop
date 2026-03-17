@@ -1,0 +1,50 @@
+[package]
+name = "firefly-signal"
+version = "0.0.2"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "firefly_signal"
+path = "src/lib.rs"
+
+[profile.release]
+strip = true
+opt-level = 3
+lto = true
+codegen-units = 1
+
+
+
+[dependencies]
+chrono = { version = "0.4.42", default-features = false, features = ["clock"] }
+android_logger = "0.15.1"
+anyhow = { version = "1.0.100", features = ["backtrace"] }
+async-trait = "0.1.89"
+base64 = "0.22.1"
+bytes = "1.11.0"
+futures = "0.3.31"
+itertools = "0.14.0"
+lazy_static = "1.5.0"
+libsignal_protocol = { git = "https://github.com/signalapp/libsignal.git", package = "libsignal-protocol" }
+firefly_core = { git = "https://github.com/lupyd/firefly-mls.git", package = "firefly-core" }
+firefly_protos = { git = "https://github.com/lupyd/firefly-mls.git", package = "firefly-protos" }
+log = "0.4.28"
+prost = "0.14.1"
+
+quick-protobuf = "0.8.1"
+rand = "0.9.2"
+rand_chacha = "0.9.0"
+reqwest = { version = "0.12.24", features = ["rustls-tls", "zstd", "brotli", "gzip"], default-features = false }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+sqlx = { version = "0.8.6", features = ["sqlite", "runtime-tokio"] }
+tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
+tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-webpki-roots"] }
+env_logger = "0.11.8"
+mls-rs = "0.51.0"
+shfs = { git = "https://github.com/lupyd/shfs", version = "0.1.0" }
+
+[build-dependencies]
+pb-rs = "0.10.0"
+prost-build = "0.14.1"

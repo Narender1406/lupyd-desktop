@@ -1,0 +1,360 @@
+syntax = "proto3";
+
+package firefly;
+
+message UserMessage {
+  fixed64 id = 1;
+  uint64 toId = 2;
+  uint64 fromId = 3;
+  bytes text = 4;
+  uint32 type = 6;
+  uint32 settings = 7; // flags for server to notify or just send or don't send
+
+  // optional sends these for decryption purposes
+  string fromUsername = 8;
+  uint32 fromDeviceId = 9;
+}
+
+message Group {
+  fixed64 id = 1;
+  string name = 2;
+  string description = 3;
+  bytes state = 5;
+  uint32 settings = 6;
+}
+
+message Groups {
+  repeated Group groups = 1;
+}
+
+message UserMessages {
+  repeated UserMessage messages = 1;
+}
+
+message GroupInvite {
+  uint64 groupId = 1;
+  string inviter = 2;
+  string invitee = 3;
+  bytes welcomeMessage = 4;
+  fixed64 commitId = 5;
+}
+
+message GroupCommitAndWelcome {
+  fixed64 id = 1;
+  uint64 groupId = 2;
+  bytes commitMessage = 3;
+
+  string inviter = 4;
+  string invitee = 5;
+  bytes welcomeMessage = 6;
+
+  repeated uint64 inviteeAddresses = 7;
+}
+
+message GroupInvites {
+  repeated GroupInvite invites = 1;
+}
+
+message GroupMessage {
+  fixed64 id = 1;
+  uint64 groupId = 2;
+  bytes message = 3;
+  uint32 epoch = 4;
+}
+
+message GroupKeyPackage {
+  uint64 address = 3;
+  bytes package = 2;
+  string username = 4;
+  int32 id = 1;
+}
+
+message GroupKeyPackages {
+  repeated GroupKeyPackage packages = 1;
+}
+
+message GroupMessages {
+  repeated GroupMessage messages = 2;
+}
+
+message GroupSyncRequest {
+  uint64 group_id = 1;
+  fixed64 start_after = 2;
+  fixed64 until = 3;
+  uint32 limit = 4;
+}
+
+message GroupSyncRequests {
+  repeated GroupSyncRequest requests = 1;
+}
+
+message GroupMemberUpdate {
+  uint64 group_id = 1;
+  fixed64 last_message_seen = 2;
+  uint32 last_epoch = 3;
+}
+
+message GroupMemberUpdates {
+  repeated GroupMemberUpdate updates = 1;
+}
+
+message GroupCommit {
+  fixed64 id = 1;
+  uint64 groupId = 2;
+  bytes commit = 4;
+  uint32 epoch = 3;
+}
+
+message GroupCommits {
+  repeated GroupCommit commits = 1;
+}
+
+message GroupCommitSyncRequest {
+  uint64 group_id = 1;
+  uint32 epoch = 2;
+}
+
+message GroupReAddRequest {
+  uint64 group_id = 1;
+  uint64 address_id = 2;
+  string username = 3;
+}
+
+message GroupReAddRequests {
+  repeated GroupReAddRequest requests = 1;
+}
+
+message Error {
+  string error = 2;
+  uint32 errorCode = 1;
+}
+
+message Result {
+  bytes body = 2;
+  uint32 resultCode = 1;
+}
+
+message Address {
+  uint64 id = 1;
+  string username = 2;
+  string fcmToken = 4;
+  uint32 deviceId = 3;
+}
+
+message Addresses {
+  repeated Address addresses = 1;
+}
+
+message UploadUserMessage {
+  repeated UserMessage messages = 1;
+}
+
+message MessageIdAndTo {
+  fixed64 id = 1;
+  uint64 to = 2;
+  bool is_self = 3;
+}
+
+message UserMessageUploaded {
+  repeated MessageIdAndTo messageIds = 1;
+}
+
+message Request {
+  uint32 id = 1;
+  oneof payload {
+    UserMessage createUserMessage = 2;
+    UploadUserMessage uploadUserMessage = 3;
+    GroupMessage uploadGroupMessage = 4;
+  }
+}
+
+message Response {
+  uint32 id = 1;
+  Error error = 2;
+  oneof body {
+    UserMessage createdUserMessage = 3;
+    UserMessageUploaded userMessageUploaded = 4;
+    GroupMessage groupMessageUploaded = 5;
+  }
+}
+
+message ServerMessage {
+  oneof message {
+    UserMessage userMessage = 1;
+    GroupMessage groupMessage = 2;
+    UserMessages userMessages = 3;
+    GroupMessages groupMessages = 4;
+    Response response = 10;
+
+    bytes ping = 11;
+    bytes pong = 12;
+  }
+}
+
+message ClientMessage {
+  oneof message {
+    UserMessage userMessage = 1;
+    GroupMessage groupMessage = 2;
+    Request request = 10;
+    bytes ping = 11;
+    bytes pong = 12;
+  }
+}
+
+message GroupId {
+  uint64 id = 2;
+}
+
+message AuthToken {
+  string username = 1;
+  uint64 valid_until = 2;
+  bytes credential = 4;
+  uint64 address_id = 6;
+  uint32 device_id = 5;
+}
+
+message SignedToken {
+  string kid = 1;
+  bytes payload = 2;
+  bytes signature = 3;
+}
+
+message FireflyIdentity {
+  bytes secret = 2;
+  bytes public = 3;
+  bytes credential = 4;
+}
+
+message FireflyGroupExtension {
+  string name = 1;
+  repeated FireflyGroupRole roles = 2;
+  repeated FireflyGroupChannel channels = 3;
+  repeated FireflyGroupMember members = 4;
+  fixed32 default_permissions = 5;
+}
+
+message FireflyGroupRole {
+  uint32 id = 1;
+  string name = 2;
+  fixed32 permissions = 3;
+}
+
+message FireflyGroupMember {
+  string username = 1;
+  uint32 role = 2;
+}
+
+message FireflyGroupChannel {
+  uint32 id = 1;
+  string name = 2;
+  uint32 type = 3;
+  repeated FireflyGroupRole roles = 4;
+  fixed32 default_permissions = 5;
+}
+
+message PreKeyBundle {
+  uint32 registrationId = 1;
+  uint32 deviceId = 2;
+  uint32 preKeyId = 3;
+  bytes prePublicKey = 4;
+  uint32 signedPreKeyId = 5;
+  bytes signedPrePublicKey = 6;
+  bytes signedPreKeySignature = 7;
+  bytes identityPublicKey = 8;
+  uint32 KEMPreKeyId = 9;
+  bytes KEMPrePublicKey = 10;
+  bytes KEMPreKeySignature = 11;
+}
+
+message PreKeyBundleEntry {
+  uint32 id = 1;
+  uint64 address = 2;
+  PreKeyBundle bundle = 3;
+
+  string username = 4;
+  uint32 device_id = 5;
+}
+
+message PreKeyBundleEntries {
+  repeated PreKeyBundleEntry entries = 1;
+}
+
+message ConversationStart {
+  uint64 conversationId = 1;
+  string started_by = 2;
+  string other = 3;
+  PreKeyBundle bundle = 4;
+}
+
+message PreKeyBundles {
+  repeated PreKeyBundle bundles = 1;
+}
+
+message Conversation {
+  string user1 = 1;
+  string user2 = 2;
+  uint64 settings = 3;
+}
+
+message Conversations {
+  repeated Conversation conversations = 1;
+}
+
+message EncryptedFile {
+  string url = 1;
+  bytes secretKey = 3;
+  uint32 contentType = 2;
+  uint32 contentLength = 4;
+}
+
+message EncryptedFiles {
+  repeated EncryptedFile files = 1;
+}
+
+message MessagePayload {
+  string text = 1;
+  fixed64 replyingTo = 2;
+  EncryptedFiles files = 3;
+}
+
+enum CallMessageType {
+  none = 0;
+  request = 1;
+  reject = 2;
+  end = 3;
+  // for saving call messages
+  ended = 4;
+  rejected = 5;
+  // webrtc messages
+  candidate = 10;
+  answer = 11;
+  offer = 12;
+}
+
+message CallMessage {
+  bytes message = 1;
+  CallMessageType type = 3;
+  string jsonBody = 4;
+  uint32 sessionId = 2;
+}
+
+message SelfUserMessage {
+  string to = 1;
+  bytes inner = 2; // UserMessageInner encrypted
+}
+
+message UserMessageInner {
+  oneof message {
+    bytes plainText = 1;
+    CallMessage callMessage = 2;
+    MessagePayload messagePayload = 3;
+    SelfUserMessage selfMessage = 4;
+  }
+}
+
+message GroupMessageInner {
+  uint32 channelId = 1;
+  oneof message {
+    MessagePayload messagePayload = 2;
+  }
+}
