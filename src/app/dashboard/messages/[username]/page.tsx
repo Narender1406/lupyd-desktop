@@ -71,6 +71,7 @@ export default function UserMessagePage() {
   const firefly = useFirefly()
 
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [isClientReady, setIsClientReady] = useState(false)
   // NEW: Track the exact height of the visible screen
   const [viewportHeight, setViewportHeight] = useState('100%')
   const { api, cdnUrl } = useApiService()
@@ -202,6 +203,25 @@ export default function UserMessagePage() {
     }
   }, [])
 
+  // Poll until the Tauri backend is ready
+  useEffect(() => {
+    let cancelled = false
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const ready = await EncryptionPlugin.isReady()
+          if (ready) {
+            setIsClientReady(true)
+            return
+          }
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 500))
+      }
+    }
+    poll()
+    return () => { cancelled = true }
+  }, [])
+
   const getOlderMessages = async () => {
     const lastTs = messagesRef.current.length == 0 ? Date.now() * 1000 : messagesRef.current[0].id
     const COUNT = 36
@@ -247,8 +267,8 @@ export default function UserMessagePage() {
   }, [auth, isAtBottom])
 
   useEffect(() => {
-    getOlderMessages()
-  }, [])
+    if (isClientReady) getOlderMessages()
+  }, [isClientReady])
 
 
 
@@ -286,10 +306,13 @@ export default function UserMessagePage() {
   async function handleSendMessage() {
     const msg = messageText.trim()
     if (msg.length == 0 && files.length == 0) return
+    if (sendingMessage) return
 
-    if (sendingMessage) {
+    if (!isClientReady) {
+      toast({ title: "Connecting...", description: "Please wait, still connecting to server", variant: "destructive" })
       return
     }
+
     setSendingMessage(true)
     try {
       const encryptedFiles = FireflyProtos.EncryptedFiles.create()
@@ -344,22 +367,18 @@ export default function UserMessagePage() {
 
       // Don't await here, let it run
       sendMessage(userMessage).then(finalMsg => {
-
         messagesRef.current.delete(tempMsg)
         addMessageToRef(finalMsg)
-
       }).catch(err => {
         console.error(err)
         toast({ title: "Failed to send", variant: "destructive" })
-        // Remove temp message and restore text
         messagesRef.current.delete(tempMsg)
         setMessageText(msg)
-      }).finally(() => {
+        setSendingMessage(false)
+      }).then(() => {
         setSendingMessage(false)
       })
 
-      // Return early/break function flow since we handled async part
-      // Note: setSendingMessage is handled in finally of the promise chain above
       return
 
     } catch (err) {
@@ -369,8 +388,6 @@ export default function UserMessagePage() {
         description: "Please try again later",
         variant: "destructive",
       })
-      setSendingMessage(false)
-    } finally {
       setSendingMessage(false)
     }
   }
@@ -672,6 +689,24 @@ export function MessageElement(props: { message: UserMessage, sender: string }) 
       </div>
     </div>
   )
+}
+
+export function MessageBodyPreview(props: { inner: Uint8Array }) {
+  const message = FireflyProtos.UserMessageInner.decode(props.inner)
+
+  if (message.plainText) {
+    return <span>{new TextDecoder().decode(message.plainText)}</span>
+  }
+  if (message.messagePayload) {
+    const text = message.messagePayload.text
+    const files = message.messagePayload.files?.files ?? []
+    if (text) return <span>{text}</span>
+    if (files.length > 0) return <span>📎 {files.length} file{files.length > 1 ? 's' : ''}</span>
+  }
+  if (message.callMessage) {
+    return <span>📞 Call</span>
+  }
+  return <span></span>
 }
 
 export function MessageBody(props: { inner: Uint8Array }) {

@@ -53,6 +53,7 @@ pub fn run() {
             encryption_plugin::kick_group_member,
             encryption_plugin::clear_notifications,
             encryption_plugin::test_method,
+            encryption_plugin::is_ready,
         ]);
 
     #[cfg(desktop)]
@@ -103,18 +104,16 @@ pub fn run() {
                 log::error!("Failed to create app data dir: {}", e);
                 return;
             }
-            if let Err(e) = encryption_plugin::initialize_firefly_client(
-                app_data_dir
-                    
-                    .to_string_lossy()
-                    .to_string(),
+            match encryption_plugin::initialize_firefly_client(
+                app_data_dir.to_string_lossy().to_string(),
             )
             .await
             {
-                log::error!("Failed to initialize firefly client: {}", e);
-            } else {
-                log::info!("Firefly client initialized successfully");
-                encryption_plugin::register_state(&app_handle);
+                Err(e) => log::error!("Failed to initialize firefly client: {}", e),
+                Ok(_) => {
+                    log::info!("Firefly client initialized successfully");
+                    encryption_plugin::register_state(&app_handle);
+                }
             }
         });
 

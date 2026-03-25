@@ -91,6 +91,7 @@ export default function DiscoverPage() {
 
 
   const [searchText, setSearchText] = useState("")
+  const [activeTab, setActiveTab] = useState("posts")
 
   const [posts, setPosts] = useState<Array<PostProtos.FullPost>>([])
   const [users, setUsers] = useState<Array<UserProtos.User>>([])
@@ -108,6 +109,8 @@ export default function DiscoverPage() {
       return
     }
 
+    setPosts([])
+    setUsers([])
 
     const promises: Array<Promise<unknown>> = []
     // posts
@@ -118,12 +121,7 @@ export default function DiscoverPage() {
           fetchTypeFields: query,
         }).then((results) => {
           setPosts(results)
-          for (const post of results) {
-            console.log(post)
-          }
-
         })
-
         promises.push(postsFuture)
       }
     }
@@ -131,12 +129,11 @@ export default function DiscoverPage() {
     {
       const usersFuture = api.getUsers(query).then((results) => {
         setUsers(results)
-        for (const user of results) {
-          console.log(user)
+        if (results.length > 0) {
+          setActiveTab("people")
         }
       })
       promises.push(usersFuture)
-
     }
 
     await Promise.all(promises)
@@ -221,7 +218,7 @@ export default function DiscoverPage() {
         </div>
 
         <div className="">
-          <Tabs defaultValue="posts" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="overflow-x-auto pb-2">
               <TabsList className="mb-6 bg-transparent border-b w-full justify-start rounded-none p-0 h-auto flex-nowrap">
                 <TabsTrigger

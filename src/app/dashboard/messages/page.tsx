@@ -10,7 +10,7 @@ import { dateToRelativeString } from "lupyd-js"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { protos as FireflyProtos } from "firefly-client-js"
 import { UserAvatar } from "@/components/user-avatar"
-import { MessageBody } from "./[username]/page"
+import { MessageBody, MessageBodyPreview } from "./[username]/page"
 import { bUserMessageToUserMessage, EncryptionPlugin, type UserMessage } from "@/context/encryption-plugin"
 
 
@@ -254,11 +254,11 @@ function ConversationElement(props: { conversation: { count: number, message: Us
                   <p className="text-xs text-muted-foreground">{dateToRelativeString(lastTs)}</p>
                 </div>
               </div>
-              <p
+              <div
                 className={`text-sm truncate ${unread ? "text-black font-medium" : "text-muted-foreground"}`}
               >
-                <MessageBody inner={conversation.message.text}></MessageBody>
-              </p>
+                <MessageBodyPreview inner={conversation.message.text} />
+              </div>
             </div>
           </div>
         </div>

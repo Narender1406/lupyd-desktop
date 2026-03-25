@@ -75,8 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if ("refresh_token" in result && typeof result["refresh_token"] === "string") {
         const refreshToken = result.refresh_token;
-        console.log(`Saving tokens `, { accessToken, refreshToken })
-        EncryptionPlugin.saveTokens({ accessToken, refreshToken })
+        try {
+          await EncryptionPlugin.saveTokens({ accessToken, refreshToken })
+        } catch (e) {
+          console.error('Failed to save tokens to Tauri backend', e)
+        }
       } else {
         console.warn(`Unable to get refresh token`, JSON.stringify(result))
       }

@@ -1,7 +1,4 @@
-import { fromBase64, toBase64 } from "@/lib/utils";
-
-import { decryptBlobV1 } from "@/lib/utils";
-import { isTauri } from "@tauri-apps/api/core";
+import { fromBase64, toBase64, decryptBlobV1 } from "@/lib/utils";
 import { protos as FireflyProtos } from "firefly-client-js";
 import { TauriEncryptionPluginInstance } from './tauri-encryption-plugin';
 
@@ -200,6 +197,8 @@ export interface EncryptionPluginType {
   kickGroupMember(options: { groupId: number, username: string }): Promise<void>
 
   deleteGroup(options: { groupId: number }): Promise<void>
+
+  isReady(): Promise<boolean>
 };
 
 // Check if running in Tauri environment

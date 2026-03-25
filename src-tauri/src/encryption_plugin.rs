@@ -37,6 +37,9 @@ pub static MESSAGE_STORE: OnceCell<MessageStore> = OnceCell::const_new();
 pub static FIREFLY_CLIENT: OnceCell<FireflyClient> = OnceCell::const_new();
 pub static FILE_SERVER: OnceCell<FileServer> = OnceCell::const_new();
 
+// Signals that the file server is bound and ready to accept connections
+pub static FILE_SERVER_READY: tokio::sync::OnceCell<u16> = tokio::sync::OnceCell::const_new();
+
 // Using once_cell::sync::Lazy for the event channel as it doesn't require async initialization
 // and is simple to use for this purpose.
 use once_cell::sync::Lazy;
@@ -249,7 +252,13 @@ pub async fn initialize_firefly_client(app_data_dir: String) -> Result<(), Strin
             let file_server = Arc::new(file_server);
             let server_clone = file_server.clone();
             tokio::spawn(async move {
-                let _ = server_clone.start_serving(None).await;
+                match server_clone.start_serving(None).await {
+                    Ok(port) => {
+                        let _ = FILE_SERVER_READY.set(port);
+                        log::info!("file server ready on port {}", port);
+                    }
+                    Err(e) => log::error!("file server failed: {}", e),
+                }
             });
 
             Ok::<Arc<FfiFileServer>, String>(file_server)
@@ -440,17 +449,15 @@ pub async fn save_tokens<R: Runtime>(
         .await
         .map_err(|e| format!("Failed to save tokens: {}", e))?;
 
-    // Always run check_setup after tokens are saved so key bundles get uploaded.
-    // initialize_with_retrying() ran at startup before tokens existed — now that
-    // we have a valid token, re-run check_setup regardless of connection state.
-    let client_clone = client.clone();
-    tauri::async_runtime::spawn(async move {
-        if let Err(err) = client_clone.check_setup().await {
-            log::error!("check_setup after token save failed: {:?}", err);
-        } else {
-            log::info!("check_setup after token save succeeded");
-        }
-    });
+    // Run check_setup now that we have a valid token.
+    // This uploads pre-key bundles so other users can encrypt messages to this account.
+    // We await it so the frontend knows keys are ready before allowing sends.
+    if let Err(err) = client.check_setup().await {
+        log::error!("check_setup after token save failed: {:?}", err);
+        // Non-fatal: the initialize_with_retrying loop will retry
+    } else {
+        log::info!("check_setup after token save succeeded");
+    }
 
     Ok(())
 }
@@ -523,11 +530,26 @@ pub async fn clear_notifications<R: Runtime>(app: AppHandle<R>) -> Result<(), St
 pub async fn get_file_server_url<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<FileServerResponse, String> {
+    // Wait up to 5 seconds for the file server to be ready
+    let port = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        async {
+            loop {
+                if let Some(p) = FILE_SERVER_READY.get() {
+                    return *p;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            }
+        },
+    )
+    .await
+    .map_err(|_| "File server not ready".to_string())?;
+
     let server_state: State<FileServer> = app.state();
     let server = server_state.inner().clone();
 
     Ok(FileServerResponse {
-        url: format!("http://localhost:{}", server.port().await),
+        url: format!("http://localhost:{}", port),
         token: server.token().await,
     })
 }
@@ -551,6 +573,21 @@ pub async fn handle_message<R: Runtime>(
     _message: BUserMessage,
 ) -> Result<(), String> {
     Ok(())
+}
+
+#[command]
+pub async fn is_ready() -> bool {
+    // All stores must be initialized AND the firefly client must have
+    // completed check_setup (address_id != 0 means pre-key bundles are uploaded)
+    if let Some(client) = FIREFLY_CLIENT.get() {
+        let is_setup_done = client.is_setup_done();
+        FIREFLY_CLIENT.get().is_some()
+            && MESSAGE_STORE.get().is_some()
+            && DATABASE.get().is_some()
+            && is_setup_done
+    } else {
+        false
+    }
 }
 
 #[command]

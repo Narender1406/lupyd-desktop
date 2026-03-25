@@ -274,6 +274,17 @@ impl FireflyWsClient {
         }
 
         loop {
+            // If no token exists yet, wait silently instead of hammering the API
+            // with unauthenticated requests. Tokens are set via save_tokens after login.
+            match self.auth.has_token().await {
+                false => {
+                    log::info!("no token yet, waiting for login before check_setup");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+                true => {}
+            }
+
             log::info!("checking setup");
             match self.check_setup().await {
                 Ok(_) => {
@@ -282,7 +293,6 @@ impl FireflyWsClient {
                 }
                 Err(err) => {
                     log::error!("failed to check setup: {:?}", err);
-
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }
@@ -581,7 +591,8 @@ impl FireflyWsClient {
         if let Some(firefly::response::Body::UserMessageUploaded(body)) = response.body {
             log::info!("uploaded messages: {:?}", body);
             for ids in body.message_ids {
-                if ids.to == 0 {
+                if ids.id == 0 && ids.to != 0 {
+                    // Server rejected this address — fetch fresh pre-key bundle for it
                     more_addresses_to_send_to.push(ids.to);
                 } else {
                     if let Some(index) = addresses_to_not_send_to
@@ -970,8 +981,8 @@ impl FireflyWsClient {
             log::info!("deleted key packages: {:?}", ids_to_delete);
         }
 
-        let keys_remained = received_key_packages_len - ids_to_delete.len();
-        let keys_to_generate = MAX_KEY_PACKAGES_LIMIT - keys_remained;
+        let keys_remained = received_key_packages_len.saturating_sub(ids_to_delete.len());
+        let keys_to_generate = MAX_KEY_PACKAGES_LIMIT.saturating_sub(keys_remained);
 
         if keys_to_generate > 0 {
             let mut key_packages = firefly::GroupKeyPackages::default();
@@ -1599,7 +1610,7 @@ impl FireflyWsClient {
 
         const MAX_KEYS_LIMIT: usize = 32;
 
-        let keys_remaining = bundles_length - key_ids_to_delete.len();
+        let keys_remaining = bundles_length.saturating_sub(key_ids_to_delete.len());
 
         if keys_remaining < MAX_KEYS_LIMIT {
             let keys_to_create = MAX_KEYS_LIMIT - keys_remaining;
@@ -2354,5 +2365,14 @@ impl FfiFireflyWsClient {
             .check_setup()
             .await
             .map_err(DumbError::from_anyhow)
+    }
+
+    /// Returns true if check_setup has completed at least once successfully
+    /// (address_id is non-zero, meaning pre-key bundles have been uploaded).
+    pub fn is_setup_done(&self) -> bool {
+        self.inner
+            .address_id
+            .load(std::sync::atomic::Ordering::Relaxed)
+            != 0
     }
 }

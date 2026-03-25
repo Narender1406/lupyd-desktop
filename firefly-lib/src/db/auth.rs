@@ -133,4 +133,19 @@ impl FfiAuthHandler {
             .await
             .map_err(DumbError::from_anyhow)
     }
+
+    /// Returns true if a non-expired access token OR a refresh token exists.
+    /// Used to avoid hammering the API before the user has logged in.
+    pub async fn has_token(&self) -> bool {
+        // Check for a valid non-expired access token first
+        if let Ok(token) = self.key_value_store.get(KEY_ACCESS_TOKEN).await {
+            if let Ok(claims) = get_claims_from_token(&token) {
+                if claims.exp > get_current_timestamp_seconds_since_epoch() {
+                    return true;
+                }
+            }
+        }
+        // Fall back to checking if a refresh token exists
+        self.key_value_store.get(KEY_REFRESH_TOKEN).await.is_ok()
+    }
 }

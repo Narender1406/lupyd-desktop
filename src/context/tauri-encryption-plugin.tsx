@@ -40,10 +40,22 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
     accessToken: string;
     refreshToken: string;
   }): Promise<void> {
-    return await invoke('save_tokens', {
-      accessToken: options.accessToken,
-      refreshToken: options.refreshToken,
-    });
+    // Retry with backoff — on Android cold-start the Tauri backend may not be
+    // ready yet when the first getToken fires, causing ERR_CONNECTION_REFUSED.
+    const maxAttempts = 10;
+    let delay = 500;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await invoke('save_tokens', {
+          accessToken: options.accessToken,
+          refreshToken: options.refreshToken,
+        });
+      } catch (e) {
+        if (attempt === maxAttempts) throw e;
+        await new Promise(r => setTimeout(r, delay));
+        delay = Math.min(delay * 2, 5000);
+      }
+    }
   }
 
   async markAsReadUntil(options: { username: string; ts: number }): Promise<void> {
@@ -208,6 +220,10 @@ export class TauriEncryptionPlugin implements EncryptionPluginType {
       groupId: options.groupId,
       username: options.username,
     });
+  }
+
+  async isReady(): Promise<boolean> {
+    return await invoke('is_ready');
   }
 }
 
